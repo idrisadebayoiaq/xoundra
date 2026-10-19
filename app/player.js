@@ -1,4 +1,4 @@
-import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { goBack } from '../src/lib/navigation';
@@ -13,6 +13,13 @@ import { colors, font } from '../src/theme';
 import { useApp } from '../src/state/AppState';
 import { useAudioOutput } from '../src/lib/audioRoute';
 import { ArtistLink } from '../src/components/ArtistLink';
+
+function coverSize(width, height) {
+  const side = Math.min(width, 480);
+  const fromWidth = side - 120;
+  const fromHeight = height - 460;
+  return Math.max(168, Math.min(260, fromWidth, fromHeight));
+}
 
 export default function PlayerScreen() {
   const insets = useSafeAreaInsets();
@@ -38,6 +45,8 @@ export default function PlayerScreen() {
     premium,
   } = useApp();
   const output = useAudioOutput();
+  const { width, height } = useWindowDimensions();
+  const art = coverSize(width, height);
 
   if (!track) {
     return (
@@ -58,7 +67,7 @@ export default function PlayerScreen() {
       <Pressable onPress={goBack} hitSlop={12} style={styles.close}>
         <Ionicons name="chevron-down" size={30} color={colors.text} />
       </Pressable>
-      <Image source={coverSource(track.artwork)} style={styles.art} />
+      <Image source={coverSource(track.artwork)} style={[styles.art, { width: art, height: art }]} />
       <View style={styles.titleRow}>
         <View style={styles.titles}>
           <Text style={styles.title} numberOfLines={1}>{track.title}</Text>
@@ -133,11 +142,10 @@ const styles = StyleSheet.create({
     marginTop: 24,
   },
   art: {
-    width: '100%',
-    aspectRatio: 1,
-    borderRadius: 18,
+    alignSelf: 'center',
+    borderRadius: 8,
     backgroundColor: colors.card,
-    marginTop: 8,
+    marginTop: 4,
   },
   titleRow: {
     flexDirection: 'row',
