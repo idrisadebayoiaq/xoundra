@@ -8,6 +8,7 @@ import { AppProvider, useApp } from '../src/state/AppState';
 import { MiniPlayer } from '../src/components/MiniPlayer';
 import { NotificationBridge } from '../src/components/NotificationBridge';
 import { colors } from '../src/theme';
+import { AppFrame } from '../src/components/AppFrame';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -40,10 +41,10 @@ export default function RootLayout() {
   return (
     <AppProvider>
       <StatusBar style="light" />
-      <View style={{ flex: 1, backgroundColor: colors.bg }}>
+      <AppFrame>
         <NotificationBridge />
         <Gate />
-      </View>
+      </AppFrame>
     </AppProvider>
   );
 }
