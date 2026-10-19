@@ -1,0 +1,16 @@
+.env
+.env.*
+!.env.example
+catalog-work/
+node_modules/
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+web/.next/
+ios/
+android/
+*firebase-adminsdk*.json
+design/
+doc/
+supabase/

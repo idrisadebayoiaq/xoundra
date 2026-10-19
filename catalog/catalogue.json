@@ -1,0 +1,1652 @@
+{
+  "name": "Xoundra starter catalogue",
+  "source_zip": "supabase-files.zip",
+  "files_in_zip": 99,
+  "unique_recordings": 80,
+  "duplicate_copies_removed": 19,
+  "rights": "Internal only. Embedded notes match a professional sound-effects library (Infax / ECD transfer records). Do not publish in the store until the licence is confirmed.",
+  "artwork_note": "Covers are shared by category. Tracks do not each have a unique photo.",
+  "shelves": {
+    "home": "Calm beds for the first Home and Explore shelves.",
+    "explore": "Usable, but not on the first Home row.",
+    "hold": "Kept in the archive and kept off listener shelves. Short foley, motors, traffic, dogs, or uncertain clips."
+  },
+  "tracks": [
+    {
+      "id": "rain-on-the-trees",
+      "title": "Rain on the Trees",
+      "category": "Rain",
+      "tags": [
+        "rain",
+        "sleep",
+        "nature"
+      ],
+      "shelf": "home",
+      "access": "free",
+      "status": "internal",
+      "loop_ok": true,
+      "duration_seconds": 367.9,
+      "duration_label": "6:08",
+      "audio": "catalog/audio/rain-on-the-trees.mp3",
+      "artwork": "catalog/artwork/rain.jpg",
+      "name_source": "metadata",
+      "source_file": "317e220f-7cc2-4b8c-abbc-d94837049d66.mp3",
+      "duplicate_files": []
+    },
+    {
+      "id": "fine-rain",
+      "title": "Fine Rain",
+      "category": "Rain",
+      "tags": [
+        "rain",
+        "sleep",
+        "focus"
+      ],
+      "shelf": "home",
+      "access": "free",
+      "status": "internal",
+      "loop_ok": true,
+      "duration_seconds": 140.6,
+      "duration_label": "2:21",
+      "audio": "catalog/audio/fine-rain.mp3",
+      "artwork": "catalog/artwork/rain.jpg",
+      "name_source": "profile",
+      "source_file": "8b46853a-7366-452a-8a97-cc8a71102379.mp3",
+      "duplicate_files": []
+    },
+    {
+      "id": "even-drizzle",
+      "title": "Even Drizzle",
+      "category": "Rain",
+      "tags": [
+        "rain",
+        "sleep"
+      ],
+      "shelf": "home",
+      "access": "free",
+      "status": "internal",
+      "loop_ok": true,
+      "duration_seconds": 194.7,
+      "duration_label": "3:15",
+      "audio": "catalog/audio/even-drizzle.mp3",
+      "artwork": "catalog/artwork/rain.jpg",
+      "name_source": "profile",
+      "source_file": "e9a23783-eb05-4d77-9ee9-a034f388819d.mp3",
+      "duplicate_files": []
+    },
+    {
+      "id": "all-night-rain",
+      "title": "All-Night Rain",
+      "category": "Rain",
+      "tags": [
+        "rain",
+        "sleep"
+      ],
+      "shelf": "home",
+      "access": "free",
+      "status": "internal",
+      "loop_ok": true,
+      "duration_seconds": 385.6,
+      "duration_label": "6:26",
+      "audio": "catalog/audio/all-night-rain.mp3",
+      "artwork": "catalog/artwork/rain.jpg",
+      "name_source": "profile",
+      "source_file": "ea7c7c2b-b65f-49e7-ad45-a0169278e38f.mp3",
+      "duplicate_files": []
+    },
+    {
+      "id": "steady-rain",
+      "title": "Steady Rain",
+      "category": "Rain",
+      "tags": [
+        "rain",
+        "sleep",
+        "focus"
+      ],
+      "shelf": "home",
+      "access": "free",
+      "status": "internal",
+      "loop_ok": true,
+      "duration_seconds": 429.0,
+      "duration_label": "7:09",
+      "audio": "catalog/audio/steady-rain.mp3",
+      "artwork": "catalog/artwork/rain.jpg",
+      "name_source": "profile",
+      "source_file": "6e2aebd0-cc7e-4b63-a09e-cacdc5fa55c8.mp3",
+      "duplicate_files": []
+    },
+    {
+      "id": "rain-that-swells",
+      "title": "Rain That Swells",
+      "category": "Rain",
+      "tags": [
+        "rain",
+        "sleep"
+      ],
+      "shelf": "home",
+      "access": "free",
+      "status": "internal",
+      "loop_ok": true,
+      "duration_seconds": 581.3,
+      "duration_label": "9:41",
+      "audio": "catalog/audio/rain-that-swells.mp3",
+      "artwork": "catalog/artwork/rain.jpg",
+      "name_source": "profile",
+      "source_file": "84fd3182-46f2-4b14-81f5-e164bfd11a55.mp3",
+      "duplicate_files": []
+    },
+    {
+      "id": "soft-rain",
+      "title": "Soft Rain",
+      "category": "Rain",
+      "tags": [
+        "rain",
+        "relaxation"
+      ],
+      "shelf": "home",
+      "access": "free",
+      "status": "internal",
+      "loop_ok": true,
+      "duration_seconds": 117.3,
+      "duration_label": "1:57",
+      "audio": "catalog/audio/soft-rain.mp3",
+      "artwork": "catalog/artwork/rain.jpg",
+      "name_source": "profile",
+      "source_file": "e77b78e2-cbcc-44e9-a0bb-2f593895a782.mp3",
+      "duplicate_files": []
+    },
+    {
+      "id": "rain-on-leaves",
+      "title": "Rain on Leaves",
+      "category": "Rain",
+      "tags": [
+        "rain",
+        "nature"
+      ],
+      "shelf": "home",
+      "access": "free",
+      "status": "internal",
+      "loop_ok": true,
+      "duration_seconds": 129.8,
+      "duration_label": "2:10",
+      "audio": "catalog/audio/rain-on-leaves.mp3",
+      "artwork": "catalog/artwork/rain.jpg",
+      "name_source": "profile",
+      "source_file": "67f225fc-5238-46b5-891a-8bbc688ea140.mp3",
+      "duplicate_files": []
+    },
+    {
+      "id": "passing-rain",
+      "title": "Passing Rain",
+      "category": "Rain",
+      "tags": [
+        "rain"
+      ],
+      "shelf": "home",
+      "access": "free",
+      "status": "internal",
+      "loop_ok": true,
+      "duration_seconds": 133.0,
+      "duration_label": "2:13",
+      "audio": "catalog/audio/passing-rain.mp3",
+      "artwork": "catalog/artwork/rain.jpg",
+      "name_source": "profile",
+      "source_file": "dc9f5afa-75c1-4d3b-9d1e-b183cf5b1518.mp3",
+      "duplicate_files": []
+    },
+    {
+      "id": "garden-rain",
+      "title": "Garden Rain",
+      "category": "Rain",
+      "tags": [
+        "rain",
+        "nature"
+      ],
+      "shelf": "home",
+      "access": "free",
+      "status": "internal",
+      "loop_ok": true,
+      "duration_seconds": 184.0,
+      "duration_label": "3:04",
+      "audio": "catalog/audio/garden-rain.mp3",
+      "artwork": "catalog/artwork/rain.jpg",
+      "name_source": "profile",
+      "source_file": "6a824f4a-fba6-4cfd-9035-aeecfc5ee9ed.mp3",
+      "duplicate_files": []
+    },
+    {
+      "id": "steady-rain-bed",
+      "title": "Steady Rain Bed",
+      "category": "Rain",
+      "tags": [
+        "rain",
+        "sleep"
+      ],
+      "shelf": "home",
+      "access": "free",
+      "status": "internal",
+      "loop_ok": true,
+      "duration_seconds": 121.7,
+      "duration_label": "2:02",
+      "audio": "catalog/audio/steady-rain-bed.mp3",
+      "artwork": "catalog/artwork/rain.jpg",
+      "name_source": "inferred",
+      "source_file": "22735726-48f1-45f7-9685-fca40b32ff83.mp3",
+      "duplicate_files": []
+    },
+    {
+      "id": "close-thunder",
+      "title": "Close Thunder",
+      "category": "Rain",
+      "tags": [
+        "thunder",
+        "storm",
+        "sleep"
+      ],
+      "shelf": "home",
+      "access": "free",
+      "status": "internal",
+      "loop_ok": false,
+      "duration_seconds": 72.3,
+      "duration_label": "1:12",
+      "audio": "catalog/audio/close-thunder.mp3",
+      "artwork": "catalog/artwork/storm.jpg",
+      "name_source": "metadata",
+      "source_file": "67e6555f-3bbd-4ebf-8c03-556ed41240a5.mp3",
+      "duplicate_files": []
+    },
+    {
+      "id": "thunder-at-a-distance",
+      "title": "Thunder at a Distance",
+      "category": "Rain",
+      "tags": [
+        "thunder",
+        "storm"
+      ],
+      "shelf": "home",
+      "access": "free",
+      "status": "internal",
+      "loop_ok": true,
+      "duration_seconds": 245.9,
+      "duration_label": "4:06",
+      "audio": "catalog/audio/thunder-at-a-distance.mp3",
+      "artwork": "catalog/artwork/storm.jpg",
+      "name_source": "metadata",
+      "source_file": "fd5ef004-589e-4e84-baf5-73e005cf8348.mp3",
+      "duplicate_files": []
+    },
+    {
+      "id": "rolling-thunder",
+      "title": "Rolling Thunder",
+      "category": "Rain",
+      "tags": [
+        "thunder",
+        "storm",
+        "sleep"
+      ],
+      "shelf": "home",
+      "access": "free",
+      "status": "internal",
+      "loop_ok": true,
+      "duration_seconds": 266.1,
+      "duration_label": "4:26",
+      "audio": "catalog/audio/rolling-thunder.mp3",
+      "artwork": "catalog/artwork/storm.jpg",
+      "name_source": "metadata",
+      "source_file": "c6e485b2-e414-4a78-99d3-ca684b5c28c4.mp3",
+      "duplicate_files": []
+    },
+    {
+      "id": "quiet-storm",
+      "title": "Quiet Storm",
+      "category": "Rain",
+      "tags": [
+        "thunder",
+        "storm",
+        "sleep"
+      ],
+      "shelf": "home",
+      "access": "free",
+      "status": "internal",
+      "loop_ok": true,
+      "duration_seconds": 242.7,
+      "duration_label": "4:03",
+      "audio": "catalog/audio/quiet-storm.mp3",
+      "artwork": "catalog/artwork/storm.jpg",
+      "name_source": "metadata",
+      "source_file": "ddc58dba-a924-41dc-8cdb-d97c62f417df.mp3",
+      "duplicate_files": []
+    },
+    {
+      "id": "storm-rain",
+      "title": "Storm Rain",
+      "category": "Rain",
+      "tags": [
+        "thunder",
+        "rain",
+        "storm"
+      ],
+      "shelf": "home",
+      "access": "free",
+      "status": "internal",
+      "loop_ok": true,
+      "duration_seconds": 261.1,
+      "duration_label": "4:21",
+      "audio": "catalog/audio/storm-rain.mp3",
+      "artwork": "catalog/artwork/storm.jpg",
+      "name_source": "metadata",
+      "source_file": "2d767f08-0c82-4ca1-be28-815eb7182db7.mp3",
+      "duplicate_files": []
+    },
+    {
+      "id": "thunder-and-rain",
+      "title": "Thunder and Rain",
+      "category": "Rain",
+      "tags": [
+        "thunder",
+        "rain"
+      ],
+      "shelf": "home",
+      "access": "free",
+      "status": "internal",
+      "loop_ok": true,
+      "duration_seconds": 107.8,
+      "duration_label": "1:48",
+      "audio": "catalog/audio/thunder-and-rain.mp3",
+      "artwork": "catalog/artwork/storm.jpg",
+      "name_source": "metadata",
+      "source_file": "eaf3fea5-8b5d-4c53-94ac-44f089d353a1.mp3",
+      "duplicate_files": []
+    },
+    {
+      "id": "thunder-claps",
+      "title": "Thunder Claps",
+      "category": "Rain",
+      "tags": [
+        "thunder",
+        "storm"
+      ],
+      "shelf": "explore",
+      "access": "free",
+      "status": "internal",
+      "loop_ok": true,
+      "duration_seconds": 124.5,
+      "duration_label": "2:04",
+      "audio": "catalog/audio/thunder-claps.mp3",
+      "artwork": "catalog/artwork/storm.jpg",
+      "name_source": "metadata",
+      "source_file": "b86493d0-1acf-4e18-aad7-88ea0959c029.mp3",
+      "duplicate_files": []
+    },
+    {
+      "id": "light-rain-storm",
+      "title": "Light Rain Storm",
+      "category": "Rain",
+      "tags": [
+        "thunder",
+        "rain"
+      ],
+      "shelf": "home",
+      "access": "free",
+      "status": "internal",
+      "loop_ok": true,
+      "duration_seconds": 212.8,
+      "duration_label": "3:33",
+      "audio": "catalog/audio/light-rain-storm.mp3",
+      "artwork": "catalog/artwork/storm.jpg",
+      "name_source": "metadata",
+      "source_file": "21f672d5-f01f-45bf-94ca-5aacee3c3790.mp3",
+      "duplicate_files": []
+    },
+    {
+      "id": "severe-storm",
+      "title": "Severe Storm",
+      "category": "Rain",
+      "tags": [
+        "thunder",
+        "storm"
+      ],
+      "shelf": "explore",
+      "access": "free",
+      "status": "internal",
+      "loop_ok": true,
+      "duration_seconds": 148.6,
+      "duration_label": "2:29",
+      "audio": "catalog/audio/severe-storm.mp3",
+      "artwork": "catalog/artwork/storm.jpg",
+      "name_source": "metadata",
+      "source_file": "180e2867-32df-43ae-b5e6-26b818217dbf.mp3",
+      "duplicate_files": []
+    },
+    {
+      "id": "thunder-clap-in-rain",
+      "title": "Thunder Clap in Rain",
+      "category": "Rain",
+      "tags": [
+        "thunder",
+        "rain"
+      ],
+      "shelf": "hold",
+      "access": "free",
+      "status": "internal",
+      "loop_ok": false,
+      "duration_seconds": 35.7,
+      "duration_label": "0:36",
+      "audio": "catalog/audio/thunder-clap-in-rain.mp3",
+      "artwork": "catalog/artwork/storm.jpg",
+      "name_source": "metadata",
+      "source_file": "e1cc5d5f-a5ee-40c5-823e-7b7f8b6f48e7.mp3",
+      "duplicate_files": []
+    },
+    {
+      "id": "distant-rumble",
+      "title": "Distant Rumble",
+      "category": "Rain",
+      "tags": [
+        "thunder",
+        "storm"
+      ],
+      "shelf": "explore",
+      "access": "free",
+      "status": "internal",
+      "loop_ok": true,
+      "duration_seconds": 99.3,
+      "duration_label": "1:39",
+      "audio": "catalog/audio/distant-rumble.mp3",
+      "artwork": "catalog/artwork/storm.jpg",
+      "name_source": "inferred",
+      "source_file": "536af8d6-4a51-4a0d-8350-61014e911930.mp3",
+      "duplicate_files": []
+    },
+    {
+      "id": "cape-surf",
+      "title": "Cape Surf",
+      "category": "Ocean",
+      "tags": [
+        "ocean",
+        "surf",
+        "sleep"
+      ],
+      "shelf": "home",
+      "access": "free",
+      "status": "internal",
+      "loop_ok": true,
+      "duration_seconds": 262.6,
+      "duration_label": "4:23",
+      "audio": "catalog/audio/cape-surf.mp3",
+      "artwork": "catalog/artwork/ocean.jpg",
+      "name_source": "metadata",
+      "source_file": "01260b6a-0c42-413a-beb7-c40f6b398c8d.mp3",
+      "duplicate_files": []
+    },
+    {
+      "id": "pacific-coast",
+      "title": "Pacific Coast",
+      "category": "Ocean",
+      "tags": [
+        "ocean",
+        "surf",
+        "sleep"
+      ],
+      "shelf": "home",
+      "access": "free",
+      "status": "internal",
+      "loop_ok": true,
+      "duration_seconds": 278.4,
+      "duration_label": "4:38",
+      "audio": "catalog/audio/pacific-coast.mp3",
+      "artwork": "catalog/artwork/ocean.jpg",
+      "name_source": "metadata",
+      "source_file": "c0653a27-1684-4b72-92db-8bf1a3ee6af0.mp3",
+      "duplicate_files": []
+    },
+    {
+      "id": "atlantic-shore",
+      "title": "Atlantic Shore",
+      "category": "Ocean",
+      "tags": [
+        "ocean",
+        "surf"
+      ],
+      "shelf": "home",
+      "access": "free",
+      "status": "internal",
+      "loop_ok": true,
+      "duration_seconds": 232.7,
+      "duration_label": "3:53",
+      "audio": "catalog/audio/atlantic-shore.mp3",
+      "artwork": "catalog/artwork/ocean.jpg",
+      "name_source": "metadata",
+      "source_file": "780fb8af-5dd3-4b27-b0f0-a48c5c77bd2b.mp3",
+      "duplicate_files": []
+    },
+    {
+      "id": "soft-shore",
+      "title": "Soft Shore",
+      "category": "Ocean",
+      "tags": [
+        "ocean",
+        "surf"
+      ],
+      "shelf": "home",
+      "access": "free",
+      "status": "internal",
+      "loop_ok": true,
+      "duration_seconds": 136.5,
+      "duration_label": "2:17",
+      "audio": "catalog/audio/soft-shore.mp3",
+      "artwork": "catalog/artwork/ocean.jpg",
+      "name_source": "inferred",
+      "source_file": "99938a9b-245c-4617-8492-c32c89cce82a.mp3",
+      "duplicate_files": []
+    },
+    {
+      "id": "deep-sea",
+      "title": "Deep Sea",
+      "category": "Ocean",
+      "tags": [
+        "underwater",
+        "meditation",
+        "sleep"
+      ],
+      "shelf": "home",
+      "access": "free",
+      "status": "internal",
+      "loop_ok": true,
+      "duration_seconds": 303.0,
+      "duration_label": "5:03",
+      "audio": "catalog/audio/deep-sea.mp3",
+      "artwork": "catalog/artwork/underwater.jpg",
+      "name_source": "metadata",
+      "source_file": "1833541f-e885-4d93-97d0-4854ed72c705.mp3",
+      "duplicate_files": []
+    },
+    {
+      "id": "shallow-sea",
+      "title": "Shallow Sea",
+      "category": "Ocean",
+      "tags": [
+        "underwater",
+        "meditation"
+      ],
+      "shelf": "home",
+      "access": "free",
+      "status": "internal",
+      "loop_ok": true,
+      "duration_seconds": 303.0,
+      "duration_label": "5:03",
+      "audio": "catalog/audio/shallow-sea.mp3",
+      "artwork": "catalog/artwork/underwater.jpg",
+      "name_source": "metadata",
+      "source_file": "b937e498-0a9e-4209-bcf6-096e4f8117f1.mp3",
+      "duplicate_files": []
+    },
+    {
+      "id": "underwater-river",
+      "title": "Underwater River",
+      "category": "Ocean",
+      "tags": [
+        "underwater",
+        "river",
+        "meditation"
+      ],
+      "shelf": "home",
+      "access": "free",
+      "status": "internal",
+      "loop_ok": true,
+      "duration_seconds": 303.0,
+      "duration_label": "5:03",
+      "audio": "catalog/audio/underwater-river.mp3",
+      "artwork": "catalog/artwork/underwater.jpg",
+      "name_source": "metadata",
+      "source_file": "09210f60-a0a3-4859-b048-666657680cb7.mp3",
+      "duplicate_files": []
+    },
+    {
+      "id": "deep-water-hum",
+      "title": "Deep Water Hum",
+      "category": "Meditation",
+      "tags": [
+        "underwater",
+        "meditation",
+        "focus"
+      ],
+      "shelf": "home",
+      "access": "free",
+      "status": "internal",
+      "loop_ok": true,
+      "duration_seconds": 144.0,
+      "duration_label": "2:24",
+      "audio": "catalog/audio/deep-water-hum.mp3",
+      "artwork": "catalog/artwork/underwater.jpg",
+      "name_source": "inferred",
+      "source_file": "445f4b7e-0462-4b25-b53e-83315f6c94a0.mp3",
+      "duplicate_files": []
+    },
+    {
+      "id": "west-african-dawn",
+      "title": "West African Dawn",
+      "category": "Forest",
+      "tags": [
+        "forest",
+        "birds",
+        "morning",
+        "nature"
+      ],
+      "shelf": "home",
+      "access": "free",
+      "status": "internal",
+      "loop_ok": true,
+      "duration_seconds": 507.3,
+      "duration_label": "8:27",
+      "audio": "catalog/audio/west-african-dawn.mp3",
+      "artwork": "catalog/artwork/forest.jpg",
+      "name_source": "metadata",
+      "source_file": "18ba2ad1-1035-4812-80ec-c78573b910c2.mp3",
+      "duplicate_files": []
+    },
+    {
+      "id": "west-african-night",
+      "title": "West African Night",
+      "category": "Forest",
+      "tags": [
+        "forest",
+        "night",
+        "insects",
+        "sleep"
+      ],
+      "shelf": "home",
+      "access": "free",
+      "status": "internal",
+      "loop_ok": true,
+      "duration_seconds": 501.3,
+      "duration_label": "8:21",
+      "audio": "catalog/audio/west-african-night.mp3",
+      "artwork": "catalog/artwork/night.jpg",
+      "name_source": "metadata",
+      "source_file": "33573acc-9684-4dbc-bd72-e6ecee15d83e.mp3",
+      "duplicate_files": []
+    },
+    {
+      "id": "forest-air",
+      "title": "Forest Air",
+      "category": "Forest",
+      "tags": [
+        "forest",
+        "nature"
+      ],
+      "shelf": "home",
+      "access": "free",
+      "status": "internal",
+      "loop_ok": true,
+      "duration_seconds": 184.4,
+      "duration_label": "3:04",
+      "audio": "catalog/audio/forest-air.mp3",
+      "artwork": "catalog/artwork/forest.jpg",
+      "name_source": "metadata",
+      "source_file": "ade95db8-60fc-4850-b6e4-ff9c43549553.mp3",
+      "duplicate_files": []
+    },
+    {
+      "id": "gallery-forest-late-day",
+      "title": "Gallery Forest, Late Day",
+      "category": "Forest",
+      "tags": [
+        "forest",
+        "birds"
+      ],
+      "shelf": "home",
+      "access": "free",
+      "status": "internal",
+      "loop_ok": true,
+      "duration_seconds": 147.4,
+      "duration_label": "2:27",
+      "audio": "catalog/audio/gallery-forest-late-day.mp3",
+      "artwork": "catalog/artwork/forest.jpg",
+      "name_source": "metadata",
+      "source_file": "2e132fea-a2a1-4800-bbbb-8fa6bcbd5389.mp3",
+      "duplicate_files": []
+    },
+    {
+      "id": "gallery-forest-dusk",
+      "title": "Gallery Forest at Dusk",
+      "category": "Forest",
+      "tags": [
+        "forest",
+        "birds",
+        "evening"
+      ],
+      "shelf": "home",
+      "access": "free",
+      "status": "internal",
+      "loop_ok": true,
+      "duration_seconds": 238.1,
+      "duration_label": "3:58",
+      "audio": "catalog/audio/gallery-forest-dusk.mp3",
+      "artwork": "catalog/artwork/forest.jpg",
+      "name_source": "metadata",
+      "source_file": "7e6ba512-f8e9-4dd5-b3e0-7d2a52a9336b.mp3",
+      "duplicate_files": []
+    },
+    {
+      "id": "clear-river",
+      "title": "Clear River",
+      "category": "Nature",
+      "tags": [
+        "river",
+        "water",
+        "focus"
+      ],
+      "shelf": "home",
+      "access": "free",
+      "status": "internal",
+      "loop_ok": false,
+      "duration_seconds": 77.3,
+      "duration_label": "1:17",
+      "audio": "catalog/audio/clear-river.mp3",
+      "artwork": "catalog/artwork/river.jpg",
+      "name_source": "metadata",
+      "source_file": "09a87392-86bf-4b2a-b4fc-4bbd337a0b40.mp3",
+      "duplicate_files": []
+    },
+    {
+      "id": "slow-river",
+      "title": "Slow River",
+      "category": "Nature",
+      "tags": [
+        "river",
+        "water",
+        "relaxation"
+      ],
+      "shelf": "home",
+      "access": "free",
+      "status": "internal",
+      "loop_ok": true,
+      "duration_seconds": 104.3,
+      "duration_label": "1:44",
+      "audio": "catalog/audio/slow-river.mp3",
+      "artwork": "catalog/artwork/river.jpg",
+      "name_source": "metadata",
+      "source_file": "efa1a357-a2b0-4996-aada-b5584c18a359.mp3",
+      "duplicate_files": []
+    },
+    {
+      "id": "riverside",
+      "title": "Riverside",
+      "category": "Nature",
+      "tags": [
+        "river",
+        "nature"
+      ],
+      "shelf": "home",
+      "access": "free",
+      "status": "internal",
+      "loop_ok": true,
+      "duration_seconds": 113.9,
+      "duration_label": "1:54",
+      "audio": "catalog/audio/riverside.mp3",
+      "artwork": "catalog/artwork/river.jpg",
+      "name_source": "metadata",
+      "source_file": "56d0af32-caf6-4df1-bd77-084e8d6a2cfd.mp3",
+      "duplicate_files": []
+    },
+    {
+      "id": "midday-river",
+      "title": "Midday River",
+      "category": "Nature",
+      "tags": [
+        "river",
+        "water",
+        "focus"
+      ],
+      "shelf": "home",
+      "access": "free",
+      "status": "internal",
+      "loop_ok": true,
+      "duration_seconds": 228.4,
+      "duration_label": "3:48",
+      "audio": "catalog/audio/midday-river.mp3",
+      "artwork": "catalog/artwork/river.jpg",
+      "name_source": "metadata",
+      "source_file": "efdb23ca-b2cc-4999-a81b-00a27be44a22.mp3",
+      "duplicate_files": []
+    },
+    {
+      "id": "little-stream",
+      "title": "Little Stream",
+      "category": "Nature",
+      "tags": [
+        "river",
+        "water"
+      ],
+      "shelf": "home",
+      "access": "free",
+      "status": "internal",
+      "loop_ok": true,
+      "duration_seconds": 127.7,
+      "duration_label": "2:08",
+      "audio": "catalog/audio/little-stream.mp3",
+      "artwork": "catalog/artwork/river.jpg",
+      "name_source": "metadata",
+      "source_file": "391a7e70-f1f0-45a4-ab79-c26e1d93ea97.mp3",
+      "duplicate_files": []
+    },
+    {
+      "id": "river-rapids",
+      "title": "River Rapids",
+      "category": "Focus",
+      "tags": [
+        "river",
+        "water",
+        "focus"
+      ],
+      "shelf": "home",
+      "access": "free",
+      "status": "internal",
+      "loop_ok": true,
+      "duration_seconds": 302.7,
+      "duration_label": "5:03",
+      "audio": "catalog/audio/river-rapids.mp3",
+      "artwork": "catalog/artwork/river.jpg",
+      "name_source": "metadata",
+      "source_file": "c5bace30-3f59-4c3e-883f-64254d9e71b9.mp3",
+      "duplicate_files": []
+    },
+    {
+      "id": "river-lock",
+      "title": "River Lock",
+      "category": "Nature",
+      "tags": [
+        "river"
+      ],
+      "shelf": "hold",
+      "access": "free",
+      "status": "internal",
+      "loop_ok": false,
+      "duration_seconds": 111.1,
+      "duration_label": "1:51",
+      "audio": "catalog/audio/river-lock.mp3",
+      "artwork": "catalog/artwork/river.jpg",
+      "name_source": "metadata",
+      "source_file": "c9547e9c-3655-4da8-aa68-822ee25af8cf.mp3",
+      "duplicate_files": []
+    },
+    {
+      "id": "low-wind",
+      "title": "Low Wind",
+      "category": "Ambient",
+      "tags": [
+        "wind",
+        "focus"
+      ],
+      "shelf": "home",
+      "access": "free",
+      "status": "internal",
+      "loop_ok": false,
+      "duration_seconds": 89.9,
+      "duration_label": "1:30",
+      "audio": "catalog/audio/low-wind.mp3",
+      "artwork": "catalog/artwork/wind.jpg",
+      "name_source": "metadata",
+      "source_file": "c6cdbe1d-cf4c-4331-943e-6078023c5723.mp3",
+      "duplicate_files": []
+    },
+    {
+      "id": "gusts",
+      "title": "Gusts",
+      "category": "Ambient",
+      "tags": [
+        "wind"
+      ],
+      "shelf": "explore",
+      "access": "free",
+      "status": "internal",
+      "loop_ok": true,
+      "duration_seconds": 129.4,
+      "duration_label": "2:09",
+      "audio": "catalog/audio/gusts.mp3",
+      "artwork": "catalog/artwork/wind.jpg",
+      "name_source": "metadata",
+      "source_file": "c90c7814-4226-4d1f-938c-7db53404064b.mp3",
+      "duplicate_files": []
+    },
+    {
+      "id": "wind-in-leaves",
+      "title": "Wind in Leaves",
+      "category": "Ambient",
+      "tags": [
+        "wind",
+        "forest",
+        "focus"
+      ],
+      "shelf": "home",
+      "access": "free",
+      "status": "internal",
+      "loop_ok": true,
+      "duration_seconds": 113.6,
+      "duration_label": "1:54",
+      "audio": "catalog/audio/wind-in-leaves.mp3",
+      "artwork": "catalog/artwork/wind.jpg",
+      "name_source": "metadata",
+      "source_file": "1dd54d95-efe1-4127-8cca-8bfc4e5c1506.mp3",
+      "duplicate_files": []
+    },
+    {
+      "id": "open-wind",
+      "title": "Open Wind",
+      "category": "Ambient",
+      "tags": [
+        "wind"
+      ],
+      "shelf": "home",
+      "access": "free",
+      "status": "internal",
+      "loop_ok": true,
+      "duration_seconds": 131.7,
+      "duration_label": "2:12",
+      "audio": "catalog/audio/open-wind.mp3",
+      "artwork": "catalog/artwork/wind.jpg",
+      "name_source": "metadata",
+      "source_file": "fd0eedba-56fb-40b2-8cdd-83c6f4971859.mp3",
+      "duplicate_files": []
+    },
+    {
+      "id": "crossing-wind",
+      "title": "Crossing Wind",
+      "category": "Ambient",
+      "tags": [
+        "wind"
+      ],
+      "shelf": "home",
+      "access": "free",
+      "status": "internal",
+      "loop_ok": true,
+      "duration_seconds": 168.2,
+      "duration_label": "2:48",
+      "audio": "catalog/audio/crossing-wind.mp3",
+      "artwork": "catalog/artwork/wind.jpg",
+      "name_source": "metadata",
+      "source_file": "36552e48-6705-46bd-8c90-f3dc85538f6a.mp3",
+      "duplicate_files": []
+    },
+    {
+      "id": "long-wind",
+      "title": "Long Wind",
+      "category": "Ambient",
+      "tags": [
+        "wind",
+        "focus",
+        "sleep"
+      ],
+      "shelf": "home",
+      "access": "free",
+      "status": "internal",
+      "loop_ok": true,
+      "duration_seconds": 351.6,
+      "duration_label": "5:52",
+      "audio": "catalog/audio/long-wind.mp3",
+      "artwork": "catalog/artwork/wind.jpg",
+      "name_source": "metadata",
+      "source_file": "209e6b52-aa68-4c85-ab8e-e1e83fe20e6e.mp3",
+      "duplicate_files": []
+    },
+    {
+      "id": "muffled-wind",
+      "title": "Muffled Wind",
+      "category": "Ambient",
+      "tags": [
+        "wind"
+      ],
+      "shelf": "explore",
+      "access": "free",
+      "status": "internal",
+      "loop_ok": false,
+      "duration_seconds": 83.7,
+      "duration_label": "1:24",
+      "audio": "catalog/audio/muffled-wind.mp3",
+      "artwork": "catalog/artwork/wind.jpg",
+      "name_source": "inferred",
+      "source_file": "00bf48f2-7aca-4d0c-97d0-05b2826df2a7.mp3",
+      "duplicate_files": []
+    },
+    {
+      "id": "low-gust",
+      "title": "Low Gust",
+      "category": "Ambient",
+      "tags": [
+        "wind"
+      ],
+      "shelf": "explore",
+      "access": "free",
+      "status": "internal",
+      "loop_ok": true,
+      "duration_seconds": 91.8,
+      "duration_label": "1:32",
+      "audio": "catalog/audio/low-gust.mp3",
+      "artwork": "catalog/artwork/wind.jpg",
+      "name_source": "inferred",
+      "source_file": "7759524f-f359-4f2a-9dc3-bc6c1a877b19.mp3",
+      "duplicate_files": []
+    },
+    {
+      "id": "watering-hole",
+      "title": "Watering Hole, Late Afternoon",
+      "category": "Nature",
+      "tags": [
+        "birds",
+        "nature",
+        "afternoon"
+      ],
+      "shelf": "home",
+      "access": "free",
+      "status": "internal",
+      "loop_ok": true,
+      "duration_seconds": 238.6,
+      "duration_label": "3:59",
+      "audio": "catalog/audio/watering-hole.mp3",
+      "artwork": "catalog/artwork/birds.jpg",
+      "name_source": "metadata",
+      "source_file": "0ad04b46-ce91-4a77-ba4a-417295b5b01e.mp3",
+      "duplicate_files": [
+        "6625ed42-9e56-45a6-b0ab-c9b6299a6f10.mp3",
+        "d61e29f1-0b62-4293-95ec-874883b284cb.mp3"
+      ]
+    },
+    {
+      "id": "weaver-birds",
+      "title": "Weaver Birds",
+      "category": "Nature",
+      "tags": [
+        "birds",
+        "nature"
+      ],
+      "shelf": "home",
+      "access": "free",
+      "status": "internal",
+      "loop_ok": true,
+      "duration_seconds": 139.6,
+      "duration_label": "2:20",
+      "audio": "catalog/audio/weaver-birds.mp3",
+      "artwork": "catalog/artwork/birds.jpg",
+      "name_source": "metadata",
+      "source_file": "0156d48f-0b4a-4a57-b0ca-d74fd479098c.mp3",
+      "duplicate_files": [
+        "f4bb4671-ad2f-4fdb-924c-5a8b190b854c.mp3"
+      ]
+    },
+    {
+      "id": "weaver-colony",
+      "title": "Weaver Colony",
+      "category": "Nature",
+      "tags": [
+        "birds",
+        "nature"
+      ],
+      "shelf": "home",
+      "access": "free",
+      "status": "internal",
+      "loop_ok": true,
+      "duration_seconds": 189.9,
+      "duration_label": "3:10",
+      "audio": "catalog/audio/weaver-colony.mp3",
+      "artwork": "catalog/artwork/birds.jpg",
+      "name_source": "metadata",
+      "source_file": "986a2e75-3979-45d5-a462-58b11d96e32b.mp3",
+      "duplicate_files": [
+        "c176acd3-2f5c-456f-9c21-1003cdd98dec.mp3"
+      ]
+    },
+    {
+      "id": "migrating-birds",
+      "title": "Migrating Birds",
+      "category": "Nature",
+      "tags": [
+        "birds"
+      ],
+      "shelf": "explore",
+      "access": "free",
+      "status": "internal",
+      "loop_ok": false,
+      "duration_seconds": 71.5,
+      "duration_label": "1:12",
+      "audio": "catalog/audio/migrating-birds.mp3",
+      "artwork": "catalog/artwork/birds.jpg",
+      "name_source": "metadata",
+      "source_file": "832d6564-49d0-43fb-8b9f-ca55a3e5818a.mp3",
+      "duplicate_files": [
+        "dd75e06c-67bc-4a7c-98c0-b56c16b8bf0c.mp3"
+      ]
+    },
+    {
+      "id": "steady-insect-bed",
+      "title": "Steady Insect Bed",
+      "category": "Nature",
+      "tags": [
+        "insects",
+        "night",
+        "forest"
+      ],
+      "shelf": "home",
+      "access": "free",
+      "status": "internal",
+      "loop_ok": false,
+      "duration_seconds": 48.5,
+      "duration_label": "0:49",
+      "audio": "catalog/audio/steady-insect-bed.mp3",
+      "artwork": "catalog/artwork/night.jpg",
+      "name_source": "inferred",
+      "source_file": "e4a1a734-6af4-4cdd-aa5d-4fd382102a34.mp3",
+      "duplicate_files": []
+    },
+    {
+      "id": "patterned-birdsong",
+      "title": "Patterned Birdsong",
+      "category": "Nature",
+      "tags": [
+        "birds"
+      ],
+      "shelf": "explore",
+      "access": "free",
+      "status": "internal",
+      "loop_ok": false,
+      "duration_seconds": 79.8,
+      "duration_label": "1:20",
+      "audio": "catalog/audio/patterned-birdsong.mp3",
+      "artwork": "catalog/artwork/birds.jpg",
+      "name_source": "inferred",
+      "source_file": "d386cbce-5aca-481d-84d2-f0089f210d75.mp3",
+      "duplicate_files": []
+    },
+    {
+      "id": "bright-birdsong",
+      "title": "Bright Birdsong",
+      "category": "Nature",
+      "tags": [
+        "birds",
+        "morning"
+      ],
+      "shelf": "home",
+      "access": "free",
+      "status": "internal",
+      "loop_ok": true,
+      "duration_seconds": 118.8,
+      "duration_label": "1:59",
+      "audio": "catalog/audio/bright-birdsong.mp3",
+      "artwork": "catalog/artwork/birds.jpg",
+      "name_source": "inferred",
+      "source_file": "fa79097d-15d8-49b8-84e7-81bcc855bf24.mp3",
+      "duplicate_files": []
+    },
+    {
+      "id": "town-garden",
+      "title": "Town Garden",
+      "category": "Nature",
+      "tags": [
+        "garden",
+        "birds",
+        "relaxation"
+      ],
+      "shelf": "home",
+      "access": "free",
+      "status": "internal",
+      "loop_ok": true,
+      "duration_seconds": 132.3,
+      "duration_label": "2:12",
+      "audio": "catalog/audio/town-garden.mp3",
+      "artwork": "catalog/artwork/garden.jpg",
+      "name_source": "metadata",
+      "source_file": "42481c95-191c-40d9-84b9-9ec9895beee5.mp3",
+      "duplicate_files": []
+    },
+    {
+      "id": "standardwing-calls",
+      "title": "Standardwing Calls",
+      "category": "Nature",
+      "tags": [
+        "birds"
+      ],
+      "shelf": "explore",
+      "access": "free",
+      "status": "internal",
+      "loop_ok": true,
+      "duration_seconds": 117.3,
+      "duration_label": "1:57",
+      "audio": "catalog/audio/standardwing-calls.mp3",
+      "artwork": "catalog/artwork/birds.jpg",
+      "name_source": "metadata",
+      "source_file": "79d26a73-9eee-4f70-9938-d56304dcdb34.mp3",
+      "duplicate_files": []
+    },
+    {
+      "id": "magpie-jay",
+      "title": "Magpie Jay",
+      "category": "Nature",
+      "tags": [
+        "birds"
+      ],
+      "shelf": "explore",
+      "access": "free",
+      "status": "internal",
+      "loop_ok": false,
+      "duration_seconds": 69.1,
+      "duration_label": "1:09",
+      "audio": "catalog/audio/magpie-jay.mp3",
+      "artwork": "catalog/artwork/birds.jpg",
+      "name_source": "metadata",
+      "source_file": "e4358507-c111-442e-a76e-80ed6f84b6a6.mp3",
+      "duplicate_files": []
+    },
+    {
+      "id": "albatross-calls",
+      "title": "Albatross Calls",
+      "category": "Nature",
+      "tags": [
+        "birds",
+        "ocean"
+      ],
+      "shelf": "hold",
+      "access": "free",
+      "status": "internal",
+      "loop_ok": false,
+      "duration_seconds": 78.5,
+      "duration_label": "1:18",
+      "audio": "catalog/audio/albatross-calls.mp3",
+      "artwork": "catalog/artwork/birds.jpg",
+      "name_source": "metadata",
+      "source_file": "477a22dd-5d96-4e81-a47e-bbbd1d72ff84.mp3",
+      "duplicate_files": []
+    },
+    {
+      "id": "birds-and-owl",
+      "title": "Birds and an Owl",
+      "category": "Nature",
+      "tags": [
+        "birds"
+      ],
+      "shelf": "hold",
+      "access": "free",
+      "status": "internal",
+      "loop_ok": false,
+      "duration_seconds": 140.7,
+      "duration_label": "2:21",
+      "audio": "catalog/audio/birds-and-owl.mp3",
+      "artwork": "catalog/artwork/birds.jpg",
+      "name_source": "metadata",
+      "source_file": "88623f27-fd56-497e-af18-e19e55b57932.mp3",
+      "duplicate_files": [
+        "a0fa81e4-8598-4f1b-9a72-eabf655835c8.mp3"
+      ]
+    },
+    {
+      "id": "flying-fox",
+      "title": "Flying Fox",
+      "category": "Nature",
+      "tags": [
+        "animals",
+        "night"
+      ],
+      "shelf": "hold",
+      "access": "free",
+      "status": "internal",
+      "loop_ok": false,
+      "duration_seconds": 57.5,
+      "duration_label": "0:57",
+      "audio": "catalog/audio/flying-fox.mp3",
+      "artwork": "catalog/artwork/night.jpg",
+      "name_source": "metadata",
+      "source_file": "c87585b1-e6db-4523-8aa9-d6b720824e1c.mp3",
+      "duplicate_files": []
+    },
+    {
+      "id": "capuchin-calls",
+      "title": "Capuchin Calls",
+      "category": "Nature",
+      "tags": [
+        "animals"
+      ],
+      "shelf": "hold",
+      "access": "free",
+      "status": "internal",
+      "loop_ok": false,
+      "duration_seconds": 32.6,
+      "duration_label": "0:33",
+      "audio": "catalog/audio/capuchin-calls.mp3",
+      "artwork": "catalog/artwork/forest.jpg",
+      "name_source": "metadata",
+      "source_file": "294dc53c-56a0-4902-9719-8a0d167e2906.mp3",
+      "duplicate_files": []
+    },
+    {
+      "id": "open-road",
+      "title": "Open Road",
+      "category": "Ambient",
+      "tags": [
+        "road"
+      ],
+      "shelf": "hold",
+      "access": "free",
+      "status": "internal",
+      "loop_ok": false,
+      "duration_seconds": 191.9,
+      "duration_label": "3:12",
+      "audio": "catalog/audio/open-road.mp3",
+      "artwork": "catalog/artwork/field.jpg",
+      "name_source": "metadata",
+      "source_file": "3d21775c-2ba8-4181-9a70-7acdc3a75089.mp3",
+      "duplicate_files": [
+        "770eef6c-99ed-489f-a960-3bfdc48fd363.mp3",
+        "f0494b1b-860e-4b54-862e-53fa96901444.mp3"
+      ]
+    },
+    {
+      "id": "dogs-and-birdsong",
+      "title": "Dogs and Birdsong",
+      "category": "Nature",
+      "tags": [
+        "animals",
+        "birds"
+      ],
+      "shelf": "hold",
+      "access": "free",
+      "status": "internal",
+      "loop_ok": false,
+      "duration_seconds": 49.4,
+      "duration_label": "0:49",
+      "audio": "catalog/audio/dogs-and-birdsong.mp3",
+      "artwork": "catalog/artwork/field.jpg",
+      "name_source": "metadata",
+      "source_file": "57acf6ee-c3a6-4a1f-911a-3dd537a0172f.mp3",
+      "duplicate_files": [
+        "adcf150e-96c6-47de-b5b9-e8af72d13051.mp3",
+        "d7a37098-0cd9-4b02-a8ba-a71d9e615fc9.mp3"
+      ]
+    },
+    {
+      "id": "horse-on-a-track",
+      "title": "Horse on a Track",
+      "category": "Nature",
+      "tags": [
+        "animals"
+      ],
+      "shelf": "hold",
+      "access": "free",
+      "status": "internal",
+      "loop_ok": false,
+      "duration_seconds": 27.5,
+      "duration_label": "0:28",
+      "audio": "catalog/audio/horse-on-a-track.mp3",
+      "artwork": "catalog/artwork/field.jpg",
+      "name_source": "metadata",
+      "source_file": "0da266b5-7a65-4a47-997c-6e722e5b0a8a.mp3",
+      "duplicate_files": [
+        "343f437a-7215-4436-bd0a-ec2b5f343465.mp3",
+        "d4cff14a-4c40-4448-9cb6-ad35c009da5f.mp3"
+      ]
+    },
+    {
+      "id": "riverboat-motor",
+      "title": "Riverboat Motor",
+      "category": "Ambient",
+      "tags": [
+        "mechanical",
+        "river"
+      ],
+      "shelf": "hold",
+      "access": "free",
+      "status": "internal",
+      "loop_ok": false,
+      "duration_seconds": 262.8,
+      "duration_label": "4:23",
+      "audio": "catalog/audio/riverboat-motor.mp3",
+      "artwork": "catalog/artwork/field.jpg",
+      "name_source": "metadata",
+      "source_file": "15d89d7b-7233-4967-b03f-f15845b9a784.mp3",
+      "duplicate_files": []
+    },
+    {
+      "id": "paddle-steamer",
+      "title": "Paddle Steamer",
+      "category": "Ambient",
+      "tags": [
+        "mechanical",
+        "water"
+      ],
+      "shelf": "hold",
+      "access": "free",
+      "status": "internal",
+      "loop_ok": false,
+      "duration_seconds": 212.5,
+      "duration_label": "3:33",
+      "audio": "catalog/audio/paddle-steamer.mp3",
+      "artwork": "catalog/artwork/field.jpg",
+      "name_source": "metadata",
+      "source_file": "1b7bd219-a504-47ad-bb51-b471999c440d.mp3",
+      "duplicate_files": []
+    },
+    {
+      "id": "brushing-the-hearth",
+      "title": "Brushing the Hearth",
+      "category": "Ambient",
+      "tags": [
+        "fire"
+      ],
+      "shelf": "hold",
+      "access": "free",
+      "status": "internal",
+      "loop_ok": false,
+      "duration_seconds": 30.3,
+      "duration_label": "0:30",
+      "audio": "catalog/audio/brushing-the-hearth.mp3",
+      "artwork": "catalog/artwork/fire.jpg",
+      "name_source": "metadata",
+      "source_file": "ac30a876-61d7-4bbf-88d7-b27aff9639d3.mp3",
+      "duplicate_files": [
+        "b6a2226b-3a58-44a3-8a78-2863d0c7db1d.mp3"
+      ]
+    },
+    {
+      "id": "brushing-the-grate",
+      "title": "Brushing the Grate",
+      "category": "Ambient",
+      "tags": [
+        "fire"
+      ],
+      "shelf": "hold",
+      "access": "free",
+      "status": "internal",
+      "loop_ok": false,
+      "duration_seconds": 27.6,
+      "duration_label": "0:28",
+      "audio": "catalog/audio/brushing-the-grate.mp3",
+      "artwork": "catalog/artwork/fire.jpg",
+      "name_source": "metadata",
+      "source_file": "0ae32dab-0ab6-4c91-8a5e-dedba647638b.mp3",
+      "duplicate_files": [
+        "a367db8f-c043-49d9-8e74-df5ead2262a7.mp3"
+      ]
+    },
+    {
+      "id": "laying-the-fire",
+      "title": "Laying the Fire",
+      "category": "Ambient",
+      "tags": [
+        "fire"
+      ],
+      "shelf": "hold",
+      "access": "free",
+      "status": "internal",
+      "loop_ok": false,
+      "duration_seconds": 29.4,
+      "duration_label": "0:29",
+      "audio": "catalog/audio/laying-the-fire.mp3",
+      "artwork": "catalog/artwork/fire.jpg",
+      "name_source": "metadata",
+      "source_file": "7c98d0fc-b75a-4cb2-ae1d-8383779f8610.mp3",
+      "duplicate_files": []
+    },
+    {
+      "id": "shovelling-cinders",
+      "title": "Shovelling Cinders",
+      "category": "Ambient",
+      "tags": [
+        "fire"
+      ],
+      "shelf": "hold",
+      "access": "free",
+      "status": "internal",
+      "loop_ok": false,
+      "duration_seconds": 29.4,
+      "duration_label": "0:29",
+      "audio": "catalog/audio/shovelling-cinders.mp3",
+      "artwork": "catalog/artwork/fire.jpg",
+      "name_source": "metadata",
+      "source_file": "c6151760-cd6c-4ae8-b0aa-9b7e9563cad0.mp3",
+      "duplicate_files": [
+        "d1b3244e-31a2-4de6-9228-7ef1bc9ea860.mp3"
+      ]
+    },
+    {
+      "id": "raking-the-hearth",
+      "title": "Raking the Hearth",
+      "category": "Ambient",
+      "tags": [
+        "fire"
+      ],
+      "shelf": "hold",
+      "access": "free",
+      "status": "internal",
+      "loop_ok": false,
+      "duration_seconds": 36.7,
+      "duration_label": "0:37",
+      "audio": "catalog/audio/raking-the-hearth.mp3",
+      "artwork": "catalog/artwork/fire.jpg",
+      "name_source": "metadata",
+      "source_file": "8e6da47a-0380-499c-abb9-bf708b51ab8a.mp3",
+      "duplicate_files": [
+        "af91ae9a-cf9d-4dfc-ad87-092319cbee22.mp3"
+      ]
+    },
+    {
+      "id": "clearing-cinders",
+      "title": "Clearing Cinders",
+      "category": "Ambient",
+      "tags": [
+        "fire"
+      ],
+      "shelf": "hold",
+      "access": "free",
+      "status": "internal",
+      "loop_ok": false,
+      "duration_seconds": 32.3,
+      "duration_label": "0:32",
+      "audio": "catalog/audio/clearing-cinders.mp3",
+      "artwork": "catalog/artwork/fire.jpg",
+      "name_source": "metadata",
+      "source_file": "7a1f74b6-c1d4-4437-bb7e-da3c70035545.mp3",
+      "duplicate_files": [
+        "b43537e1-209a-49cb-9621-9ac590a7c2a1.mp3"
+      ]
+    },
+    {
+      "id": "ice-field",
+      "title": "Ice Field",
+      "category": "Ambient",
+      "tags": [
+        "ice",
+        "wind",
+        "focus"
+      ],
+      "shelf": "explore",
+      "access": "free",
+      "status": "internal",
+      "loop_ok": true,
+      "duration_seconds": 154.5,
+      "duration_label": "2:34",
+      "audio": "catalog/audio/ice-field.mp3",
+      "artwork": "catalog/artwork/wind.jpg",
+      "name_source": "metadata",
+      "source_file": "bf7621f5-1618-40a5-96d5-74d4a5c9bcad.mp3",
+      "duplicate_files": []
+    },
+    {
+      "id": "brief-low-rumble",
+      "title": "Brief Low Rumble",
+      "category": "Ambient",
+      "tags": [
+        "unknown"
+      ],
+      "shelf": "hold",
+      "access": "free",
+      "status": "internal",
+      "loop_ok": false,
+      "duration_seconds": 8.1,
+      "duration_label": "0:08",
+      "audio": "catalog/audio/brief-low-rumble.mp3",
+      "artwork": "catalog/artwork/field.jpg",
+      "name_source": "inferred",
+      "source_file": "27f8669c-e5ce-4d4f-9344-6c2254cd2b04.mp3",
+      "duplicate_files": []
+    },
+    {
+      "id": "short-rumble",
+      "title": "Short Rumble",
+      "category": "Ambient",
+      "tags": [
+        "unknown"
+      ],
+      "shelf": "hold",
+      "access": "free",
+      "status": "internal",
+      "loop_ok": false,
+      "duration_seconds": 19.7,
+      "duration_label": "0:20",
+      "audio": "catalog/audio/short-rumble.mp3",
+      "artwork": "catalog/artwork/field.jpg",
+      "name_source": "inferred",
+      "source_file": "e337fc3a-a200-4ca0-a604-3b764b5b121e.mp3",
+      "duplicate_files": []
+    },
+    {
+      "id": "short-bright-calls",
+      "title": "Short Bright Calls",
+      "category": "Nature",
+      "tags": [
+        "birds"
+      ],
+      "shelf": "hold",
+      "access": "free",
+      "status": "internal",
+      "loop_ok": false,
+      "duration_seconds": 41.8,
+      "duration_label": "0:42",
+      "audio": "catalog/audio/short-bright-calls.mp3",
+      "artwork": "catalog/artwork/birds.jpg",
+      "name_source": "inferred",
+      "source_file": "0645b4e0-63df-42c8-9bd6-b2c53dcc6aec.mp3",
+      "duplicate_files": [
+        "af270285-8560-40b6-ae79-e5114c7770e8.mp3"
+      ]
+    },
+    {
+      "id": "short-soft-calls",
+      "title": "Short Soft Calls",
+      "category": "Nature",
+      "tags": [
+        "birds"
+      ],
+      "shelf": "hold",
+      "access": "free",
+      "status": "internal",
+      "loop_ok": false,
+      "duration_seconds": 37.0,
+      "duration_label": "0:37",
+      "audio": "catalog/audio/short-soft-calls.mp3",
+      "artwork": "catalog/artwork/birds.jpg",
+      "name_source": "inferred",
+      "source_file": "06e9fa4c-e61b-4ba7-ab88-e5ff66a93c12.mp3",
+      "duplicate_files": [
+        "d71387fb-8622-4f68-a197-bd02ff78bd97.mp3"
+      ]
+    }
+  ]
+}
