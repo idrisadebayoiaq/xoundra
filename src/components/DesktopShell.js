@@ -232,7 +232,7 @@ function NowPanel() {
           <Ionicons name="close" size={22} color={colors.text} />
         </Pressable>
       </View>
-      <Image source={coverSource(shown.artwork)} style={styles.nowArt} />
+      <Image source={coverSource(shown.artwork)} style={styles.nowArt} resizeMode="cover" />
       <View style={styles.nowTitleRow}>
         <View style={styles.nowCopy}>
           <Text style={styles.nowTitle} numberOfLines={2}>{title}</Text>
@@ -545,6 +545,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginBottom: 8,
     padding: 16,
+    overflow: 'hidden',
   },
   nowTools: {
     flexDirection: 'row',
@@ -552,8 +553,9 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   nowArt: {
-    width: '100%',
-    aspectRatio: 1,
+    width: 200,
+    height: 200,
+    alignSelf: 'center',
     borderRadius: 8,
     backgroundColor: colors.card,
   },
