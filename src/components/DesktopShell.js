@@ -15,6 +15,7 @@ import { DownloadAppButton } from './DownloadAppButton';
 import { DownloadProgress } from './DownloadProgress';
 import { LevelBar } from './LevelBar';
 import { PlaylistCover } from './PlaylistCover';
+import { DownloadMark } from './DownloadMark';
 
 const nav = [
   { href: '/', label: 'Home', icon: 'home', match: (path) => path === '/' },
@@ -201,6 +202,7 @@ function likedRows(list, needle, current, play) {
           <Text style={styles.libTitle} numberOfLines={1}>{item.title}</Text>
           <Text style={styles.libMeta} numberOfLines={1}>{item.artistName || item.category}</Text>
         </View>
+        <DownloadMark track={item} />
       </Pressable>
     ));
 }

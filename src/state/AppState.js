@@ -1,12 +1,13 @@
 import React from 'react';
-import { Platform } from 'react-native';
+import { Image, Platform } from 'react-native';
 import { router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { createAudioPlayer, setAudioModeAsync } from 'expo-audio';
+import { createAudioPlayer, createAudioPlaylist, setAudioModeAsync } from 'expo-audio';
 import { Asset } from 'expo-asset';
 import { Directory, File, Paths } from 'expo-file-system';
 import localTracks from '../data/tracks.json';
 import { audioFiles } from '../data/audioFiles';
+import { coverSource } from '../data/artwork';
 import { fetchCategories, fetchPremium, fetchProfile, fetchPublishedTracks, supabase } from '../lib/supabase';
 import { presentNotice } from '../lib/notices';
 import { publishDownloadProgress } from '../lib/downloadNotice';
@@ -16,6 +17,36 @@ const AppContext = React.createContext(null);
 
 function downloadFile(id) {
   return new File(Paths.document, 'downloads', `${id}.mp3`);
+}
+
+function lockMetadata(track) {
+  const art = track?.artwork ? Image.resolveAssetSource(coverSource(track.artwork)) : null;
+  return {
+    title: track?.title || 'Xoundra',
+    artist: track?.artistName || 'Xoundra',
+    albumTitle: 'Xoundra',
+    artworkUrl: art?.uri || '',
+  };
+}
+
+function showLock(player, track, allowSkip = true) {
+  if (Platform.OS === 'web' || !player?.setActiveForLockScreen || !track) return;
+  try {
+    player.setActiveForLockScreen(true, lockMetadata(track), {
+      showNextTrack: allowSkip,
+      showPreviousTrack: allowSkip,
+    });
+  } catch {
+    // lock screen controls are unavailable in this build
+  }
+}
+
+function hideLock(player) {
+  try {
+    player?.clearLockScreenControls?.();
+  } catch {
+    // already cleared
+  }
 }
 
 const webDownloadKey = 'xoundra-web-downloads';
@@ -130,6 +161,10 @@ export function AppProvider({ children }) {
   const userHeld = React.useRef(false);
   const startedAt = React.useRef(0);
   const advanceRef = React.useRef(() => {});
+  const adjustRef = React.useRef(() => {});
+  const queueKey = React.useRef('');
+  const playableIds = React.useRef([]);
+  const suppressUntil = React.useRef(0);
   const mixPlayers = React.useRef([]);
   playback.current = { playing, track: queue[index] || null, queue, index, repeat, shuffle, sleepLeft, position, collection: collectionLock.current };
   mixRef.current = mix;
@@ -160,22 +195,41 @@ export function AppProvider({ children }) {
     setAudioModeAsync({
       playsInSilentMode: true,
       shouldPlayInBackground: true,
-      interruptionMode: 'mixWithOthers',
+      interruptionMode: 'doNotMix',
     }).catch(() => {});
+    const nativeQueue = Platform.OS !== 'web';
     let player;
     try {
-      player = createAudioPlayer(null);
+      player = nativeQueue ? createAudioPlaylist({ loop: 'none' }) : createAudioPlayer(null);
     } catch {
       return undefined;
     }
     playerRef.current = player;
-    const subscription = player.addListener('playbackStatusUpdate', (status) => {
+    const onStatus = (status) => {
       setPosition(status.currentTime || 0);
       setPlaying(Boolean(status.playing));
+      if (nativeQueue) return;
       const duration = status.duration || playback.current.track?.duration || 0;
       const ended = status.didJustFinish || (duration > 1 && !status.playing && status.currentTime >= duration - 0.45);
       if (ended) advanceRef.current();
-    });
+    };
+    const subscription = player.addListener(nativeQueue ? 'playlistStatusUpdate' : 'playbackStatusUpdate', onStatus);
+    const trackSubscription = nativeQueue ? player.addListener('trackChanged', ({ currentIndex }) => {
+      if (Date.now() < suppressUntil.current) return;
+      const id = playableIds.current[currentIndex];
+      const queue = playback.current.queue;
+      const nextIndex = queue.findIndex((item) => item.id === id);
+      const next = queue[nextIndex];
+      if (!next) return;
+      setIndex(nextIndex);
+      setPosition(0);
+      setPlaying(true);
+      adjustRef.current(next.id, 'plays', 1);
+      if (userRef.current) {
+        supabase.from('listening_history').insert({ user_id: userRef.current, track_id: next.id }).then(() => {});
+      }
+      showLock(player, next);
+    }) : null;
     const watch = setInterval(() => {
       const current = playerRef.current;
       if (!current || current.loop) return;
@@ -189,6 +243,8 @@ export function AppProvider({ children }) {
       clearInterval(watch);
       try {
         subscription.remove();
+        trackSubscription?.remove();
+        hideLock(player);
         player.remove();
       } catch {
         // player was already released
@@ -217,7 +273,11 @@ export function AppProvider({ children }) {
   }, []);
 
   React.useEffect(() => {
-    if (playerRef.current) playerRef.current.loop = guideFollow.current ? false : repeat;
+    const player = playerRef.current;
+    if (!player) return;
+    player.loop = Platform.OS === 'web'
+      ? (guideFollow.current ? false : repeat)
+      : (guideFollow.current ? 'all' : (repeat ? 'single' : 'none'));
   }, [repeat]);
 
   const loadAccount = React.useCallback(async (sessionUser) => {
@@ -429,19 +489,25 @@ export function AppProvider({ children }) {
     setLikes((items) => items.map(apply));
   }, []);
 
+  const soundSource = React.useCallback((id) => {
+    try {
+      const saved = downloadFile(id);
+      if (saved.exists) return saved.uri;
+    } catch {
+      // web has no on-device file
+    }
+    const bundled = audioFiles[id];
+    if (bundled) return bundled;
+    const track = tracksRef.current.find((item) => item.id === id) || localTracks.find((item) => item.id === id);
+    if (track?.audioUrl && onlineRef.current) return track.audioUrl;
+    return null;
+  }, []);
+  adjustRef.current = adjustCount;
+
   const startSound = React.useCallback((track) => {
     const player = playerRef.current;
     if (!track || !player) return;
-    const bundled = audioFiles[track.id];
-    let source = null;
-    try {
-      const saved = downloadFile(track.id);
-      if (saved.exists) source = saved.uri;
-    } catch {
-      source = null;
-    }
-    if (!source && bundled) source = bundled;
-    if (!source && track.audioUrl && onlineRef.current) source = track.audioUrl;
+    const source = soundSource(track.id);
     if (!source) {
       setPlaybackNote(onlineRef.current ? 'This sound is not on this device.' : 'Download this sound to play it offline.');
       return;
@@ -451,9 +517,32 @@ export function AppProvider({ children }) {
     endLock.current = false;
     startedAt.current = Date.now();
     try {
-      player.loop = guideFollow.current ? false : playback.current.repeat;
-      player.replace(source);
-      player.play();
+      if (Platform.OS !== 'web' && player.clear) {
+        const queue = playback.current.queue.length ? playback.current.queue : [track];
+        const key = queue.map((item) => item.id).join('|');
+        if (queueKey.current !== key) {
+          player.clear();
+          const loaded = [];
+          queue.forEach((item) => {
+            const itemSource = soundSource(item.id) || item.audioUrl;
+            if (!itemSource) return;
+            player.add(itemSource);
+            loaded.push(item.id);
+          });
+          playableIds.current = loaded;
+          queueKey.current = key;
+        }
+        player.loop = guideFollow.current ? 'all' : (playback.current.repeat ? 'single' : 'none');
+        const loadedIndex = Math.max(0, playableIds.current.indexOf(track.id));
+        suppressUntil.current = Date.now() + 700;
+        if (player.trackCount > 0) player.skipTo(Math.min(loadedIndex, player.trackCount - 1));
+        player.play();
+        showLock(player, track);
+      } else {
+        player.loop = guideFollow.current ? false : playback.current.repeat;
+        player.replace(source);
+        player.play();
+      }
     } catch {
       setPlaybackNote('This sound could not be played.');
       return;
@@ -465,7 +554,7 @@ export function AppProvider({ children }) {
     if (userRef.current) {
       supabase.from('listening_history').insert({ user_id: userRef.current, track_id: track.id }).then(() => {});
     }
-  }, [adjustCount]);
+  }, [adjustCount, soundSource]);
   startRef.current = startSound;
 
   const advanceQueue = React.useCallback(() => {
@@ -686,6 +775,8 @@ export function AppProvider({ children }) {
     endLock.current = true;
     stopMix();
     playerRef.current?.pause();
+    hideLock(playerRef.current);
+    queueKey.current = '';
     setQueue([]);
     setIndex(0);
     setPlaying(false);
@@ -948,18 +1039,26 @@ export function AppProvider({ children }) {
   React.useEffect(() => {
     if (!mixPlaying) return undefined;
     releaseMixPlayers();
-    mixRef.current.forEach((layer) => {
-      const source = audioFiles[layer.id];
+    mixRef.current.forEach((layer, index) => {
+      const source = soundSource(layer.id);
       if (!source) return;
       const player = createAudioPlayer(source);
       player.loop = true;
       player.volume = layer.muted ? 0 : layer.volume;
       player.play();
       mixPlayers.current.push(player);
+      if (index === 0) {
+        const track = tracksRef.current.find((item) => item.id === layer.id);
+        showLock(player, track || { title: 'Mix', artistName: 'Xoundra', artwork: track?.artwork }, false);
+      }
     });
     if (!mixPlayers.current.length) setMixPlaying(false);
-    return () => releaseMixPlayers();
-  }, [mixPlaying, mixShape]);
+    return () => {
+      releaseMixPlayers();
+      const current = playback.current.track;
+      if (current) showLock(playerRef.current, current);
+    };
+  }, [mixPlaying, mixShape, soundSource]);
 
   React.useEffect(() => {
     if (!mixPlaying) return;

@@ -6,6 +6,7 @@ import { statLine } from '../data/shelves';
 import { useApp } from '../state/AppState';
 import { SoundMenuButton } from './SoundMenu';
 import { ArtistLink } from './ArtistLink';
+import { DownloadMark } from './DownloadMark';
 
 export function PhotoTile({ track, onPress, style }) {
   return (
@@ -19,6 +20,9 @@ export function PhotoTile({ track, onPress, style }) {
       <View style={styles.tileMenu}>
         <SoundMenuButton track={track} />
       </View>
+      <View style={styles.tileDownload}>
+        <DownloadMark track={track} />
+      </View>
     </View>
   );
 }
@@ -31,6 +35,9 @@ export function AlbumCard({ track, onPress }) {
       </Pressable>
       <View style={styles.albumMenu}>
         <SoundMenuButton track={track} />
+      </View>
+      <View style={styles.albumDownload}>
+        <DownloadMark track={track} />
       </View>
       <Text style={styles.albumTitle} numberOfLines={2}>{track.title}</Text>
       <ArtistLink track={track} style={styles.albumArtist} />
@@ -56,6 +63,7 @@ export function TrackRow({ track, onPress, subtitle }) {
         {liked ? <Ionicons name="heart" size={14} color={colors.mint} /> : null}
         {active && playing ? <Ionicons name="volume-medium" size={16} color={colors.mint} /> : null}
       </Pressable>
+      <DownloadMark track={track} />
       <SoundMenuButton track={track} />
     </View>
   );
@@ -94,6 +102,11 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
     padding: 12,
   },
+  tileDownload: {
+    position: 'absolute',
+    top: 6,
+    left: 6,
+  },
   tileMenu: {
     position: 'absolute',
     top: 6,
@@ -108,6 +121,11 @@ const styles = StyleSheet.create({
   album: {
     width: 148,
     marginRight: 12,
+  },
+  albumDownload: {
+    position: 'absolute',
+    left: 4,
+    bottom: 58,
   },
   albumMenu: {
     position: 'absolute',
