@@ -78,8 +78,6 @@ export default function SettingsScreen() {
         </Pressable>
       ) : null}
       <Pressable onPress={() => router.push('/support')}><Row label="Support" /></Pressable>
-      <Pressable onPress={() => router.push('/terms')}><Row label="Terms and privacy" /></Pressable>
-      <Pressable onPress={() => router.push('/delete-account')}><Row label="Delete account" /></Pressable>
       <Pressable onPress={app.signOut}><Row label="Sign out" /></Pressable>
     </ScrollView>
   );

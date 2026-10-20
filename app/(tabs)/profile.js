@@ -7,13 +7,12 @@ import { useApp } from '../../src/state/AppState';
 import { Avatar } from '../../src/components/Avatar';
 
 export default function ProfileScreen() {
-  const { premium, firstName, isAdmin, isArtist, avatarPath, avatarStamp } = useApp();
+  const { premium, firstName, isAdmin, avatarPath, avatarStamp } = useApp();
   const rows = [
     { label: 'Edit profile', icon: 'create-outline', href: '/edit-profile' },
-    { label: isArtist ? 'Artist dashboard' : 'Become an artist', icon: 'mic-outline', href: '/artist' },
     ...(isAdmin ? [{ label: 'Admin', icon: 'shield-checkmark-outline', href: '/admin' }] : []),
     { label: 'Downloads', icon: 'download-outline', href: '/downloads' },
-    { label: 'Privacy', icon: 'lock-closed-outline', href: '/settings' },
+    { label: 'Privacy', icon: 'lock-closed-outline', href: '/privacy' },
     { label: 'Country', icon: 'globe-outline', href: '/country' },
     { label: 'Settings', icon: 'settings-outline', href: '/settings' },
   ];

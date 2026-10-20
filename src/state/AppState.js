@@ -9,6 +9,7 @@ import localTracks from '../data/tracks.json';
 import { audioFiles } from '../data/audioFiles';
 import { fetchCategories, fetchPremium, fetchProfile, fetchPublishedTracks, supabase } from '../lib/supabase';
 import { presentNotice } from '../lib/notices';
+import { publishDownloadProgress } from '../lib/downloadNotice';
 import { connectionOnline, downloadGate, readOnline, watchNetwork } from '../lib/network';
 
 const AppContext = React.createContext(null);
@@ -18,6 +19,30 @@ function downloadFile(id) {
 }
 
 const webDownloadKey = 'xoundra-web-downloads';
+const sessionKey = 'sb-mmgezkeemyjxluxcshaz-auth-token';
+
+function withTimeout(promise, ms) {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error('timeout')), ms);
+    promise.then((value) => {
+      clearTimeout(timer);
+      resolve(value);
+    }, (error) => {
+      clearTimeout(timer);
+      reject(error);
+    });
+  });
+}
+
+async function storedUser() {
+  try {
+    const raw = await AsyncStorage.getItem(sessionKey);
+    const saved = JSON.parse(raw || 'null');
+    return saved?.user || saved?.currentSession?.user || null;
+  } catch {
+    return null;
+  }
+}
 
 async function readWebDownloads() {
   try {
@@ -49,6 +74,7 @@ export function AppProvider({ children }) {
   const [signals, setSignals] = React.useState([]);
   const [helped, setHelped] = React.useState([]);
   const [online, setOnline] = React.useState(true);
+  const [onlineKnown, setOnlineKnown] = React.useState(false);
   const [playbackNote, setPlaybackNote] = React.useState('');
   const [isArtist, setIsArtist] = React.useState(false);
   const [onboardingDone, setOnboardingDone] = React.useState(false);
@@ -72,6 +98,9 @@ export function AppProvider({ children }) {
   const [ready, setReady] = React.useState(false);
   const [tracks, setTracks] = React.useState(localTracks);
   const [downloads, setDownloads] = React.useState([]);
+  const [downloadProgress, setDownloadProgress] = React.useState(null);
+  const batchRef = React.useRef(null);
+  const progressAt = React.useRef(0);
   const [downloadOnWifiOnly, setDownloadOnWifiOnlyState] = React.useState(false);
   const wifiOnlyRef = React.useRef(false);
   const waitIds = React.useRef([]);
@@ -93,6 +122,7 @@ export function AppProvider({ children }) {
   const onlineRef = React.useRef(true);
   const notifyRef = React.useRef(true);
   const notedUser = React.useRef(null);
+  const renewed = React.useRef(false);
   const startRef = React.useRef(() => {});
   const endLock = React.useRef(false);
   const guideFollow = React.useRef(false);
@@ -215,29 +245,62 @@ export function AppProvider({ children }) {
       setPicks([]);
       return false;
     }
-    const [profileResult, isPremium, saved, liked, played, role, notes, picked] = await Promise.all([
-      fetchProfile(sessionUser.id),
-      fetchPremium(sessionUser.id),
-      supabase.from('favorites').select('track_id, created_at').eq('user_id', sessionUser.id),
-      supabase.from('likes').select('track_id, created_at').eq('user_id', sessionUser.id),
-      supabase.from('listening_history').select('track_id').eq('user_id', sessionUser.id).order('played_at', { ascending: false }).limit(40),
-      supabase.from('user_roles').select('role').eq('user_id', sessionUser.id).eq('role', 'admin').maybeSingle(),
-      supabase.from('track_comments').select('helped').eq('user_id', sessionUser.id),
-      supabase.from('profile_picks').select('track_id').eq('user_id', sessionUser.id),
-    ]);
+    let profileResult = null;
+    let isPremium = false;
+    let saved = { data: [] };
+    let liked = { data: [] };
+    let played = { data: [] };
+    let role = { data: null };
+    let notes = { data: [] };
+    let picked = { data: [] };
+    let accountFailed = false;
+    try {
+      [profileResult, isPremium, saved, liked, played, role, notes, picked] = await withTimeout(Promise.all([
+        fetchProfile(sessionUser.id),
+        fetchPremium(sessionUser.id),
+        supabase.from('favorites').select('track_id, created_at').eq('user_id', sessionUser.id),
+        supabase.from('likes').select('track_id, created_at').eq('user_id', sessionUser.id),
+        supabase.from('listening_history').select('track_id').eq('user_id', sessionUser.id).order('played_at', { ascending: false }).limit(40),
+        supabase.from('user_roles').select('role').eq('user_id', sessionUser.id).eq('role', 'admin').maybeSingle(),
+        supabase.from('track_comments').select('helped').eq('user_id', sessionUser.id),
+        supabase.from('profile_picks').select('track_id').eq('user_id', sessionUser.id),
+      ]), 8000);
+    } catch {
+      accountFailed = true;
+      try {
+        const cached = JSON.parse(await AsyncStorage.getItem('xoundra-account') || 'null');
+        if (cached?.id === sessionUser.id) {
+          profileResult = cached.profile;
+          isPremium = cached.premium === true;
+        }
+      } catch {
+        profileResult = null;
+      }
+    }
     let profile = profileResult;
-    if (!profile?.first_name) {
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      profile = (await fetchProfile(sessionUser.id)) || profile;
+    if (!accountFailed && !profile?.first_name) {
+      profile = (await fetchProfile(sessionUser.id).catch(() => null)) || profile;
     }
     if (profile?.country_code) setCountryState(profile.country_code);
     setFirstName(profile?.first_name || '');
     setEmail(sessionUser.email || '');
-    setEmailConfirmed(profile?.email_confirmed === true);
+    const authConfirmed = Boolean(sessionUser.email_confirmed_at || sessionUser.confirmed_at);
+    setEmailConfirmed(authConfirmed || profile?.email_confirmed === true || accountFailed);
     setAvatarPath(profile?.avatar_path || '');
     setAvatarStamp(Date.now());
     setIntention(profile?.intention || '');
-    setOnboardingDone(profile?.onboarding_done === true);
+    setOnboardingDone(accountFailed ? profile?.onboarding_done !== false : profile?.onboarding_done === true);
+    if (!accountFailed) {
+      AsyncStorage.setItem('xoundra-account', JSON.stringify({
+        id: sessionUser.id,
+        profile,
+        premium: isPremium,
+      })).catch(() => {});
+      if (!renewed.current) {
+        renewed.current = true;
+        supabase.functions.invoke('billing', { body: { action: 'renew_mine' } }).catch(() => {});
+      }
+    }
     setIsArtist(profile?.is_artist === true);
     setArtistName(profile?.artist_name || '');
     setArtistBio(profile?.artist_bio || '');
@@ -273,6 +336,20 @@ export function AppProvider({ children }) {
 
   React.useEffect(() => {
     let alive = true;
+    AsyncStorage.getItem('xoundra-catalogue').then((raw) => {
+      if (!alive || !raw) return;
+      const cached = JSON.parse(raw);
+      if (Array.isArray(cached?.tracks) && cached.tracks.length) {
+        setTracks(cached.tracks);
+        setSignals(cached.signals || []);
+      }
+    }).catch(() => {});
+    readOnline().then((next) => {
+      onlineRef.current = next;
+      if (alive) setOnline(next);
+    }).catch(() => {
+      onlineRef.current = false;
+    });
     fetchPublishedTracks()
       .then((remote) => {
         if (!alive || !remote.tracks?.length) return;
@@ -306,19 +383,38 @@ export function AppProvider({ children }) {
         if (alive && remote.length) setCategories(remote);
       })
       .catch(() => {});
-    supabase.auth.getSession().then(({ data }) => {
-      if (!alive) return;
-      loadAccount(data.session?.user ?? null).finally(() => {
+    const openTimer = setTimeout(() => {
+      if (alive) setReady(true);
+    }, 2500);
+    storedUser().then((cachedUser) => {
+      if (!alive || !cachedUser) return;
+      loadAccount(cachedUser).finally(() => {
         if (alive) setReady(true);
       });
+    }).catch(() => {});
+    supabase.auth.getSession().then(({ data }) => {
+      if (!alive) return;
+      clearTimeout(openTimer);
+      const user = data.session?.user ?? null;
+      if (!user && sessionUserRef.current && !onlineRef.current) {
+        setReady(true);
+        return;
+      }
+      loadAccount(user).finally(() => {
+        if (alive) setReady(true);
+      });
+    }).catch(() => {
+      if (alive) setReady(true);
     });
-    const { data: auth } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: auth } = supabase.auth.onAuthStateChange((event, session) => {
+      if ((event === 'SIGNED_OUT' || !session) && !onlineRef.current && sessionUserRef.current) return;
       setTimeout(() => {
-        loadAccount(session?.user ?? null);
+        loadAccount(session?.user ?? null).finally(() => setReady(true));
       }, 0);
     });
     return () => {
       alive = false;
+      clearTimeout(openTimer);
       auth.subscription.unsubscribe();
     };
   }, [loadAccount]);
@@ -586,6 +682,17 @@ export function AppProvider({ children }) {
     return active;
   }, []);
 
+  const closePlayback = React.useCallback(() => {
+    endLock.current = true;
+    stopMix();
+    playerRef.current?.pause();
+    setQueue([]);
+    setIndex(0);
+    setPlaying(false);
+    setPosition(0);
+    setPlaybackNote('');
+  }, []);
+
   const signOut = React.useCallback(async () => {
     playerRef.current?.pause();
     stopMix();
@@ -619,21 +726,67 @@ export function AppProvider({ children }) {
     AsyncStorage.setItem('xoundra-download-wait', JSON.stringify(ids)).catch(() => {});
   }, []);
 
+  const emitDownload = React.useCallback((payload) => {
+    const now = Date.now();
+    if (!payload.done && now - progressAt.current < 400) return;
+    progressAt.current = now;
+    setDownloadProgress(payload);
+    publishDownloadProgress(payload).catch(() => {});
+    if (payload.done) {
+      setTimeout(() => setDownloadProgress((current) => (current?.done ? null : current)), 4500);
+    }
+  }, []);
+
+  const noteDownload = React.useCallback((track, fraction, done = false) => {
+    const batch = batchRef.current;
+    const index = batch?.index || 1;
+    const total = batch?.total || 1;
+    const title = done
+      ? 'Download complete'
+      : total > 1
+        ? `Downloading ${index} of ${total}`
+        : 'Downloading';
+    const percent = done ? 1 : ((index - 1) + Math.max(0, Math.min(1, fraction))) / total;
+    emitDownload({
+      title,
+      body: done && total > 1 ? `${batch?.saved || 1} sounds saved on this device` : track.title,
+      percent,
+      done,
+    });
+  }, [emitDownload]);
+
   const saveDownloadNow = React.useCallback(async (track) => {
+    if (batchRef.current) {
+      batchRef.current.index += 1;
+      batchRef.current.title = track.title;
+    } else {
+      batchRef.current = { total: 1, index: 1, title: track.title, saved: 0, own: true };
+    }
+    noteDownload(track, 0);
     try {
       const bundled = audioFiles[track.id];
       if (!bundled && !track.audioUrl) return 'missing';
       if (Platform.OS === 'web') {
+        noteDownload(track, 0.45);
         const ids = await readWebDownloads();
         if (!ids.includes(track.id)) {
           await AsyncStorage.setItem(webDownloadKey, JSON.stringify([track.id, ...ids]));
         }
+        noteDownload(track, 1);
       } else if (track.audioUrl && !audioFiles[track.id]) {
         const folder = new Directory(Paths.document, 'downloads');
         if (!folder.exists) folder.create();
         const destination = new File(folder, `${track.id}.mp3`);
-        if (!destination.exists) await File.downloadFileAsync(track.audioUrl, destination);
+        if (!destination.exists) {
+          await File.downloadFileAsync(track.audioUrl, destination, {
+            onProgress: ({ bytesWritten, totalBytes }) => {
+              noteDownload(track, totalBytes > 0 ? bytesWritten / totalBytes : 0.5);
+            },
+          });
+        }
+        noteDownload(track, 1);
       } else {
+        noteDownload(track, 0.35);
         const folder = new Directory(Paths.document, 'downloads');
         if (!folder.exists) folder.create();
         const asset = Asset.fromModule(bundled);
@@ -642,27 +795,63 @@ export function AppProvider({ children }) {
         if (!destination.exists && asset.localUri) {
           await new File(asset.localUri).copy(destination);
         }
+        noteDownload(track, 1);
       }
       if (userRef.current) {
         supabase.from('downloads').insert({ user_id: userRef.current, track_id: track.id, status: 'ready' }).then(() => {});
       }
       setDownloads((items) => (items.some((item) => item.id === track.id) ? items : [track, ...items]));
       writeWait(waitIds.current.filter((id) => id !== track.id));
+      if (batchRef.current) batchRef.current.saved += 1;
       return 'saved';
     } catch {
       return 'missing';
     }
-  }, [writeWait]);
+  }, [noteDownload, writeWait]);
+
+  const finishDownloadBatch = React.useCallback((title) => {
+    const batch = batchRef.current;
+    const saved = batch?.saved || 0;
+    const total = batch?.total || 1;
+    if (batch?.own) batchRef.current = null;
+    if (!saved) {
+      emitDownload({ title: 'Download stopped', body: `${title} could not be saved`, percent: 0, done: true });
+      return;
+    }
+    emitDownload({
+      title: 'Download complete',
+      body: total > 1 ? `${saved} sounds saved on this device` : `${title} saved on this device`,
+      percent: 1,
+      done: true,
+    });
+  }, [emitDownload]);
 
   const flushWaiting = React.useCallback(async () => {
     const gate = await downloadGate(wifiOnlyRef.current);
     if (gate !== 'ok' || !waitIds.current.length) return;
     const ids = [...waitIds.current];
-    for (const id of ids) {
-      const track = tracksRef.current.find((item) => item.id === id) || localTracks.find((item) => item.id === id);
-      if (track) await saveDownloadNow(track);
+    const queued = ids
+      .map((id) => tracksRef.current.find((item) => item.id === id) || localTracks.find((item) => item.id === id))
+      .filter(Boolean);
+    if (!queued.length) return;
+    batchRef.current = { total: queued.length, index: 0, title: '', saved: 0, own: false };
+    for (const track of queued) {
+      await saveDownloadNow(track);
     }
-  }, [saveDownloadNow]);
+    const saved = batchRef.current?.saved || 0;
+    const label = queued[queued.length - 1]?.title || 'Sounds';
+    batchRef.current = null;
+    if (!saved) {
+      emitDownload({ title: 'Download stopped', body: 'Those sounds could not be saved', percent: 0, done: true });
+      return;
+    }
+    emitDownload({
+      title: 'Download complete',
+      body: queued.length > 1 ? `${saved} sounds saved on this device` : `${label} saved on this device`,
+      percent: 1,
+      done: true,
+    });
+  }, [emitDownload, saveDownloadNow]);
   flushRef.current = flushWaiting;
 
   const saveDownload = React.useCallback(async (track) => {
@@ -676,8 +865,10 @@ export function AppProvider({ children }) {
       if (!waitIds.current.includes(track.id)) writeWait([...waitIds.current, track.id]);
       return 'wifi';
     }
-    return saveDownloadNow(track);
-  }, [saveDownloadNow, writeWait]);
+    const result = await saveDownloadNow(track);
+    finishDownloadBatch(track.title);
+    return result;
+  }, [finishDownloadBatch, saveDownloadNow, writeWait]);
 
   const setDownloadOnWifiOnly = React.useCallback((wifiOnly) => {
     wifiOnlyRef.current = wifiOnly;
@@ -705,11 +896,12 @@ export function AppProvider({ children }) {
       const next = connectionOnline(state);
       onlineRef.current = next;
       setOnline(next);
+      setOnlineKnown(true);
     };
     readOnline().then((next) => {
       onlineRef.current = next;
       setOnline(next);
-    }).catch(() => {});
+    }).catch(() => {}).finally(() => setOnlineKnown(true));
     const stop = watchNetwork((state) => {
       markOnline(state);
       flushRef.current();
@@ -852,6 +1044,7 @@ export function AppProvider({ children }) {
     signals,
     helped,
     online,
+    onlineKnown,
     playbackNote,
     isArtist,
     artistName,
@@ -859,6 +1052,7 @@ export function AppProvider({ children }) {
     artistLocation,
     artistBanner,
     downloads,
+    downloadProgress,
     downloadOnWifiOnly,
     setDownloadOnWifiOnly,
     country,
@@ -915,6 +1109,7 @@ export function AppProvider({ children }) {
     },
     saveDownload,
     removeDownload,
+    closePlayback,
     isFavourite: (id) => favourites.some((item) => item.id === id),
     isLiked: (id) => likes.some((item) => item.id === id),
     isDownloaded: (id) => downloads.some((item) => item.id === id),

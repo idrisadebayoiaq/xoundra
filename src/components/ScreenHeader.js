@@ -4,6 +4,7 @@ import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, font } from '../theme';
 import { useApp } from '../state/AppState';
+import { useShell } from '../state/ShellState';
 import { goBack } from '../lib/navigation';
 import { Avatar } from './Avatar';
 import { DownloadAppButton } from './DownloadAppButton';
@@ -11,6 +12,7 @@ import { DownloadAppButton } from './DownloadAppButton';
 export function ScreenHeader({ title, back = false }) {
   const insets = useSafeAreaInsets();
   const { unread, avatarPath, avatarStamp } = useApp();
+  const { desktop } = useShell();
   return (
     <View style={[styles.row, { paddingTop: insets.top + 10 }]}>
       <View style={styles.titleSide}>
@@ -24,23 +26,27 @@ export function ScreenHeader({ title, back = false }) {
         </Text>
       </View>
       <View style={styles.actions}>
-        {Platform.OS === 'web' ? <DownloadAppButton compact /> : null}
-        <Pressable
-          onPress={() => router.push('/notifications')}
-          hitSlop={8}
-          style={styles.bell}
-          accessibilityLabel="Notifications"
-        >
-          <Ionicons name="notifications-outline" size={22} color={colors.text} />
-          {unread > 0 ? <View style={styles.dot} /> : null}
-        </Pressable>
-        <Pressable
-          onPress={() => router.navigate('/(tabs)/profile')}
-          hitSlop={8}
-          accessibilityLabel="Profile"
-        >
-          <Avatar path={avatarPath} stamp={avatarStamp} size={34} />
-        </Pressable>
+        {desktop ? null : Platform.OS === 'web' ? <DownloadAppButton compact /> : null}
+        {desktop ? null : (
+          <Pressable
+            onPress={() => router.push('/notifications')}
+            hitSlop={8}
+            style={styles.bell}
+            accessibilityLabel="Notifications"
+          >
+            <Ionicons name="notifications-outline" size={22} color={colors.text} />
+            {unread > 0 ? <View style={styles.dot} /> : null}
+          </Pressable>
+        )}
+        {desktop ? null : (
+          <Pressable
+            onPress={() => router.navigate('/(tabs)/profile')}
+            hitSlop={8}
+            accessibilityLabel="Profile"
+          >
+            <Avatar path={avatarPath} stamp={avatarStamp} size={34} />
+          </Pressable>
+        )}
       </View>
     </View>
   );

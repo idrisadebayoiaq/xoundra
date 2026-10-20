@@ -8,7 +8,7 @@ import { useAudioOutput } from '../lib/audioRoute';
 import { ArtistLink } from './ArtistLink';
 
 export function MiniPlayer() {
-  const { track, playing, position, togglePlay, mixPlaying, mixTracks, playMix } = useApp();
+  const { track, playing, position, togglePlay, mixPlaying, mixTracks, playMix, closePlayback } = useApp();
   const output = useAudioOutput();
   if (mixPlaying && mixTracks.length) {
     return (
@@ -29,6 +29,17 @@ export function MiniPlayer() {
         >
           <Ionicons name="pause" size={22} color={colors.mint} />
         </Pressable>
+        <Pressable
+          onPress={(event) => {
+            event.stopPropagation?.();
+            closePlayback();
+          }}
+          hitSlop={10}
+          style={styles.play}
+          accessibilityLabel="Close playback"
+        >
+          <Ionicons name="close" size={20} color={colors.muted} />
+        </Pressable>
       </Pressable>
     );
   }
@@ -44,8 +55,26 @@ export function MiniPlayer() {
         <ArtistLink track={track} style={styles.device} />
         {output ? <Text style={styles.device} numberOfLines={1}>{output}</Text> : null}
       </View>
-      <Pressable onPress={togglePlay} hitSlop={10} style={styles.play}>
+      <Pressable
+        onPress={(event) => {
+          event.stopPropagation?.();
+          togglePlay();
+        }}
+        hitSlop={10}
+        style={styles.play}
+      >
         <Ionicons name={playing ? 'pause' : 'play'} size={22} color={colors.mint} />
+      </Pressable>
+      <Pressable
+        onPress={(event) => {
+          event.stopPropagation?.();
+          closePlayback();
+        }}
+        hitSlop={10}
+        style={styles.play}
+        accessibilityLabel="Close playback"
+      >
+        <Ionicons name="close" size={20} color={colors.muted} />
       </Pressable>
     </Pressable>
   );

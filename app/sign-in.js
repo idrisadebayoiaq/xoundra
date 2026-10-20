@@ -24,11 +24,6 @@ export default function SignInScreen() {
     });
     setBusy(false);
     if (authError) {
-      if (/confirm/i.test(authError.message)) {
-        rememberSignIn(address, password);
-        router.replace({ pathname: '/confirm-email', params: { email: address } });
-        return;
-      }
       setError(authError.message);
       return;
     }

@@ -43,6 +43,7 @@ export default function PlayerScreen() {
     queue,
     index,
     premium,
+    closePlayback,
   } = useApp();
   const output = useAudioOutput();
   const { width, height } = useWindowDimensions();
@@ -64,9 +65,21 @@ export default function PlayerScreen() {
 
   return (
     <ScrollView style={[styles.screen, { paddingTop: insets.top + 8 }]} contentContainerStyle={{ paddingBottom: insets.bottom + 28 }}>
-      <Pressable onPress={goBack} hitSlop={12} style={styles.close}>
-        <Ionicons name="chevron-down" size={30} color={colors.text} />
-      </Pressable>
+      <View style={styles.topActions}>
+        <Pressable onPress={goBack} hitSlop={12} accessibilityLabel="Minimize playback">
+          <Ionicons name="chevron-down" size={30} color={colors.text} />
+        </Pressable>
+        <Pressable
+          onPress={() => {
+            closePlayback();
+            goBack();
+          }}
+          hitSlop={12}
+          accessibilityLabel="Close playback"
+        >
+          <Ionicons name="close" size={28} color={colors.text} />
+        </Pressable>
+      </View>
       <Image source={coverSource(track.artwork)} style={[styles.art, { width: art, height: art }]} />
       <View style={styles.titleRow}>
         <View style={styles.titles}>
@@ -131,8 +144,10 @@ const styles = StyleSheet.create({
     backgroundColor: colors.bg,
     paddingHorizontal: 24,
   },
-  close: {
-    alignSelf: 'flex-start',
+  topActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: 12,
   },
   missing: {

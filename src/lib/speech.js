@@ -1,3 +1,5 @@
+import * as Speech from 'expo-speech';
+
 export function listenOnce(ms = 8000) {
   const Ctor = globalThis.SpeechRecognition || globalThis.webkitSpeechRecognition;
   if (!Ctor) return Promise.reject(new Error('unavailable'));
@@ -31,10 +33,11 @@ export function listenOnce(ms = 8000) {
 }
 
 export function speakLine(line) {
-  const voice = globalThis.speechSynthesis;
-  if (!voice || !line) return;
-  voice.cancel();
-  const utterance = new SpeechSynthesisUtterance(line);
-  utterance.rate = 0.92;
-  voice.speak(utterance);
+  if (!line) return;
+  Speech.stop();
+  Speech.speak(line, { rate: 0.92, language: 'en-US' });
+}
+
+export function stopSpeaking() {
+  Speech.stop();
 }

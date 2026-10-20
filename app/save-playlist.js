@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { ScreenHeader } from '../src/components/ScreenHeader';
 import { supabase } from '../src/lib/supabase';
@@ -12,7 +12,6 @@ export default function SavePlaylistScreen() {
   const { userId, track, tracks } = useApp();
   const chosen = tracks.find((item) => item.id === requestedId) || track;
   const [lists, setLists] = useState([]);
-  const [title, setTitle] = useState('');
   const [notice, setNotice] = useState('');
 
   async function load() {
@@ -23,22 +22,6 @@ export default function SavePlaylistScreen() {
   useEffect(() => {
     if (userId) load();
   }, [userId]);
-
-  async function create() {
-    const name = title.trim();
-    if (!name || !userId) return;
-    const { data, error } = await supabase.from('playlists').insert({ user_id: userId, title: name }).select('id, title').single();
-    if (error || !data) {
-      setNotice('That playlist could not be created.');
-      return;
-    }
-    setTitle('');
-    if (chosen) {
-      await add(data);
-      return;
-    }
-    load();
-  }
 
   async function add(list) {
     if (!chosen) return;
@@ -53,10 +36,13 @@ export default function SavePlaylistScreen() {
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
       <ScreenHeader title="Add to playlist" back />
       <Text style={styles.lead}>{chosen ? chosen.title : 'Choose a sound first.'}</Text>
-      <View style={styles.create}>
-        <TextInput value={title} onChangeText={setTitle} placeholder="New playlist" placeholderTextColor={colors.muted} style={styles.input} />
-        <Pressable onPress={create} style={styles.add}><Text style={styles.addText}>Create</Text></Pressable>
-      </View>
+      <Pressable
+        onPress={() => router.push({ pathname: '/new-playlist', params: chosen ? { trackId: chosen.id } : {} })}
+        style={styles.newList}
+        accessibilityLabel="New playlist"
+      >
+        <Text style={styles.addText}>New playlist</Text>
+      </Pressable>
       {notice ? <Text style={styles.notice}>{notice}</Text> : null}
       {lists.map((list) => (
         <Pressable key={list.id} style={styles.row} onPress={() => add(list)}>
@@ -71,7 +57,15 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
   content: { paddingBottom: 28 },
   lead: { color: colors.muted, fontFamily: font.regular, fontSize: 15, marginHorizontal: 20, marginBottom: 14 },
-  create: { flexDirection: 'row', gap: 8, marginHorizontal: 20, marginBottom: 12 },
+  newList: {
+    marginHorizontal: 20,
+    marginBottom: 12,
+    height: 46,
+    borderRadius: 14,
+    backgroundColor: colors.mint,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   input: { flex: 1, height: 46, borderRadius: 14, backgroundColor: colors.card, color: colors.text, fontFamily: font.regular, paddingHorizontal: 12 },
   add: { backgroundColor: colors.mint, borderRadius: 14, paddingHorizontal: 14, justifyContent: 'center' },
   addText: { color: colors.mintInk, fontFamily: font.semibold },

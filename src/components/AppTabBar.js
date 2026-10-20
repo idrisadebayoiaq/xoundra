@@ -5,12 +5,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, font } from '../theme';
 import { MiniPlayer } from './MiniPlayer';
 import { useApp } from '../state/AppState';
+import { useShell } from '../state/ShellState';
 import { Avatar } from './Avatar';
 
 const items = {
   index: { label: 'Home', icon: 'home', href: '/' },
   explore: { label: 'Explore', icon: 'compass', href: '/explore' },
   studio: { label: 'Studio', icon: 'layers', href: '/studio' },
+  guide: { label: 'Guide', icon: 'mic', href: '/guide' },
   library: { label: 'Library', icon: 'albums', href: '/library' },
   profile: { label: 'Profile', icon: 'person', href: '/profile' },
 };
@@ -18,6 +20,8 @@ const items = {
 export function AppTabBar({ state }) {
   const insets = useSafeAreaInsets();
   const { avatarPath, avatarStamp } = useApp();
+  const { desktop } = useShell();
+  if (desktop) return null;
   return (
     <View style={{ backgroundColor: colors.bg }}>
       <MiniPlayer />
@@ -64,6 +68,6 @@ const styles = StyleSheet.create({
   },
   label: {
     fontFamily: font.medium,
-    fontSize: 11,
+    fontSize: 10,
   },
 });

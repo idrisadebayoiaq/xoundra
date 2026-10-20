@@ -44,7 +44,7 @@ export default function HomeScreen() {
           <AlbumCard key={item.id} track={item} onPress={() => play(item, forSleep)} />
         ))}
       </ScrollView>
-      <Pressable style={styles.voice} onPress={() => router.push('/ai')}>
+      <Pressable style={styles.voice} onPress={() => router.navigate('/guide')}>
         <View style={styles.orb} />
         <View style={styles.voiceCopy}>
           <Text style={styles.voiceTitle}>Talk with Xoundra</Text>

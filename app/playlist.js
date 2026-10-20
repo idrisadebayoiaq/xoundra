@@ -10,13 +10,16 @@ import { Dropdown } from '../src/components/Dropdown';
 import { shuffleTracks, sortOptions, sortTracks } from '../src/data/order';
 import { colors, font } from '../src/theme';
 import { useApp } from '../src/state/AppState';
+import { PlaylistCover } from '../src/components/PlaylistCover';
 
 export default function PlaylistScreen() {
   const { id } = useLocalSearchParams();
   const playlistId = Array.isArray(id) ? id[0] : id;
-  const { tracks, play } = useApp();
+  const { tracks, play, userId } = useApp();
   const [title, setTitle] = useState('');
   const [draft, setDraft] = useState('');
+  const [ownerId, setOwnerId] = useState('');
+  const [isPublic, setIsPublic] = useState(false);
   const [rows, setRows] = useState([]);
   const [notice, setNotice] = useState('');
   const [sortMode, setSortMode] = useState('saved');
@@ -24,11 +27,13 @@ export default function PlaylistScreen() {
   const load = useCallback(async () => {
     if (!playlistId) return;
     const [{ data: playlist }, { data: items }] = await Promise.all([
-      supabase.from('playlists').select('id, title').eq('id', playlistId).maybeSingle(),
+      supabase.from('playlists').select('id, title, user_id, is_public').eq('id', playlistId).maybeSingle(),
       supabase.from('playlist_tracks').select('track_id, position').eq('playlist_id', playlistId).order('position'),
     ]);
     setTitle(playlist?.title || 'Playlist');
     setDraft(playlist?.title || '');
+    setOwnerId(playlist?.user_id || '');
+    setIsPublic(playlist?.is_public === true);
     setRows(items || []);
   }, [playlistId]);
 
@@ -38,6 +43,7 @@ export default function PlaylistScreen() {
 
   const queued = rows.map((row) => tracks.find((track) => track.id === row.track_id)).filter(Boolean);
   const ordered = sortMode === 'saved' ? queued : sortTracks(queued, sortMode);
+  const mine = Boolean(userId) && ownerId === userId;
 
   async function rename() {
     const next = draft.trim();
@@ -77,19 +83,24 @@ export default function PlaylistScreen() {
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
       <ScreenHeader title={title} back />
-      <Text style={styles.count}>{queued.length} sounds</Text>
-      <View style={styles.rename}>
+      <View style={styles.coverWrap}>
+        <PlaylistCover tracks={queued} size={168} />
+      </View>
+      <Text style={styles.count}>{isPublic ? 'Public' : 'Private'} · {queued.length === 1 ? '1 sound' : `${queued.length} sounds`}</Text>
+      {mine ? <View style={styles.rename}>
         <TextInput value={draft} onChangeText={setDraft} style={styles.input} placeholder="Playlist name" placeholderTextColor={colors.muted} />
         <Pressable onPress={rename} style={styles.save}><Text style={styles.saveText}>Rename</Text></Pressable>
-      </View>
+      </View> : null}
       {ordered.length ? (
         <View style={styles.tools}>
-          <Dropdown
-            label="Sort by"
-            value={sortMode}
-            options={[{ value: 'saved', label: 'Saved order' }, ...sortOptions.filter((item) => item.value !== 'added')]}
-            onChange={applySort}
-          />
+          {mine ? (
+            <Dropdown
+              label="Sort by"
+              value={sortMode}
+              options={[{ value: 'saved', label: 'Saved order' }, ...sortOptions.filter((item) => item.value !== 'added')]}
+              onChange={applySort}
+            />
+          ) : null}
           <View style={styles.pills}>
             <PillButton filled icon="play" label="Play" onPress={() => play(ordered[0], ordered, { collection: true })} />
             <PillButton icon="shuffle" label="Shuffle" onPress={() => {
@@ -99,7 +110,7 @@ export default function PlaylistScreen() {
           </View>
         </View>
       ) : (
-        <Text style={styles.empty}>Add sounds with the plus button on any sound.</Text>
+        <Text style={styles.empty}>{mine ? 'Add sounds with the plus button on any sound.' : 'Nothing in this playlist yet.'}</Text>
       )}
       {notice ? <Text style={styles.notice}>{notice}</Text> : null}
       <View style={styles.list}>
@@ -108,15 +119,19 @@ export default function PlaylistScreen() {
             <View style={styles.row}>
               <TrackRow track={track} onPress={() => play(track, ordered, { collection: true })} />
             </View>
-            <Pressable onPress={() => removeTrack(track.id)} hitSlop={8} accessibilityLabel="Remove from playlist">
-              <Ionicons name="remove-circle-outline" size={22} color={colors.muted} />
-            </Pressable>
+            {mine ? (
+              <Pressable onPress={() => removeTrack(track.id)} hitSlop={8} accessibilityLabel="Remove from playlist">
+                <Ionicons name="remove-circle-outline" size={22} color={colors.muted} />
+              </Pressable>
+            ) : null}
           </View>
         ))}
       </View>
-      <Pressable onPress={removePlaylist} style={styles.delete}>
-        <Text style={styles.deleteText}>Delete playlist</Text>
-      </Pressable>
+      {mine ? (
+        <Pressable onPress={removePlaylist} style={styles.delete}>
+          <Text style={styles.deleteText}>Delete playlist</Text>
+        </Pressable>
+      ) : null}
     </ScrollView>
   );
 }
@@ -124,6 +139,7 @@ export default function PlaylistScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
   content: { paddingBottom: 32 },
+  coverWrap: { alignItems: 'flex-start', marginHorizontal: 20, marginBottom: 14 },
   count: { color: colors.muted, fontFamily: font.regular, marginHorizontal: 20, marginBottom: 12 },
   tools: { marginHorizontal: 20, gap: 12, marginBottom: 8 },
   rename: { flexDirection: 'row', gap: 8, marginHorizontal: 20, marginBottom: 14 },

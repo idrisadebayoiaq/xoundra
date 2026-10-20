@@ -4,6 +4,7 @@ import { ScreenHeader } from '../src/components/ScreenHeader';
 import { PillButton, TrackRow } from '../src/components/Cards';
 import { colors, font } from '../src/theme';
 import { useApp } from '../src/state/AppState';
+import { DownloadProgress } from '../src/components/DownloadProgress';
 
 export default function DownloadsScreen() {
   const { premium, downloads, play, removeDownload } = useApp();
@@ -11,6 +12,7 @@ export default function DownloadsScreen() {
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
       <ScreenHeader title="Downloads" back />
+      <DownloadProgress />
       {premium ? (
         downloads.length ? (
           <View style={styles.list}>

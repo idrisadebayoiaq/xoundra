@@ -88,7 +88,7 @@ async function askModel(model: string, text: string, tracks: Track[]) {
       messages: [
         {
           role: "system",
-          content: "You guide a relaxation sound app. Reply with JSON only: {\"id\",\"line\"}. The id must be copied from the catalogue. Do not invent a sound. The line is one calm sentence under 18 words, written to be spoken aloud. Name the sound and say you will stay with sounds like it.",
+          content: "You guide a relaxation sound app. Reply with JSON only: {\"id\",\"line\"}. The id must be copied from the catalogue. Do not invent a sound. The line is one calm sentence under 18 words, written to be spoken aloud. If the person sounds tired, sad, stressed, or low, start with a short kindness such as Okay. Then name the sound and say it is playing now. Example: Okay, soft rain is playing now.",
         },
         { role: "user", content: `Catalogue:\n${catalogue}\n\nThe person said: ${text}` },
       ],
@@ -109,7 +109,7 @@ function parseChoice(raw: string, tracks: Track[]) {
     const track = tracks.find((item) => item.id === String(parsed.id || ""));
     if (!track) return null;
     const line = String(parsed.line || "").replace(/\s+/g, " ").trim().slice(0, 140);
-    return { id: track.id, line: line || `${track.title} is on. I will stay with sounds like this.` };
+    return { id: track.id, line: line || spokenLine(track.title, '') };
   } catch {
     return null;
   }
@@ -144,5 +144,12 @@ function keywordChoice(text: string, tracks: Track[]) {
     const hay = `${track.title} ${track.category} ${track.tags.join(" ")}`.toLowerCase();
     return word ? hay.includes(word) : false;
   }) || tracks[0];
-  return { id: match.id, line: `${match.title} is on. I will stay with sounds like this.` };
+  return { id: match.id, line: spokenLine(match.title, text) };
+}
+
+function spokenLine(title: string, text: string) {
+  const said = text.toLowerCase();
+  const heavy = /sad|anxious|stress|tired|cannot sleep|can't sleep|overwhelm|lonely|worried|low|cry|hurt/.test(said);
+  const lead = heavy ? 'Okay. ' : '';
+  return `${lead}${title} is playing now.`.slice(0, 140);
 }
