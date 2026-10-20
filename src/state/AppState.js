@@ -230,7 +230,7 @@ export function AppProvider({ children }) {
       }
       showLock(player, next);
     }) : null;
-    const watch = setInterval(() => {
+    const watch = nativeQueue ? null : setInterval(() => {
       const current = playerRef.current;
       if (!current || current.loop) return;
       const duration = current.duration || playback.current.track?.duration || 0;
@@ -240,7 +240,7 @@ export function AppProvider({ children }) {
       if (nearEnd && stopped) advanceRef.current();
     }, 500);
     return () => {
-      clearInterval(watch);
+      if (watch) clearInterval(watch);
       try {
         subscription.remove();
         trackSubscription?.remove();
