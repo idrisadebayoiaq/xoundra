@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { ScreenHeader } from '../src/components/ScreenHeader';
@@ -7,6 +8,7 @@ import { plans } from '../src/data/catalogue';
 import { supabase } from '../src/lib/supabase';
 import { colors, font } from '../src/theme';
 import { useApp } from '../src/state/AppState';
+import { useShell } from '../src/state/ShellState';
 
 const problems = {
   sold_out: 'Lifetime is sold out.',
@@ -41,6 +43,11 @@ export default function PayScreen() {
   const [purchaseId, setPurchaseId] = useState('');
   const [message, setMessage] = useState('');
   const [busy, setBusy] = useState(false);
+  const [keepCard, setKeepCard] = useState(true);
+  const { width } = useWindowDimensions();
+  const { desktop, sidebar, panel } = useShell();
+  const reserved = desktop ? (sidebar ? 320 : 40) + (panel ? 360 : 0) : 0;
+  const wide = Platform.OS === 'web' && width - reserved >= 760;
 
   async function loadCards() {
     const { data } = await supabase.functions.invoke('billing', { body: { action: 'cards' } });
@@ -68,7 +75,7 @@ export default function PayScreen() {
       setReference(data.reference || '');
       await WebBrowser.openBrowserAsync(data.url);
       const finished = await supabase.functions.invoke('billing', {
-        body: { action: 'finish', reference: data.reference, plan_id: plan.id },
+        body: { action: 'finish', reference: data.reference, plan_id: plan.id, save_card: Platform.OS === 'web' ? keepCard : true },
       });
       await afterCharge(finished.data);
       return;
@@ -96,6 +103,7 @@ export default function PayScreen() {
         action: 'charge',
         plan_id: plan.id,
         card: { number, cvv, expiry_month: month || '', expiry_year: year || '' },
+        save_card: Platform.OS === 'web' ? keepCard : true,
       },
     });
     setBusy(false);
@@ -126,6 +134,7 @@ export default function PayScreen() {
         reference,
         purchase_id: purchaseId,
         value: extra,
+        save_card: Platform.OS === 'web' ? keepCard : true,
       },
     });
     setBusy(false);
@@ -141,6 +150,133 @@ export default function PayScreen() {
   }
 
   const brand = brandOf(number);
+  const due = naira ? `NGN ${plan.ngn.replace(/[^\d]/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, ',')}.00` : plan.usd;
+  const lineLabel = plan.id === 'premium_annual' ? 'Annual subscription' : plan.id === 'founding_lifetime' ? 'Lifetime' : 'Monthly subscription';
+  const renewNote = plan.id === 'founding_lifetime'
+    ? `One payment of ${due}. Lifetime does not renew.`
+    : plan.id === 'premium_annual'
+      ? `Renews yearly until cancelled. ${due} will be charged. Cancel anytime in Settings.`
+      : `Renews monthly until cancelled. ${due} will be charged. Cancel anytime in Settings.`;
+
+  if (Platform.OS === 'web') {
+    return (
+      <ScrollView style={styles.screen} contentContainerStyle={styles.webContent}>
+        <View style={styles.webHead}>
+          <Pressable onPress={() => router.back()} hitSlop={10} accessibilityLabel="Back">
+            <Ionicons name="chevron-back" size={22} color={colors.text} />
+          </Pressable>
+          <Text style={styles.webTitle}>Configure your plan</Text>
+        </View>
+        <View style={[styles.webBody, wide && styles.webBodyWide]}>
+          <View style={styles.webForm}>
+            <Text style={styles.payWith}>Pay with</Text>
+            {cards.map((card) => (
+              <View key={card.id} style={styles.saved}>
+                <View style={styles.copy}>
+                  <Text style={styles.brand}>{card.brand || 'Card'} ···· {card.last4}</Text>
+                  <Text style={styles.meta}>{card.exp_month && card.exp_year ? `${card.exp_month}/${card.exp_year}` : 'Saved for renewal'}</Text>
+                </View>
+                <Pressable onPress={() => paySaved(card.id)} disabled={busy} accessibilityLabel="Pay with saved card">
+                  <Text style={styles.link}>Use</Text>
+                </Pressable>
+                <Pressable onPress={() => remove(card.id)} disabled={busy} accessibilityLabel="Remove card">
+                  <Text style={styles.remove}>Remove</Text>
+                </Pressable>
+              </View>
+            ))}
+            <View style={styles.field}>
+              <TextInput
+                value={number}
+                onChangeText={(value) => setNumber(value.replace(/[^\d ]/g, '').slice(0, 23))}
+                keyboardType="number-pad"
+                placeholder="Card number"
+                placeholderTextColor="#8E98A3"
+                style={styles.fieldInput}
+                accessibilityLabel="Card number"
+              />
+              <View style={styles.marks}>
+                {['Visa', 'Mastercard', 'Amex', 'Verve'].map((name) => (
+                  <Text key={name} style={[styles.mark, brand === name && styles.markOn]}>{name === 'Mastercard' ? 'MC' : name === 'Verve' ? 'Ve' : name === 'Amex' ? 'Amex' : 'Visa'}</Text>
+                ))}
+              </View>
+            </View>
+            <View style={styles.row}>
+              <TextInput
+                value={expiry}
+                onChangeText={(value) => {
+                  const digits = value.replace(/\D/g, '').slice(0, 4);
+                  setExpiry(digits.length > 2 ? `${digits.slice(0, 2)}/${digits.slice(2)}` : digits);
+                }}
+                keyboardType="number-pad"
+                placeholder="Expiry date"
+                placeholderTextColor="#8E98A3"
+                style={[styles.fieldInput, styles.field, styles.half]}
+                accessibilityLabel="Expiry date"
+              />
+              <TextInput
+                value={cvv}
+                onChangeText={(value) => setCvv(value.replace(/\D/g, '').slice(0, 4))}
+                keyboardType="number-pad"
+                placeholder="Security code"
+                placeholderTextColor="#8E98A3"
+                secureTextEntry
+                style={[styles.fieldInput, styles.field, styles.half]}
+                accessibilityLabel="Security code"
+              />
+            </View>
+            {step ? (
+              <TextInput
+                value={extra}
+                onChangeText={setExtra}
+                keyboardType="number-pad"
+                secureTextEntry
+                placeholder={step === 'send_pin' ? 'Card PIN' : 'Verification code'}
+                placeholderTextColor="#8E98A3"
+                style={[styles.fieldInput, styles.field]}
+                accessibilityLabel={step === 'send_pin' ? 'Card PIN' : 'Verification code'}
+              />
+            ) : null}
+            {plan.id === 'founding_lifetime' ? null : (
+              <Pressable style={styles.checkRow} onPress={() => setKeepCard((value) => !value)} accessibilityLabel="Save card for renewal">
+                <View style={[styles.box, keepCard && styles.boxOn]}>
+                  {keepCard ? <Ionicons name="checkmark" size={14} color="#111" /> : null}
+                </View>
+                <Text style={styles.checkText}>Save this card for the next renewal</Text>
+              </Pressable>
+            )}
+            {message ? <Text style={styles.message}>{message}</Text> : null}
+          </View>
+          <View style={[styles.summary, wide && styles.summaryWide]}>
+            <Text style={styles.summaryName}>Xoundra Premium</Text>
+            <Text style={styles.featuresLabel}>Top features</Text>
+            {[
+              ['layers-outline', 'Mixes you build in Studio'],
+              ['download-outline', 'Offline downloads'],
+              ['moon-outline', 'Sleep timer'],
+              ['mic-outline', 'Voice guide'],
+            ].map(([icon, label]) => (
+              <View key={label} style={styles.feature}>
+                <Ionicons name={icon} size={16} color={colors.mint} />
+                <Text style={styles.featureText}>{label}</Text>
+              </View>
+            ))}
+            <View style={styles.priceRow}>
+              <Text style={styles.priceLabel}>{lineLabel}</Text>
+              <Text style={styles.priceValue}>{due}</Text>
+            </View>
+            <View style={styles.priceRow}>
+              <Text style={styles.dueLabel}>Due today</Text>
+              <Text style={styles.dueValue}>{due}</Text>
+            </View>
+            <Pressable style={styles.subscribe} onPress={step ? sendExtra : payNew} disabled={busy} accessibilityLabel="Subscribe">
+              <Text style={styles.subscribeText}>{busy ? 'Paying' : 'Subscribe'}</Text>
+            </Pressable>
+            <Text style={styles.legal}>{renewNote}</Text>
+          </View>
+        </View>
+      </ScrollView>
+    );
+  }
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
@@ -260,4 +396,67 @@ const styles = StyleSheet.create({
   },
   buttonText: { color: colors.mintInk, fontFamily: font.semibold, fontSize: 16 },
   cancel: { color: colors.mint, fontFamily: font.medium, textAlign: 'center', marginTop: 16 },
+  webContent: { paddingHorizontal: 28, paddingBottom: 48, width: '100%', maxWidth: 980, alignSelf: 'center' },
+  webHead: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 28, marginTop: 4 },
+  webTitle: { color: colors.text, fontFamily: font.semibold, fontSize: 22 },
+  webBody: { gap: 28 },
+  webBodyWide: { flexDirection: 'row', alignItems: 'flex-start' },
+  webForm: { flex: 1, minWidth: 260, gap: 12 },
+  payWith: { color: colors.text, fontFamily: font.semibold, fontSize: 16, marginBottom: 4 },
+  field: {
+    minHeight: 52,
+    borderRadius: 12,
+    backgroundColor: '#2A2E36',
+    paddingHorizontal: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  fieldInput: {
+    flex: 1,
+    color: colors.text,
+    fontFamily: font.regular,
+    fontSize: 16,
+    height: 52,
+  },
+  marks: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  mark: { color: '#6E7780', fontFamily: font.semibold, fontSize: 10 },
+  markOn: { color: colors.text },
+  checkRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 4 },
+  box: {
+    width: 18,
+    height: 18,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: '#8E98A3',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  boxOn: { backgroundColor: '#F3F6F8', borderColor: '#F3F6F8' },
+  checkText: { color: '#C5CED6', fontFamily: font.regular, fontSize: 13, flex: 1 },
+  summary: {
+    width: '100%',
+    backgroundColor: '#1C2028',
+    borderRadius: 18,
+    padding: 22,
+  },
+  summaryWide: { width: 340 },
+  summaryName: { color: colors.text, fontFamily: font.bold, fontSize: 26 },
+  featuresLabel: { color: colors.text, fontFamily: font.semibold, fontSize: 14, marginTop: 18, marginBottom: 8 },
+  feature: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 },
+  featureText: { color: '#C5CED6', fontFamily: font.regular, fontSize: 14, flex: 1 },
+  priceRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 12, marginTop: 14 },
+  priceLabel: { color: '#C5CED6', fontFamily: font.regular, fontSize: 14, flex: 1 },
+  priceValue: { color: colors.text, fontFamily: font.medium, fontSize: 14 },
+  dueLabel: { color: colors.text, fontFamily: font.semibold, fontSize: 15 },
+  dueValue: { color: colors.text, fontFamily: font.semibold, fontSize: 15 },
+  subscribe: {
+    marginTop: 20,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#F3F6F8',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  subscribeText: { color: '#111318', fontFamily: font.semibold, fontSize: 16 },
+  legal: { color: '#8E98A3', fontFamily: font.regular, fontSize: 11, lineHeight: 16, marginTop: 14 },
 });

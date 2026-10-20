@@ -40,7 +40,7 @@ Deno.serve(async (req) => {
   if (action === "remove") return json(await removeCard(admin, user, String(body.card_id ?? "")));
   if (action === "submit_pin") return json(await submitExtra(admin, secret, user, body, "pin"));
   if (action === "submit_otp") return json(await submitExtra(admin, secret, user, body, "otp"));
-  if (action === "finish") return json(await finishReference(admin, secret, user, String(body.reference ?? ""), String(body.plan_id ?? "")));
+  if (action === "finish") return json(await finishReference(admin, secret, user, String(body.reference ?? ""), String(body.plan_id ?? ""), body.save_card !== false));
   if (action === "charge_saved") return json(await chargeSaved(admin, secret, user, String(body.plan_id ?? ""), String(body.card_id ?? "")));
   if (action === "renew_mine") return json(await renewDue(admin, secret));
 
@@ -89,7 +89,7 @@ async function chargeNew(admin: ReturnType<typeof createClient>, secret: string,
     await failPurchase(admin, prepared.purchaseId);
     return { error: "charge_failed", message: result.message || "The card was declined." };
   }
-  return await interpret(admin, secret, user, planId, prepared.purchaseId, result.data);
+  return await interpret(admin, secret, user, planId, prepared.purchaseId, result.data, body.save_card !== false);
 }
 
 async function chargeSaved(admin: ReturnType<typeof createClient>, secret: string, user: { id: string; email?: string }, planId: string, cardId: string) {
@@ -111,7 +111,7 @@ async function chargeSaved(admin: ReturnType<typeof createClient>, secret: strin
     await failPurchase(admin, prepared.purchaseId);
     return { error: "charge_failed", message: result.message || "The saved card was declined." };
   }
-  return await interpret(admin, secret, user, planId, prepared.purchaseId, result.data);
+  return await interpret(admin, secret, user, planId, prepared.purchaseId, result.data, true);
 }
 
 async function submitExtra(admin: ReturnType<typeof createClient>, secret: string, user: { id: string; email?: string }, body: Record<string, unknown>, kind: "pin" | "otp") {
@@ -123,16 +123,16 @@ async function submitExtra(admin: ReturnType<typeof createClient>, secret: strin
   const payload = kind === "pin" ? { pin: value, reference } : { otp: value, reference };
   const result = await paystack(secret, path, { method: "POST", body: JSON.stringify(payload) });
   if (!result.status) return { error: "charge_failed", message: result.message || "That code was not accepted." };
-  return await interpret(admin, secret, user, planId, String(body.purchase_id ?? ""), result.data);
+  return await interpret(admin, secret, user, planId, String(body.purchase_id ?? ""), result.data, body.save_card !== false);
 }
 
-async function finishReference(admin: ReturnType<typeof createClient>, secret: string, user: { id: string; email?: string }, reference: string, planId: string) {
+async function finishReference(admin: ReturnType<typeof createClient>, secret: string, user: { id: string; email?: string }, reference: string, planId: string, saveCard: boolean) {
   if (!reference) return { error: "charge_failed" };
   const result = await paystack(secret, `/transaction/verify/${reference}`);
-  return await interpret(admin, secret, user, planId, String(result?.data?.metadata?.purchase_id ?? ""), result.data);
+  return await interpret(admin, secret, user, planId, String(result?.data?.metadata?.purchase_id ?? ""), result.data, saveCard);
 }
 
-async function interpret(admin: ReturnType<typeof createClient>, secret: string, user: { id: string; email?: string }, planId: string, purchaseId: string, data: Record<string, unknown> | undefined) {
+async function interpret(admin: ReturnType<typeof createClient>, secret: string, user: { id: string; email?: string }, planId: string, purchaseId: string, data: Record<string, unknown> | undefined, saveCard = true) {
   const status = String(data?.status ?? "");
   const reference = String(data?.reference ?? "");
   if (status === "send_pin" || status === "send_otp" || status === "open_url") {
@@ -160,7 +160,10 @@ async function interpret(admin: ReturnType<typeof createClient>, secret: string,
   if (confirmed.error || (confirmed.data !== "granted" && confirmed.data !== "duplicate")) {
     return { error: "charge_failed", message: "The payment could not be recorded." };
   }
-  const card = await rememberCard(admin, user.id, payment.authorization as Record<string, unknown> | undefined);
+  const card = saveCard
+    ? await rememberCard(admin, user.id, payment.authorization as Record<string, unknown> | undefined)
+    : null;
+  if (!saveCard) await admin.from("saved_cards").delete().eq("user_id", user.id);
   await rememberRenewal(admin, user, planId, card);
   await sendSuccess(user.email || "", planId, card?.last4 || "");
   return { ok: true, cards: await listCards(admin, user.id) };
