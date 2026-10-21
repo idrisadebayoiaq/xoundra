@@ -14,8 +14,9 @@ export const supabase = createClient(url || 'https://example.supabase.co', anonK
 });
 
 export function trackAudioUrl(path) {
-  if (!path || !String(path).includes('/') || !url) return '';
-  return `${url}/storage/v1/object/public/track-audio/${path}`;
+  if (!path || !url) return '';
+  const clean = String(path).replace(/^\/+/, '');
+  return `${url}/storage/v1/object/public/track-audio/${clean}`;
 }
 
 export async function fetchPublishedTracks() {

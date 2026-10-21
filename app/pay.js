@@ -13,6 +13,7 @@ import { useShell } from '../src/state/ShellState';
 const problems = {
   sold_out: 'Lifetime is sold out.',
   unknown_plan: 'That plan is not available.',
+  purchase_create_failed: 'The payment could not be started. Try again.',
   sign_in_required: 'Sign in before paying.',
   card_incomplete: 'Enter the full card number, expiry, and security code.',
   card_missing: 'Add a card first.',

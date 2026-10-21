@@ -170,8 +170,9 @@ async function interpret(admin: ReturnType<typeof createClient>, secret: string,
 }
 
 async function preparePurchase(admin: ReturnType<typeof createClient>, userId: string, planId: string) {
-  const { data: price } = await admin.from("plan_prices").select("amount_minor, interval").eq("plan_id", planId).eq("currency", "NGN").maybeSingle();
-  if (!price || price.amount_minor <= 0) return { error: "unknown_plan" };
+  const { data: price, error: priceError } = await admin.from("plan_prices").select("amount_minor, interval").eq("plan_id", planId).eq("currency", "NGN").maybeSingle();
+  if (priceError || !price || Number(price.amount_minor) <= 0) return { error: "unknown_plan" };
+  price.amount_minor = Number(price.amount_minor);
   const { data: profile } = await admin.from("profiles").select("country_code").eq("id", userId).maybeSingle();
   const { data: purchase, error } = await admin.from("purchases").insert({
     user_id: userId,
