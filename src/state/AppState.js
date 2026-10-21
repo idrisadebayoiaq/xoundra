@@ -6,7 +6,7 @@ import { createAudioPlayer, createAudioPlaylist, setAudioModeAsync } from 'expo-
 import { Directory, File, Paths } from 'expo-file-system';
 import localTracks from '../data/tracks.json';
 import { coverSource } from '../data/artwork';
-import { fetchCategories, fetchPremium, fetchProfile, fetchPublishedTracks, supabase, trackAudioUrl } from '../lib/supabase';
+import { drainNotices, fetchCategories, fetchPremium, fetchProfile, fetchPublishedTracks, supabase, trackAudioUrl } from '../lib/supabase';
 import { presentNotice } from '../lib/notices';
 import { publishDownloadProgress } from '../lib/downloadNotice';
 import { connectionOnline, downloadGate, readOnline, watchNetwork } from '../lib/network';
@@ -33,13 +33,35 @@ function playerSource(source) {
   return null;
 }
 
+function clockMinutes(value) {
+  const match = /^(\d{1,2}):(\d{2})$/.exec(String(value || ''));
+  if (!match) return null;
+  const hour = Number(match[1]);
+  const minute = Number(match[2]);
+  if (hour > 23 || minute > 59) return null;
+  return hour * 60 + minute;
+}
+
+function insideWindow(start, stop, now) {
+  if (start == null || stop == null || start === stop) return false;
+  if (start < stop) return now >= start && now < stop;
+  return now >= start || now < stop;
+}
+
+function windowStamp(start, now) {
+  const day = new Date();
+  if (now < start) day.setDate(day.getDate() - 1);
+  return `${day.getFullYear()}-${day.getMonth()}-${day.getDate()}-${start}`;
+}
+
 function lockMetadata(track) {
   const art = track?.artwork ? Image.resolveAssetSource(coverSource(track.artwork)) : null;
+  const artworkUrl = art?.uri && /^(https?:|file:)/.test(art.uri) ? art.uri : undefined;
   return {
     title: track?.title || 'Xoundra',
     artist: track?.artistName || 'Xoundra',
     albumTitle: 'Xoundra',
-    artworkUrl: art?.uri || '',
+    ...(artworkUrl ? { artworkUrl } : {}),
   };
 }
 
@@ -47,6 +69,8 @@ function showLock(player, track, allowSkip = true) {
   if (Platform.OS === 'web' || !player?.setActiveForLockScreen || !track) return;
   try {
     player.setActiveForLockScreen(true, lockMetadata(track), {
+      showSeekForward: false,
+      showSeekBackward: false,
       showNextTrack: allowSkip,
       showPreviousTrack: allowSkip,
     });
@@ -132,6 +156,10 @@ export function AppProvider({ children }) {
   const [artistName, setArtistName] = React.useState('');
   const [artistBio, setArtistBio] = React.useState('');
   const [artistLocation, setArtistLocation] = React.useState('');
+  const [artistTagline, setArtistTagline] = React.useState('');
+  const [artistFocus, setArtistFocus] = React.useState('');
+  const [artistWebsite, setArtistWebsite] = React.useState('');
+  const [artistLinks, setArtistLinks] = React.useState([]);
   const [artistBanner, setArtistBanner] = React.useState('');
   const [continueHydrated, setContinueHydrated] = React.useState(false);
   const [country, setCountryState] = React.useState('NG');
@@ -156,6 +184,7 @@ export function AppProvider({ children }) {
   const flushRef = React.useRef(() => {});
   const [mixPlaying, setMixPlaying] = React.useState(false);
   const [notes, setNotes] = React.useState(starterNotes);
+  const [inbox, setInbox] = React.useState([]);
   const [notifyEnabled, setNotifyEnabled] = React.useState(true);
   const [reducedMotion, setReducedMotion] = React.useState(false);
   const [mix, setMix] = React.useState(emptyMix);
@@ -165,6 +194,8 @@ export function AppProvider({ children }) {
   const playback = React.useRef({});
   const playerRef = React.useRef(null);
   const userRef = React.useRef(null);
+  const inboxReady = React.useRef(false);
+  const seenNotices = React.useRef(new Set());
   const sessionUserRef = React.useRef(null);
   const tracksRef = React.useRef(localTracks);
   const premiumRef = React.useRef(false);
@@ -183,6 +214,11 @@ export function AppProvider({ children }) {
   const queueKey = React.useRef('');
   const playableIds = React.useRef([]);
   const suppressUntil = React.useRef(0);
+  const [sleepPlan, setSleepPlan] = React.useState(null);
+  const sleepPlanRef = React.useRef(null);
+  const sleepWindow = React.useRef('');
+  const playRef = React.useRef(() => {});
+  sleepPlanRef.current = sleepPlan;
   const mixPlayers = React.useRef([]);
   playback.current = { playing, track: queue[index] || null, queue, index, repeat, shuffle, sleepLeft, position, collection: collectionLock.current };
   mixRef.current = mix;
@@ -213,8 +249,13 @@ export function AppProvider({ children }) {
     setAudioModeAsync({
       playsInSilentMode: true,
       shouldPlayInBackground: true,
-      interruptionMode: 'doNotMix',
+      interruptionMode: 'doNotMixPersistent',
     }).catch(() => {});
+    if (Platform.OS === 'android') {
+      import('expo-notifications').then((Notifications) => {
+        Notifications.requestPermissionsAsync().catch(() => {});
+      }).catch(() => {});
+    }
     const nativeQueue = Platform.OS !== 'web';
     let player;
     try {
@@ -318,6 +359,10 @@ export function AppProvider({ children }) {
       setArtistName('');
       setArtistBio('');
       setArtistLocation('');
+      setArtistTagline('');
+      setArtistFocus('');
+      setArtistWebsite('');
+      setArtistLinks([]);
       setArtistBanner('');
       setOnboardingDone(false);
       setPicks([]);
@@ -383,6 +428,10 @@ export function AppProvider({ children }) {
     setArtistName(profile?.artist_name || '');
     setArtistBio(profile?.artist_bio || '');
     setArtistLocation(profile?.artist_location || '');
+    setArtistTagline(profile?.artist_tagline || '');
+    setArtistFocus(profile?.artist_focus || '');
+    setArtistWebsite(profile?.artist_website || '');
+    setArtistLinks(Array.isArray(profile?.artist_links) ? profile.artist_links : []);
     setArtistBanner(profile?.artist_banner_path || '');
     setIsAdmin(Boolean(role.data));
     setPremium(isPremium);
@@ -578,7 +627,9 @@ export function AppProvider({ children }) {
     setResumeId(track.id);
     adjustCount(track.id, 'plays', 1);
     if (userRef.current) {
-      supabase.from('listening_history').insert({ user_id: userRef.current, track_id: track.id }).then(() => {});
+      supabase.from('listening_history').insert({ user_id: userRef.current, track_id: track.id }).then(() => {
+        drainNotices();
+      });
     }
   }, [adjustCount, soundSource]);
   startRef.current = startSound;
@@ -630,21 +681,22 @@ export function AppProvider({ children }) {
       router.push('/plans');
       return;
     }
-    const collection = Boolean(options?.collection);
+    const ordered = Boolean(options?.ordered);
+    const collection = Boolean(options?.collection) || ordered;
     guideFollow.current = Boolean(options?.follow) && !collection;
     collectionLock.current = collection;
     userHeld.current = false;
     let nextQueue = list && list.length ? [...list] : [track];
-    if (collection) {
-      nextQueue = [track, ...nextQueue.filter((item) => item.id !== track.id)];
-    }
-    const nextIndex = collection ? 0 : Math.max(0, nextQueue.findIndex((item) => item.id === track.id));
-    playback.current = { ...playback.current, queue: nextQueue, index: nextIndex };
+    if (ordered) nextQueue = [...nextQueue];
+    else if (collection) nextQueue = [track, ...nextQueue.filter((item) => item.id !== track.id)];
+    const nextIndex = ordered || collection ? 0 : Math.max(0, nextQueue.findIndex((item) => item.id === track.id));
+    playback.current = { ...playback.current, queue: nextQueue, index: nextIndex, collection };
     setQueue(nextQueue);
     setIndex(nextIndex);
     setHistory((items) => [track, ...items.filter((item) => item.id !== track.id)].slice(0, 30));
     startSound(track);
   }, [startSound]);
+  playRef.current = play;
 
   const togglePlay = React.useCallback(() => {
     const player = playerRef.current;
@@ -655,7 +707,10 @@ export function AppProvider({ children }) {
         userHeld.current = true;
       }
       player.pause();
-    } else player.play();
+    } else {
+      player.play();
+      showLock(player, playback.current.track);
+    }
   }, []);
 
   const seek = React.useCallback((seconds) => {
@@ -684,7 +739,7 @@ export function AppProvider({ children }) {
         if (exists) {
           supabase.from('favorites').delete().eq('user_id', userRef.current).eq('track_id', track.id).then(() => {});
         } else {
-          supabase.from('favorites').insert({ user_id: userRef.current, track_id: track.id }).then(() => {});
+          supabase.from('favorites').insert({ user_id: userRef.current, track_id: track.id }).then(() => drainNotices());
         }
       }
       adjustCount(track.id, 'favorites', exists ? -1 : 1);
@@ -700,7 +755,7 @@ export function AppProvider({ children }) {
         if (exists) {
           supabase.from('likes').delete().eq('user_id', userRef.current).eq('track_id', track.id).then(() => {});
         } else {
-          supabase.from('likes').insert({ user_id: userRef.current, track_id: track.id }).then(() => {});
+          supabase.from('likes').insert({ user_id: userRef.current, track_id: track.id }).then(() => drainNotices());
         }
       }
       adjustCount(track.id, 'likes', exists ? -1 : 1);
@@ -762,8 +817,40 @@ export function AppProvider({ children }) {
     return true;
   }, []);
 
+  const refreshInbox = React.useCallback(async () => {
+    const user = userRef.current;
+    if (!user) return;
+    const { data } = await supabase
+      .from('user_notifications')
+      .select('id, kind, title, body, track_id, album_id, announcement_id, created_at, read_at')
+      .eq('user_id', user)
+      .order('created_at', { ascending: false })
+      .limit(80);
+    const rows = data || [];
+    if (inboxReady.current && Platform.OS === 'web' && notifyRef.current) {
+      rows.filter((item) => !seenNotices.current.has(item.id) && !item.read_at).forEach((item) => {
+        presentNotice(item.title, item.body, item);
+      });
+    }
+    seenNotices.current = new Set(rows.map((item) => item.id));
+    inboxReady.current = true;
+    setInbox(rows);
+  }, []);
+
   const markNotesRead = React.useCallback(() => {
     setNotes((items) => items.map((item) => ({ ...item, read: true })));
+    setInbox((items) => items.map((item) => ({ ...item, read_at: item.read_at || new Date().toISOString() })));
+    if (userRef.current) supabase.rpc('mark_notices_read').then(() => {});
+  }, []);
+
+  const markNoticeRead = React.useCallback((id) => {
+    if (!id) return;
+    const stamp = new Date().toISOString();
+    setNotes((items) => items.map((item) => (item.id === id ? { ...item, read: true } : item)));
+    setInbox((items) => items.map((item) => (item.id === id ? { ...item, read_at: item.read_at || stamp } : item)));
+    if (userRef.current && /^[0-9a-f-]{36}$/i.test(String(id))) {
+      supabase.rpc('mark_notice_read', { p_id: id }).then(() => {});
+    }
   }, []);
 
   const addNote = React.useCallback((title, body) => {
@@ -829,6 +916,10 @@ export function AppProvider({ children }) {
     setArtistName('');
     setArtistBio('');
     setArtistLocation('');
+    setArtistTagline('');
+    setArtistFocus('');
+    setArtistWebsite('');
+    setArtistLinks([]);
     setArtistBanner('');
     setOnboardingDone(false);
     setPicks([]);
@@ -1144,6 +1235,100 @@ export function AppProvider({ children }) {
     }
   }, []);
 
+  const saveSleep = React.useCallback(async (plan) => {
+    const next = {
+      enabled: Boolean(plan?.enabled),
+      start: plan?.start || '22:00',
+      stop: plan?.stop || '06:00',
+      trackIds: Array.isArray(plan?.trackIds) ? plan.trackIds.filter((id) => typeof id === 'string') : [],
+    };
+    sleepPlanRef.current = next;
+    sleepWindow.current = '';
+    setSleepPlan(next);
+    const owner = userRef.current;
+    if (!owner) return next;
+    await AsyncStorage.setItem(`xoundra-sleep:${owner}`, JSON.stringify(next)).catch(() => {});
+    await supabase.from('sleep_schedules').upsert({
+      user_id: owner,
+      enabled: next.enabled,
+      start_time: next.start,
+      stop_time: next.stop,
+      track_ids: next.trackIds,
+      updated_at: new Date().toISOString(),
+    });
+    return next;
+  }, []);
+
+  React.useEffect(() => {
+    if (!userId) {
+      sleepPlanRef.current = null;
+      setSleepPlan(null);
+      return undefined;
+    }
+    let alive = true;
+    async function load() {
+      let plan = null;
+      const { data } = await supabase.from('sleep_schedules').select('enabled, start_time, stop_time, track_ids').eq('user_id', userId).maybeSingle();
+      if (data) {
+        plan = { enabled: data.enabled, start: data.start_time, stop: data.stop_time, trackIds: data.track_ids || [] };
+      } else {
+        const raw = await AsyncStorage.getItem(`xoundra-sleep:${userId}`).catch(() => null);
+        try {
+          plan = raw ? JSON.parse(raw) : null;
+        } catch {
+          plan = null;
+        }
+      }
+      if (!alive || !plan) return;
+      sleepPlanRef.current = plan;
+      setSleepPlan(plan);
+    }
+    load().catch(() => {});
+    const timer = setInterval(() => {
+      const plan = sleepPlanRef.current;
+      if (!plan?.enabled || !premiumRef.current) return;
+      const start = clockMinutes(plan.start);
+      const stop = clockMinutes(plan.stop);
+      const minute = new Date().getHours() * 60 + new Date().getMinutes();
+      const open = insideWindow(start, stop, minute);
+      const stamp = windowStamp(start, minute);
+      if (open && sleepWindow.current !== stamp) {
+        const chosen = (plan.trackIds || [])
+          .map((id) => tracksRef.current.find((item) => item.id === id) || localTracks.find((item) => item.id === id))
+          .filter(Boolean);
+        if (!chosen.length) return;
+        sleepWindow.current = stamp;
+        playRef.current(chosen[0], chosen, { ordered: true });
+        return;
+      }
+      if (!open && sleepWindow.current) {
+        sleepWindow.current = '';
+        userHeld.current = true;
+        playerRef.current?.pause();
+        setPlaying(false);
+      }
+    }, 10000);
+    return () => {
+      alive = false;
+      clearInterval(timer);
+    };
+  }, [userId]);
+
+  React.useEffect(() => {
+    if (!userId) {
+      inboxReady.current = false;
+      setInbox([]);
+      return;
+    }
+    refreshInbox();
+    drainNotices();
+    const timer = setInterval(() => {
+      refreshInbox();
+      drainNotices();
+    }, 45000);
+    return () => clearInterval(timer);
+  }, [userId, refreshInbox]);
+
   const refreshCatalogue = React.useCallback(() => {
     fetchPublishedTracks().then((remote) => {
       if (!remote.tracks?.length) return;
@@ -1164,6 +1349,8 @@ export function AppProvider({ children }) {
     setRepeat,
     sleepMinutes,
     sleepLeft,
+    sleepPlan,
+    saveSleep,
     favourites,
     likes,
     history,
@@ -1177,6 +1364,10 @@ export function AppProvider({ children }) {
     artistName,
     artistBio,
     artistLocation,
+    artistTagline,
+    artistFocus,
+    artistWebsite,
+    artistLinks,
     artistBanner,
     downloads,
     downloadProgress,
@@ -1200,7 +1391,8 @@ export function AppProvider({ children }) {
     ready,
     tracks,
     notes,
-    unread: notes.filter((item) => !item.read).length,
+    inbox,
+    unread: notes.filter((item) => !item.read).length + inbox.filter((item) => !item.read_at).length,
     notifyEnabled,
     setNotifyEnabled,
     reducedMotion,
@@ -1225,6 +1417,8 @@ export function AppProvider({ children }) {
     refreshCatalogue,
     cycleSleep,
     markNotesRead,
+    markNoticeRead,
+    refreshInbox,
     addNote,
     clearHistory,
     clearAiChats,

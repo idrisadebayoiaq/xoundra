@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useFocusEffect } from 'expo-router';
-import { supabase } from '../lib/supabase';
+import { drainNotices, supabase } from '../lib/supabase';
 import { colors, font } from '../theme';
 import { useApp } from '../state/AppState';
 
@@ -48,6 +48,7 @@ export function Comments({ trackId }) {
       return;
     }
     setBody('');
+    drainNotices();
     setNotice('Shared. Notes like this also shape recommendations.');
     noteHelped(trackId, helped);
     setHelped('');

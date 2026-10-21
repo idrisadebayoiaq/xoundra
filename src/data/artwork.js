@@ -12,5 +12,14 @@ export const artwork = {
 };
 
 export function coverSource(name) {
-  return artwork[name] || artwork.rain;
+  if (!name) return artwork.rain;
+  const value = String(name);
+  if (/^https?:/i.test(value)) return { uri: value };
+  if (value.includes('/')) {
+    const base = process.env.EXPO_PUBLIC_SUPABASE_URL || '';
+    const path = value.replace(/^\/+/, '');
+    return base ? { uri: `${base}/storage/v1/object/public/artwork/${path}` } : artwork.rain;
+  }
+  const key = value.replace(/\.(jpe?g|png|webp)$/i, '');
+  return artwork[key] || artwork.rain;
 }

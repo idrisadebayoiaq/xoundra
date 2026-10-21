@@ -4,14 +4,23 @@ import { Asset } from 'expo-asset';
 import * as Notifications from 'expo-notifications';
 import { useApp } from '../state/AppState';
 import { setNoticePresenter } from '../lib/notices';
+import { openNotice } from '../lib/openNotice';
 import { supabase } from '../lib/supabase';
 
 const icon = require('../../assets/icon.png');
+let openFromNotice = async () => {};
 
 export function NotificationBridge() {
-  const { addNote, notifyEnabled, userId } = useApp();
+  const { addNote, notifyEnabled, userId, play, tracks, refreshInbox } = useApp();
   const enabled = useRef(notifyEnabled);
+  const playRef = useRef(play);
+  const tracksRef = useRef(tracks);
+  const refreshRef = useRef(refreshInbox);
   enabled.current = notifyEnabled;
+  openFromNotice = (data) => openNotice(data, playRef.current, tracksRef.current);
+  playRef.current = play;
+  tracksRef.current = tracks;
+  refreshRef.current = refreshInbox;
 
   useEffect(() => {
     try {
@@ -29,10 +38,10 @@ export function NotificationBridge() {
   }, [notifyEnabled]);
 
   useEffect(() => {
-    setNoticePresenter(async (title, body) => {
+    setNoticePresenter(async (title, body, data) => {
       if (!enabled.current) return;
       if (Platform.OS === 'web') {
-        await showWebNotice(title, body);
+        await showWebNotice(title, body, data);
         return;
       }
       const pushed = await pushToThisAccount(title, body);
@@ -47,19 +56,27 @@ export function NotificationBridge() {
 
   useEffect(() => {
     if (userId) registerForPush().catch(() => {});
-    const subscription = Notifications.addNotificationReceivedListener((event) => {
+    const received = Notifications.addNotificationReceivedListener((event) => {
       if (event.request.content.data?.local) return;
-      const title = event.request.content.title || 'Xoundra';
-      const body = event.request.content.body || '';
-      addNote(title, body);
+      refreshRef.current?.();
     });
-    return () => subscription?.remove();
+    const opened = Notifications.addNotificationResponseReceivedListener((event) => {
+      openNotice(event.notification.request.content.data, playRef.current, tracksRef.current);
+    });
+    Notifications.getLastNotificationResponseAsync?.().then((event) => {
+      if (!event) return;
+      openNotice(event.notification.request.content.data, playRef.current, tracksRef.current);
+    }).catch(() => {});
+    return () => {
+      received?.remove();
+      opened?.remove();
+    };
   }, [addNote, userId]);
 
   return null;
 }
 
-async function showWebNotice(title, body) {
+async function showWebNotice(title, body, data) {
   if (typeof Notification === 'undefined') return;
   let permission = Notification.permission;
   if (permission === 'default') permission = await Notification.requestPermission();
@@ -67,7 +84,11 @@ async function showWebNotice(title, body) {
   const asset = Asset.fromModule(icon);
   if (!asset.downloaded) await asset.downloadAsync().catch(() => {});
   const notice = new Notification(title, { body, icon: asset.uri || undefined });
-  notice.onclick = () => notice.close();
+  notice.onclick = () => {
+    notice.close();
+    if (typeof window !== 'undefined') window.focus();
+    if (data) openFromNotice(data);
+  };
 }
 
 async function registerForPush() {

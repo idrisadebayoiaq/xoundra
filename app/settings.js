@@ -69,7 +69,7 @@ export default function SettingsScreen() {
         <Row
           label={app.isArtist ? 'Artist dashboard' : 'Become an artist'}
           value={app.isArtist ? app.artistName || 'Artist' : 'Upload sounds'}
-          hint={app.isArtist ? 'Bio, cover, uploads, and listener counts.' : 'Share sounds with listeners. No extra check to start.'}
+          hint={app.isArtist ? 'Upload sounds, your catalogue, and analytics.' : 'Share sounds with listeners. No extra check to start.'}
         />
       </Pressable>
       {Platform.OS === 'web' ? (

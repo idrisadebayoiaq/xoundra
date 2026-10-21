@@ -34,8 +34,10 @@ export function SoundCollection({
   const [menuOpen, setMenuOpen] = useState(false);
   const [note, setNote] = useState('');
   const lastY = useRef(0);
+  const drift = useRef(0);
   const shownRef = useRef(true);
   const lockUntil = useRef(0);
+  const heroHeight = useRef(320);
   const art = Math.min(260, Math.max(180, width - 150));
   const needle = query.trim().toLowerCase();
   const visible = needle
@@ -44,29 +46,35 @@ export function SoundCollection({
   const seconds = tracks.reduce((sum, track) => sum + (Number(track.duration) || 0), 0);
 
   function onScroll(event) {
-    const y = event.nativeEvent.contentOffset.y;
-    const overflow = event.nativeEvent.contentSize.height - event.nativeEvent.layoutMeasurement.height;
-    if (overflow < 64) {
-      lastY.current = y;
-      if (!shownRef.current) {
-        shownRef.current = true;
-        setShown(true);
-      }
-      return;
-    }
-    const now = Date.now();
-    if (now < lockUntil.current) {
-      lastY.current = y;
-      return;
-    }
+    const y = event?.nativeEvent?.contentOffset?.y;
+    const contentHeight = event?.nativeEvent?.contentSize?.height;
+    const viewHeight = event?.nativeEvent?.layoutMeasurement?.height;
+    if (typeof y !== 'number') return;
     const delta = y - lastY.current;
     lastY.current = y;
-    if (Math.abs(delta) < 10) return;
-    const next = y < 24 || delta < 0;
-    if (next === shownRef.current) return;
-    shownRef.current = next;
-    lockUntil.current = now + 320;
-    setShown(next);
+    if (Date.now() < lockUntil.current) return;
+    if (!shownRef.current && delta < -80) {
+      drift.current = 0;
+      return;
+    }
+    if (delta > 0) drift.current = Math.max(0, drift.current) + delta;
+    else if (delta < 0) drift.current = Math.min(0, drift.current) + delta;
+    const measured = typeof contentHeight === 'number' && typeof viewHeight === 'number' && viewHeight > 0;
+    const overflow = measured ? contentHeight - viewHeight : 0;
+    const roomToHide = !measured || overflow > heroHeight.current + 48;
+    if (drift.current > 36 && shownRef.current && y > 24 && roomToHide) {
+      drift.current = 0;
+      shownRef.current = false;
+      lockUntil.current = Date.now() + 500;
+      setShown(false);
+      return;
+    }
+    if (drift.current < -36 && !shownRef.current) {
+      drift.current = 0;
+      shownRef.current = true;
+      lockUntil.current = Date.now() + 500;
+      setShown(true);
+    }
   }
 
   async function downloadAll() {
@@ -102,35 +110,39 @@ export function SoundCollection({
   }
 
   return (
-    <View style={styles.screen}>
-      <View style={[styles.hero, { paddingTop: insets.top + 6 }]}>
-        <Pressable onPress={goBack} hitSlop={10} accessibilityLabel="Back" style={styles.back}>
-          <Ionicons name="chevron-back" size={26} color={colors.text} />
-        </Pressable>
-        {shown ? (
-          <View>
-            <View style={styles.search}>
-              <Ionicons name="search" size={16} color={colors.muted} />
-              <TextInput
-                value={query}
-                onChangeText={setQuery}
-                placeholder={placeholder}
-                placeholderTextColor={colors.muted}
-                style={styles.searchInput}
-                accessibilityLabel={placeholder}
-              />
-            </View>
-            <View style={styles.art}>{cover(art)}</View>
-          </View>
-        ) : null}
-      </View>
+    <View style={[styles.screen, Platform.OS === 'web' && styles.screenWeb]}>
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={{ paddingBottom: insets.bottom + 120 }}
+        stickyHeaderIndices={[0]}
         onScroll={onScroll}
         scrollEventThrottle={16}
         keyboardShouldPersistTaps="handled"
       >
+        <View style={[styles.hero, { paddingTop: insets.top + 6 }]}>
+          <Pressable onPress={goBack} hitSlop={10} accessibilityLabel="Back" style={styles.back}>
+            <Ionicons name="chevron-back" size={26} color={colors.text} />
+          </Pressable>
+          {shown ? null : <Text style={styles.compact} numberOfLines={1}>{title}</Text>}
+        </View>
+        {shown ? (
+          <View onLayout={(event) => { heroHeight.current = event.nativeEvent.layout.height || heroHeight.current; }}>
+            <View style={styles.searchWrap}>
+              <View style={styles.search}>
+                <Ionicons name="search" size={16} color={colors.muted} />
+                <TextInput
+                  value={query}
+                  onChangeText={setQuery}
+                  placeholder={placeholder}
+                  placeholderTextColor={colors.muted}
+                  style={styles.searchInput}
+                  accessibilityLabel={placeholder}
+                />
+              </View>
+            </View>
+            <View style={styles.art}>{cover(art)}</View>
+          </View>
+        ) : null}
         <Text style={styles.title}>{title}</Text>
         <Pressable onPress={onOwnerPress} disabled={!onOwnerPress} style={styles.owner} accessibilityLabel={ownerName}>
           <Avatar path={ownerAvatar} stamp={ownerStamp} size={28} />
@@ -230,13 +242,19 @@ function shuffle(list) {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.bg },
+  screen: { flex: 1, minHeight: 0, backgroundColor: colors.bg },
+  screenWeb: { height: '100%', overflow: 'hidden' },
   hero: {
     backgroundColor: '#121A24',
     paddingHorizontal: 16,
     paddingBottom: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
+  compact: { flex: 1, color: colors.text, fontFamily: font.semibold, fontSize: 16 },
   back: { width: 36, height: 36, justifyContent: 'center' },
+  searchWrap: { paddingHorizontal: 16 },
   search: {
     height: 40,
     borderRadius: 8,
@@ -259,7 +277,7 @@ const styles = StyleSheet.create({
     paddingBottom: 18,
   },
   art: { alignItems: 'center', marginTop: 22, marginBottom: 8 },
-  scroll: { flex: 1 },
+  scroll: { flex: 1, minHeight: 0 },
   content: { paddingTop: 8 },
   title: {
     color: colors.text,

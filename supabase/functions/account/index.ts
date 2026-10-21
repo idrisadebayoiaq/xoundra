@@ -194,7 +194,7 @@ function welcomeMail(firstName: string, admin: boolean) {
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:22px;">
     ${row("The catalogue", "Rain, ocean, forest, and night, ready to play.")}
     ${row("Your library", "Favourites, history, and playlists stay with your account.")}
-    ${row("Premium", "Mixes, offline downloads, the sleep timer, and the voice guide.")}
+    ${row("Premium", "Mixes, offline downloads, a sleep timer that starts and stops on a schedule, and the voice guide.")}
   </table>
   ${adminLine}`;
   return shell("Welcome to Xoundra", body);

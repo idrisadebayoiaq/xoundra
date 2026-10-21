@@ -18,7 +18,7 @@ export default function PlansScreen() {
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
       <ScreenHeader title="Plans" back />
       <Text style={styles.lead}>
-        {premium ? 'You are on Premium.' : 'You are on Free. Premium adds mixes, downloads, the sleep timer, and the voice guide.'}
+        {premium ? 'You are on Premium.' : 'You are on Free. Premium adds mixes, offline downloads, a sleep timer that starts and stops on a schedule, and the voice guide.'}
       </Text>
       {plans.map((plan) => (
         <View key={plan.id} style={styles.card}>

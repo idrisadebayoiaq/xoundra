@@ -1,15 +1,19 @@
 import { useEffect, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Redirect } from 'expo-router';
 import { ScreenHeader } from '../src/components/ScreenHeader';
-import { accountAction } from '../src/lib/supabase';
+import { accountAction, drainNotices, supabase } from '../src/lib/supabase';
 import { colors, font } from '../src/theme';
 import { useApp } from '../src/state/AppState';
 
 export default function AdminScreen() {
-  const { isAdmin } = useApp();
+  const { isAdmin, ready } = useApp();
   const [overview, setOverview] = useState(null);
   const [error, setError] = useState('');
+  const [title, setTitle] = useState('');
+  const [body, setBody] = useState('');
+  const [notice, setNotice] = useState('');
+  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     if (!isAdmin) return;
@@ -19,10 +23,32 @@ export default function AdminScreen() {
     });
   }, [isAdmin]);
 
+  async function publish() {
+    if (title.trim().length < 2 || body.trim().length < 2) {
+      setNotice('Add a title and the announcement.');
+      return;
+    }
+    setBusy(true);
+    const { data, error: failed } = await supabase.rpc('publish_announcement', {
+      p_title: title.trim(),
+      p_body: body.trim(),
+    });
+    setBusy(false);
+    if (failed || !data) {
+      setNotice('The announcement could not be sent.');
+      return;
+    }
+    setTitle('');
+    setBody('');
+    setNotice('The announcement is published.');
+    drainNotices();
+  }
+
+  if (!ready) return <View style={styles.screen} />;
   if (!isAdmin) return <Redirect href="/profile" />;
 
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
+      <ScrollView style={styles.screen} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
       <ScreenHeader title="Admin" back />
       <Text style={styles.lead}>Xoundra support. Premium is included on this account.</Text>
       {error ? <Text style={styles.error}>{error}</Text> : null}
@@ -42,6 +68,14 @@ export default function AdminScreen() {
           <Text style={styles.meta}>{item.status} · {(item.amount_minor / 100).toLocaleString()} {item.currency}</Text>
         </View>
       ))}
+      <Text style={styles.section}>Announcement</Text>
+      <Text style={styles.lead}>Everyone with an account gets this, on the phone and on the web. They can open it for the full text.</Text>
+      <TextInput value={title} onChangeText={setTitle} placeholder="Title" placeholderTextColor={colors.muted} style={styles.input} accessibilityLabel="Announcement title" />
+      <TextInput value={body} onChangeText={setBody} placeholder="Write the announcement" placeholderTextColor={colors.muted} style={[styles.input, styles.bodyInput]} multiline accessibilityLabel="Announcement" />
+      <Pressable onPress={publish} disabled={busy} accessibilityLabel="Publish announcement" style={styles.button}>
+        <Text style={styles.buttonText}>{busy ? 'Sending' : 'Publish announcement'}</Text>
+      </Pressable>
+      {notice ? <Text style={styles.notice}>{notice}</Text> : null}
     </ScrollView>
   );
 }
@@ -58,6 +92,22 @@ function Stat({ label, value }) {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
   content: { paddingBottom: 28 },
+  input: {
+    minHeight: 48,
+    borderRadius: 14,
+    backgroundColor: colors.card,
+    color: colors.text,
+    fontFamily: font.regular,
+    fontSize: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    marginHorizontal: 20,
+    marginBottom: 10,
+  },
+  bodyInput: { minHeight: 120, textAlignVertical: 'top' },
+  button: { alignSelf: 'flex-start', backgroundColor: colors.mint, borderRadius: 18, paddingHorizontal: 16, paddingVertical: 12, marginHorizontal: 20, marginBottom: 10 },
+  notice: { color: colors.mint, fontFamily: font.regular, marginHorizontal: 20, marginBottom: 10 },
+  buttonText: { color: colors.mintInk, fontFamily: font.semibold, fontSize: 15 },
   lead: { color: colors.muted, fontFamily: font.regular, fontSize: 15, marginHorizontal: 20, marginBottom: 16 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, paddingHorizontal: 20 },
   stat: { width: '47%', backgroundColor: colors.card, borderRadius: 16, padding: 14 },

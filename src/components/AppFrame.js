@@ -34,6 +34,7 @@ const styles = {
   column: {
     flex: 1,
     width: '100%',
+    minHeight: 0,
     backgroundColor: colors.bg,
   },
 };

@@ -20,9 +20,8 @@ import { DownloadMark } from './DownloadMark';
 const nav = [
   { href: '/', label: 'Home', icon: 'home', match: (path) => path === '/' },
   { href: '/explore', label: 'Explore', icon: 'compass', match: (path) => path === '/explore' || path === '/browse' },
-  { href: '/studio', label: 'Studio', icon: 'layers', match: (path) => path === '/studio' },
   { href: '/guide', label: 'Guide', icon: 'mic', match: (path) => path === '/guide' || path === '/ai' },
-  { href: '/library', label: 'Library', icon: 'albums', match: (path) => path === '/library' || path === '/downloads' || path === '/playlist' || path === '/new-playlist' },
+  { href: '/library', label: 'Library', icon: 'albums', match: (path) => path === '/library' || path === '/playlist' || path === '/new-playlist' },
 ];
 
 export function WebDeck({ children }) {
@@ -54,7 +53,6 @@ export function WebDeck({ children }) {
 
 function TopBar() {
   const insets = useSafeAreaInsets();
-  const path = usePathname();
   const { sidebar, toggleSidebar, search, setSearch } = useShell();
   const { unread, avatarPath, avatarStamp } = useApp();
   return (
@@ -63,19 +61,7 @@ function TopBar() {
         <Ionicons name={sidebar ? 'chevron-back' : 'menu'} size={22} color={colors.text} />
       </Pressable>
       <Image source={require('../../assets/icon.png')} style={styles.mark} />
-      {nav.map((item) => {
-        const active = item.match(path);
-        return (
-          <Pressable
-            key={item.href}
-            onPress={() => router.navigate(item.href)}
-            accessibilityLabel={item.label}
-            style={[styles.navBtn, active && styles.navBtnOn]}
-          >
-            <Ionicons name={active ? item.icon : `${item.icon}-outline`} size={18} color={active ? colors.mintInk : colors.text} />
-          </Pressable>
-        );
-      })}
+      <Text style={styles.word}>Xoundra</Text>
       <View style={styles.search}>
         <Ionicons name="search" size={16} color={colors.muted} />
         <TextInput
@@ -142,10 +128,26 @@ function Sidebar() {
 
   return (
     <View style={styles.side}>
-      <Pressable onPress={() => router.navigate('/guide')} style={[styles.guideEntry, path === '/guide' && styles.libRowOn]} accessibilityLabel="Guide">
-        <Ionicons name={path === '/guide' ? 'mic' : 'mic-outline'} size={20} color={path === '/guide' ? colors.mint : colors.text} />
-        <Text style={styles.guideLabel}>Guide</Text>
-      </Pressable>
+      <View style={styles.navList}>
+        {nav.map((item) => {
+          const active = item.match(path);
+          return (
+            <Pressable
+              key={item.href}
+              onPress={() => router.navigate(item.href)}
+              accessibilityLabel={item.label}
+              style={[styles.navRow, active && styles.navRowOn]}
+            >
+              <Ionicons name={active ? item.icon : `${item.icon}-outline`} size={18} color={active ? colors.mint : colors.text} />
+              <Text style={[styles.navLabel, active && styles.navLabelOn]}>{item.label}</Text>
+            </Pressable>
+          );
+        })}
+        <Pressable onPress={() => router.push('/downloads')} accessibilityLabel="Downloads" style={[styles.navRow, path === '/downloads' && styles.navRowOn]}>
+          <Ionicons name={path === '/downloads' ? 'download' : 'download-outline'} size={18} color={path === '/downloads' ? colors.mint : colors.text} />
+          <Text style={[styles.navLabel, path === '/downloads' && styles.navLabelOn]}>Downloads</Text>
+        </Pressable>
+      </View>
       <View style={styles.sideHead}>
         <Text style={styles.sideTitle}>Your library</Text>
         <Pressable onPress={() => router.push('/new-playlist')} hitSlop={8} accessibilityLabel="New playlist">
@@ -341,6 +343,7 @@ const styles = StyleSheet.create({
   main: {
     flex: 1,
     minWidth: 0,
+    minHeight: 0,
     borderRadius: 12,
     overflow: 'hidden',
     backgroundColor: colors.bg,
@@ -365,6 +368,36 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 6,
+  },
+  word: {
+    color: colors.text,
+    fontFamily: font.bold,
+    fontSize: 16,
+    marginRight: 8,
+  },
+  navList: {
+    paddingHorizontal: 8,
+    marginBottom: 14,
+    gap: 2,
+  },
+  navRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 9,
+    borderRadius: 8,
+  },
+  navRowOn: {
+    backgroundColor: '#1C212B',
+  },
+  navLabel: {
+    color: colors.text,
+    fontFamily: font.semibold,
+    fontSize: 15,
+  },
+  navLabelOn: {
+    color: colors.mint,
   },
   navBtn: {
     width: 36,
@@ -427,6 +460,7 @@ const styles = StyleSheet.create({
   },
   side: {
     width: 280,
+    minHeight: 0,
     backgroundColor: '#12141A',
     borderRadius: 12,
     marginBottom: 8,

@@ -4,22 +4,19 @@ import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, font } from '../theme';
 import { MiniPlayer } from './MiniPlayer';
-import { useApp } from '../state/AppState';
 import { useShell } from '../state/ShellState';
-import { Avatar } from './Avatar';
 
 const items = {
   index: { label: 'Home', icon: 'home', href: '/' },
   explore: { label: 'Explore', icon: 'compass', href: '/explore' },
-  studio: { label: 'Studio', icon: 'layers', href: '/studio' },
   guide: { label: 'Guide', icon: 'mic', href: '/guide' },
   library: { label: 'Library', icon: 'albums', href: '/library' },
-  profile: { label: 'Profile', icon: 'person', href: '/profile' },
 };
+
+const hidden = new Set(['studio', 'profile']);
 
 export function AppTabBar({ state }) {
   const insets = useSafeAreaInsets();
-  const { avatarPath, avatarStamp } = useApp();
   const { desktop } = useShell();
   if (desktop) return null;
   return (
@@ -27,6 +24,7 @@ export function AppTabBar({ state }) {
       <MiniPlayer />
       <View style={[styles.bar, { paddingBottom: Math.max(insets.bottom, 10) }]}>
         {state.routes.map((route, index) => {
+          if (hidden.has(route.name)) return null;
           const active = state.index === index;
           const item = items[route.name] || { label: route.name, icon: 'ellipse', href: '/' };
           const color = active ? colors.mint : colors.muted;
@@ -39,11 +37,7 @@ export function AppTabBar({ state }) {
                 if (!active) router.navigate(item.href);
               }}
             >
-              {route.name === 'profile' && avatarPath ? (
-                <Avatar path={avatarPath} stamp={avatarStamp} size={22} />
-              ) : (
-                <Ionicons name={icon} size={22} color={color} />
-              )}
+              <Ionicons name={icon} size={22} color={color} />
               <Text style={[styles.label, { color }]}>{item.label}</Text>
             </Pressable>
           );

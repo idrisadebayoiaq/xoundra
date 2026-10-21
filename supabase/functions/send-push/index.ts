@@ -108,6 +108,72 @@ Deno.serve(async (req) => {
     }
     return json({ firebase: "ok" });
   }
+  if (action === "dispatch") {
+    if (!userId && !isService) return json({ error: "sign_in_required" }, 401);
+    const admin = createClient(supabaseUrl, serviceKey);
+    const pending = await admin
+      .from("notification_outbox")
+      .select("id, user_id, kind, title, body, track_id, album_id, announcement_id")
+      .is("sent_at", null)
+      .order("created_at", { ascending: true })
+      .limit(25);
+    if (pending.error) return json({ error: "push_failed" }, 500);
+    const rows = pending.data ?? [];
+    if (!rows.length) return json({ sent: 0 });
+    let accessToken = "";
+    try {
+      accessToken = await firebaseAccessToken(account);
+    } catch {
+      return json({ error: "firebase_auth_failed" }, 500);
+    }
+    let sent = 0;
+    for (const row of rows) {
+      const tokens = await admin.from("push_tokens").select("token").eq("user_id", row.user_id);
+      let delivered = !tokens.error;
+      for (const tokenRow of tokens.data ?? []) {
+        const response = await fetch(`https://fcm.googleapis.com/v1/projects/${account.project_id}/messages:send`, {
+          method: "POST",
+          headers: {
+            authorization: `Bearer ${accessToken}`,
+            "content-type": "application/json",
+          },
+          body: JSON.stringify({
+            message: {
+              token: tokenRow.token,
+              notification: { title: row.title, body: row.body },
+              data: {
+                kind: row.kind || "",
+                track_id: row.track_id || "",
+                album_id: row.album_id || "",
+                announcement_id: row.announcement_id || "",
+              },
+              android: {
+                priority: "HIGH",
+                notification: {
+                  channel_id: "default",
+                  icon: "notification_icon",
+                  color: "#8BE1CF",
+                },
+              },
+            },
+          }),
+        });
+        if (response.ok) {
+          sent += 1;
+          continue;
+        }
+        delivered = false;
+        if (response.status === 404 || response.status === 400) {
+          await admin.from("push_tokens").delete().eq("token", tokenRow.token);
+          delivered = true;
+        }
+      }
+      if (delivered || (tokens.data ?? []).length === 0) {
+        await admin.from("notification_outbox").update({ sent_at: new Date().toISOString() }).eq("id", row.id);
+      }
+    }
+    return json({ sent });
+  }
   if (action === "broadcast" && !isService) return json({ error: "not_allowed" }, 403);
   if (action === "self" && !userId) return json({ error: "sign_in_required" }, 401);
 

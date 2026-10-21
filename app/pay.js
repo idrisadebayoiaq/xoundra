@@ -253,7 +253,7 @@ export default function PayScreen() {
             {[
               ['layers-outline', 'Mixes you build in Studio'],
               ['download-outline', 'Offline downloads'],
-              ['moon-outline', 'Sleep timer'],
+              ['moon-outline', 'Sleep timer that starts and stops on a schedule'],
               ['mic-outline', 'Voice guide'],
             ].map(([icon, label]) => (
               <View key={label} style={styles.feature}>

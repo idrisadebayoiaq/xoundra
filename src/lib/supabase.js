@@ -23,7 +23,7 @@ export async function fetchPublishedTracks() {
   const [trackResult, statResult, signalResult] = await Promise.all([
     supabase
       .from('tracks')
-      .select('id, title, category, duration_seconds, access_tier, shelf, artwork_path, audio_path, artist_id, artist_name, track_tags(tag)')
+      .select('id, title, category, duration_seconds, access_tier, shelf, artwork_path, audio_path, artist_id, artist_name, album_id, track_tags(tag)')
       .eq('status', 'published'),
     supabase.from('track_stats').select('track_id, plays, likes, favorites'),
     supabase.from('comment_signals').select('track_id, helped, total'),
@@ -31,7 +31,8 @@ export async function fetchPublishedTracks() {
   if (trackResult.error) throw trackResult.error;
   const stats = new Map((statResult.data || []).map((row) => [row.track_id, row]));
   const tracks = (trackResult.data || []).map((row) => {
-    const artwork = String(row.artwork_path || 'rain.jpg').replace(/\.jpg$/i, '');
+    const rawArt = String(row.artwork_path || 'rain.jpg');
+    const artwork = rawArt.includes('/') ? rawArt : rawArt.replace(/\.(jpe?g|png|webp)$/i, '');
     const duration = Number(row.duration_seconds) || 0;
     const count = stats.get(row.id) || {};
     return {
@@ -48,6 +49,7 @@ export async function fetchPublishedTracks() {
       audioUrl: trackAudioUrl(row.audio_path),
       artistId: row.artist_id || '',
       artistName: row.artist_name || '',
+      albumId: row.album_id || '',
       plays: Number(count.plays) || 0,
       likes: Number(count.likes) || 0,
       favorites: Number(count.favorites) || 0,
@@ -62,7 +64,7 @@ export async function fetchPublishedTracks() {
 export async function fetchProfile(userId) {
   const { data } = await supabase
     .from('profiles')
-    .select('first_name, country_code, intention, avatar_path, email_confirmed, is_artist, artist_name, artist_bio, artist_location, artist_banner_path, onboarding_done')
+    .select('first_name, country_code, intention, avatar_path, email_confirmed, is_artist, artist_name, artist_bio, artist_location, artist_tagline, artist_focus, artist_website, artist_links, artist_banner_path, onboarding_done')
     .eq('id', userId)
     .maybeSingle();
   return data;
@@ -79,7 +81,7 @@ export async function fetchCategories() {
     meditation: 'underwater',
     sleep: 'night',
   };
-  const { data, error } = await supabase.from('categories').select('slug, name, sort_order').order('sort_order');
+  const { data, error } = await supabase.from('categories').select('slug, name, sort_order').is('artist_id', null).order('sort_order');
   if (error) throw error;
   return (data || []).map((row) => ({
     id: row.name,
@@ -120,6 +122,15 @@ export async function accountAction(action, body = {}) {
   }
   if (code) return { ok: false, error: accountErrors[code] || accountErrors.request_failed, code, data };
   return { ok: true, error: '', code: '', data };
+}
+
+let drainTimer = null;
+
+export function drainNotices() {
+  clearTimeout(drainTimer);
+  drainTimer = setTimeout(() => {
+    supabase.functions.invoke('send-push', { body: { action: 'dispatch' } }).catch(() => {});
+  }, 800);
 }
 
 export async function askGuide(text) {

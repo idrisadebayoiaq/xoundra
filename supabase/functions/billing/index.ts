@@ -325,7 +325,7 @@ async function sendSuccess(to: string, planId: string, last4: string) {
   const renew = planId === "founding_lifetime"
     ? "Lifetime is a single payment. It does not renew."
     : "If the card stays on the account, the same plan is charged again when the period ends.";
-  const body = `<p style="margin:0;">Your ${name} plan is active.${card}</p><p style="margin:16px 0 0;">${renew}</p><p style="margin:16px 0 0;">Premium includes mixes, offline downloads, the sleep timer, and the voice guide.</p>`;
+  const body = `<p style="margin:0;">Your ${name} plan is active.${card}</p><p style="margin:16px 0 0;">${renew}</p><p style="margin:16px 0 0;">Premium includes mixes, offline downloads, a sleep timer that starts and stops on a schedule, and the voice guide.</p>`;
   try {
     await sendMail(to, "Your Xoundra plan is active", shell("Premium is on", body), `Your ${name} plan is active.`);
   } catch {

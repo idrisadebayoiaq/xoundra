@@ -1,11 +1,14 @@
 import { useCallback, useState } from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
+import { Image, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useFocusEffect } from 'expo-router';
 import { ScreenHeader } from '../src/components/ScreenHeader';
 import { Avatar } from '../src/components/Avatar';
+import { PlatformIcon } from '../src/components/PlatformIcon';
+import { cleanArtistLinks, platformById } from '../src/data/artistPlatforms';
 import { TrackRow } from '../src/components/Cards';
-import { avatarUrl, supabase } from '../src/lib/supabase';
+import { coverSource } from '../src/data/artwork';
+import { avatarUrl, drainNotices, supabase } from '../src/lib/supabase';
 import { colors, font } from '../src/theme';
 import { useApp } from '../src/state/AppState';
 
@@ -15,18 +18,29 @@ export default function ArtistPageScreen() {
   const { userId, tracks, play, avatarStamp } = useApp();
   const [card, setCard] = useState(null);
   const [following, setFollowing] = useState(false);
+  const [albums, setAlbums] = useState([]);
   const [busy, setBusy] = useState(false);
   const mine = artistId && artistId === userId;
-  const sounds = tracks.filter((track) => track.artistId === artistId);
+  const albumTrackIds = new Set(albums.flatMap((album) => album.trackIds));
+  const sounds = tracks.filter((track) => track.artistId === artistId && !track.albumId && !albumTrackIds.has(track.id));
 
   const load = useCallback(async () => {
     if (!artistId) return;
-    const [{ data }, follow] = await Promise.all([
-      supabase.from('artists').select('id, artist_name, artist_bio, artist_location, avatar_path, artist_banner_path, followers, monthly_listeners, plays').eq('id', artistId).maybeSingle(),
+    const [{ data }, follow, albumRows] = await Promise.all([
+      supabase.from('artists').select('id, artist_name, artist_bio, artist_location, artist_tagline, artist_focus, artist_website, artist_links, avatar_path, artist_banner_path, followers, monthly_listeners, plays').eq('id', artistId).maybeSingle(),
       userId
         ? supabase.from('artist_follows').select('artist_id').eq('follower_id', userId).eq('artist_id', artistId).maybeSingle()
         : Promise.resolve({ data: null }),
+      supabase.from('albums').select('id, title, artwork_path').eq('artist_id', artistId).order('created_at', { ascending: false }),
     ]);
+    const albumIds = (albumRows.data || []).map((album) => album.id);
+    const members = albumIds.length
+      ? (await supabase.from('tracks').select('id, album_id').in('album_id', albumIds).eq('status', 'published')).data || []
+      : [];
+    setAlbums((albumRows.data || []).map((album) => ({
+      ...album,
+      trackIds: members.filter((row) => row.album_id === album.id).map((row) => row.id),
+    })));
     setCard(data || null);
     setFollowing(Boolean(follow.data));
   }, [artistId, userId]);
@@ -44,12 +58,14 @@ export default function ArtistPageScreen() {
     if (error) return;
     setFollowing(next);
     setCard((item) => (item ? { ...item, followers: Number(data) || 0 } : item));
+    if (next) drainNotices();
   }
 
   const bannerUri = card?.artist_banner_path ? `${avatarUrl(card.artist_banner_path)}?v=${avatarStamp}` : '';
   const followers = card?.followers || 0;
   const listeners = card?.monthly_listeners || 0;
   const plays = card?.plays || 0;
+  const links = cleanArtistLinks(card?.artist_links);
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
@@ -61,7 +77,9 @@ export default function ArtistPageScreen() {
         <Avatar path={card?.avatar_path} stamp={avatarStamp} size={72} />
         <View style={styles.who}>
           <Text style={styles.name}>{card?.artist_name || 'Artist'}</Text>
+          {card?.artist_tagline ? <Text style={styles.tagline}>{card.artist_tagline}</Text> : null}
           {card?.artist_location ? <Text style={styles.meta}>{card.artist_location}</Text> : null}
+          {card?.artist_focus ? <Text style={styles.meta}>{card.artist_focus}</Text> : null}
         </View>
       </View>
       <View style={styles.stats}>
@@ -70,7 +88,26 @@ export default function ArtistPageScreen() {
         <Stat label="Streams" value={plays} />
         <Stat label="Sounds" value={sounds.length} />
       </View>
+      {links.length ? (
+        <View style={styles.icons}>
+          {links.map((item) => (
+            <Pressable
+              key={item.platform}
+              onPress={() => Linking.openURL(item.url)}
+              accessibilityLabel={platformById(item.platform)?.label || 'Link'}
+              style={styles.iconButton}
+            >
+              <PlatformIcon platform={item.platform} color={colors.mint} size={20} />
+            </Pressable>
+          ))}
+        </View>
+      ) : null}
       {card?.artist_bio ? <Text style={styles.bio}>{card.artist_bio}</Text> : null}
+      {card?.artist_website ? (
+        <Pressable onPress={() => Linking.openURL(card.artist_website)} accessibilityLabel="Website">
+          <Text style={styles.website}>Website</Text>
+        </Pressable>
+      ) : null}
       {mine ? (
         <Text style={styles.mine}>This is your page. Listeners use Follow from here.</Text>
       ) : (
@@ -78,6 +115,22 @@ export default function ArtistPageScreen() {
           <Text style={[styles.followText, following && styles.followTextOn]}>{following ? 'Following' : 'Follow'}</Text>
         </Pressable>
       )}
+      <Text style={styles.section}>Albums</Text>
+      <View style={styles.list}>
+        {albums.length === 0 ? (
+          <Text style={styles.empty}>No albums yet.</Text>
+        ) : (
+          albums.map((album) => (
+            <Pressable key={album.id} style={styles.album} onPress={() => router.push({ pathname: '/album', params: { id: album.id } })} accessibilityLabel={album.title}>
+              <Image source={coverSource(album.artwork_path)} style={styles.albumCover} />
+              <View style={styles.albumCopy}>
+                <Text style={styles.albumTitle} numberOfLines={1}>{album.title}</Text>
+                <Text style={styles.albumMeta}>{album.trackIds.length === 1 ? '1 sound' : `${album.trackIds.length} sounds`}</Text>
+              </View>
+            </Pressable>
+          ))
+        )}
+      </View>
       <Text style={styles.section}>Sounds</Text>
       <View style={styles.list}>
         {sounds.length === 0 ? (
@@ -121,7 +174,18 @@ const styles = StyleSheet.create({
   },
   who: { flex: 1, paddingTop: 28 },
   name: { color: colors.text, fontFamily: font.bold, fontSize: 24 },
+  tagline: { color: colors.text, fontFamily: font.regular, fontSize: 15, marginTop: 4 },
   meta: { color: colors.muted, fontFamily: font.regular, fontSize: 14, marginTop: 2 },
+  website: { color: colors.mint, fontFamily: font.medium, fontSize: 15, marginHorizontal: 20, marginTop: 12 },
+  icons: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginHorizontal: 20, marginTop: 16 },
+  iconButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.card,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   stats: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -138,6 +202,11 @@ const styles = StyleSheet.create({
   },
   statValue: { color: colors.text, fontFamily: font.bold, fontSize: 20 },
   statLabel: { color: colors.muted, fontFamily: font.regular, fontSize: 12, marginTop: 2 },
+  album: { flexDirection: 'row', alignItems: 'center', gap: 12, marginHorizontal: 20, marginTop: 12 },
+  albumCover: { width: 64, height: 64, borderRadius: 8, backgroundColor: colors.card },
+  albumCopy: { flex: 1 },
+  albumTitle: { color: colors.text, fontFamily: font.semibold, fontSize: 16 },
+  albumMeta: { color: colors.muted, fontFamily: font.regular, fontSize: 13, marginTop: 3 },
   section: { color: colors.text, fontFamily: font.semibold, fontSize: 18, marginHorizontal: 20, marginTop: 22 },
   bio: {
     color: colors.text,

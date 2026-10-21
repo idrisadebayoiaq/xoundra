@@ -3,7 +3,7 @@ import { Redirect, router, Stack, usePathname } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useFonts, Outfit_400Regular, Outfit_500Medium, Outfit_600SemiBold, Outfit_700Bold } from '@expo-google-fonts/outfit';
 import * as SplashScreen from 'expo-splash-screen';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { AppProvider, useApp } from '../src/state/AppState';
 import { ShellProvider, useShell } from '../src/state/ShellState';
 import { MiniPlayer } from '../src/components/MiniPlayer';
@@ -11,6 +11,7 @@ import { NotificationBridge } from '../src/components/NotificationBridge';
 import { colors } from '../src/theme';
 import { AppFrame } from '../src/components/AppFrame';
 import { WebDeck } from '../src/components/DesktopShell';
+import { OfflineNotice } from '../src/components/OfflineNotice';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -64,7 +65,19 @@ function Frame({ children }) {
   useEffect(() => {
     if (Platform.OS !== 'web' || typeof document === 'undefined') return;
     document.documentElement.style.backgroundColor = '#000000';
+    document.documentElement.style.height = '100%';
+    document.documentElement.style.overflow = 'hidden';
     document.body.style.backgroundColor = '#000000';
+    document.body.style.height = '100%';
+    document.body.style.margin = '0';
+    document.body.style.overflow = 'hidden';
+    const root = document.getElementById('root');
+    if (root) {
+      root.style.height = '100%';
+      root.style.display = 'flex';
+      root.style.flexDirection = 'column';
+      root.style.overflow = 'hidden';
+    }
   }, []);
   if (desktop) return <View style={{ flex: 1, backgroundColor: '#000000' }}>{children}</View>;
   return <AppFrame>{children}</AppFrame>;
@@ -74,17 +87,10 @@ function Gate() {
   const { ready, userId, emailConfirmed, onboardingDone, online, onlineKnown } = useApp();
   const { desktop } = useShell();
   const path = usePathname();
-  const sentOffline = useRef(false);
   const onAuth = path === '/welcome' || path === '/sign-in' || path === '/sign-up';
   const confirming = path === '/confirm-email';
   const onboardingPath = path === '/listen-tip' || path === '/sound-picks';
-
-  useEffect(() => {
-    if (!ready || !onlineKnown || !userId || sentOffline.current) return;
-    sentOffline.current = true;
-    if (online || !emailConfirmed || onAuth || confirming || path === '/downloads') return;
-    router.replace({ pathname: '/library', params: { tab: 'downloads' } });
-  }, [ready, onlineKnown, online, userId, emailConfirmed, onAuth, confirming, path]);
+  const offlineHere = ready && onlineKnown && !online && userId && emailConfirmed && path !== '/downloads' && !onAuth && !confirming;
 
   return (
     <WebDeck>
@@ -107,7 +113,8 @@ function Gate() {
       {ready && !userId && !onAuth && !confirming ? <Redirect href="/welcome" /> : null}
       {ready && userId && emailConfirmed && online && !onboardingDone && !confirming && !onboardingPath ? <Redirect href="/listen-tip" /> : null}
       {ready && userId && emailConfirmed && onboardingDone && (onAuth || confirming) ? <Redirect href="/" /> : null}
-      {ready && !desktop ? <OutsideTabsPlayer /> : null}
+      {offlineHere ? <OfflineNotice /> : null}
+      {ready && !desktop && !offlineHere ? <OutsideTabsPlayer /> : null}
       {ready ? null : (
         <View style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, backgroundColor: '#000000', alignItems: 'center', justifyContent: 'center' }}>
           <Image source={require('../assets/icon.png')} style={{ width: 168, height: 168 }} resizeMode="contain" />
