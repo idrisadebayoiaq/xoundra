@@ -198,10 +198,9 @@ export default function ArtistScreen() {
     setBusy(true);
     setNotice('');
     try {
-      const response = await fetch(file.uri);
-      const blob = await response.blob();
+      const bytes = await fetch(file.uri).then((response) => response.arrayBuffer());
       const path = `${app.userId}/${Date.now()}.mp3`;
-      const uploaded = await supabase.storage.from('track-audio').upload(path, blob, {
+      const uploaded = await supabase.storage.from('track-audio').upload(path, bytes, {
         contentType: 'audio/mpeg',
         upsert: false,
       });

@@ -2,6 +2,7 @@
 .env.*
 !.env.example
 catalog-work/
+catalog/audio/
 node_modules/
 .expo/
 dist/

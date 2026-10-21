@@ -3,20 +3,34 @@ import { Image, Platform } from 'react-native';
 import { router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createAudioPlayer, createAudioPlaylist, setAudioModeAsync } from 'expo-audio';
-import { Asset } from 'expo-asset';
 import { Directory, File, Paths } from 'expo-file-system';
 import localTracks from '../data/tracks.json';
-import { audioFiles } from '../data/audioFiles';
 import { coverSource } from '../data/artwork';
-import { fetchCategories, fetchPremium, fetchProfile, fetchPublishedTracks, supabase } from '../lib/supabase';
+import { fetchCategories, fetchPremium, fetchProfile, fetchPublishedTracks, supabase, trackAudioUrl } from '../lib/supabase';
 import { presentNotice } from '../lib/notices';
 import { publishDownloadProgress } from '../lib/downloadNotice';
 import { connectionOnline, downloadGate, readOnline, watchNetwork } from '../lib/network';
 
 const AppContext = React.createContext(null);
 
-function downloadFile(id) {
-  return new File(Paths.document, 'downloads', `${id}.mp3`);
+function downloadFile(userId, id) {
+  if (!userId || !id) return null;
+  return new File(Paths.document, 'downloads', userId, `${id}.mp3`);
+}
+
+function ensureDownloadFile(userId, id) {
+  const root = new Directory(Paths.document, 'downloads');
+  if (!root.exists) root.create();
+  const folder = new Directory(root, userId);
+  if (!folder.exists) folder.create();
+  return new File(folder, `${id}.mp3`);
+}
+
+function playerSource(source) {
+  if (!source) return null;
+  if (typeof source === 'string') return { uri: source };
+  if (typeof source === 'object' && source.uri) return { uri: source.uri };
+  return null;
 }
 
 function lockMetadata(track) {
@@ -49,7 +63,9 @@ function hideLock(player) {
   }
 }
 
-const webDownloadKey = 'xoundra-web-downloads';
+function webDownloadKey(userId) {
+  return userId ? `xoundra-web-downloads:${userId}` : '';
+}
 const sessionKey = 'sb-mmgezkeemyjxluxcshaz-auth-token';
 
 function withTimeout(promise, ms) {
@@ -75,9 +91,11 @@ async function storedUser() {
   }
 }
 
-async function readWebDownloads() {
+async function readWebDownloads(userId) {
+  const key = webDownloadKey(userId);
+  if (!key) return [];
   try {
-    const raw = await AsyncStorage.getItem(webDownloadKey);
+    const raw = await AsyncStorage.getItem(key);
     const ids = JSON.parse(raw || '[]');
     return Array.isArray(ids) ? ids.filter((id) => typeof id === 'string') : [];
   } catch {
@@ -490,16 +508,16 @@ export function AppProvider({ children }) {
   }, []);
 
   const soundSource = React.useCallback((id) => {
+    const owner = userRef.current;
     try {
-      const saved = downloadFile(id);
-      if (saved.exists) return saved.uri;
+      const saved = downloadFile(owner, id);
+      if (saved?.exists) return saved.uri;
     } catch {
       // web has no on-device file
     }
-    const bundled = audioFiles[id];
-    if (bundled) return bundled;
     const track = tracksRef.current.find((item) => item.id === id) || localTracks.find((item) => item.id === id);
-    if (track?.audioUrl && onlineRef.current) return track.audioUrl;
+    const remote = track?.audioUrl || (localTracks.some((item) => item.id === id) ? trackAudioUrl(`catalogue/${id}.mp3`) : '');
+    if (remote && onlineRef.current) return remote;
     return null;
   }, []);
   adjustRef.current = adjustCount;
@@ -519,28 +537,36 @@ export function AppProvider({ children }) {
     try {
       if (Platform.OS !== 'web' && player.clear) {
         const queue = playback.current.queue.length ? playback.current.queue : [track];
-        const key = queue.map((item) => item.id).join('|');
+        const key = `${userRef.current || ''}:${queue.map((item) => item.id).join('|')}`;
         if (queueKey.current !== key) {
           player.clear();
           const loaded = [];
           queue.forEach((item) => {
-            const itemSource = soundSource(item.id) || item.audioUrl;
+            const itemSource = playerSource(soundSource(item.id) || item.audioUrl);
             if (!itemSource) return;
-            player.add(itemSource);
-            loaded.push(item.id);
+            try {
+              player.add(itemSource);
+              loaded.push(item.id);
+            } catch {
+              // skip a sound the player cannot open
+            }
           });
           playableIds.current = loaded;
           queueKey.current = key;
         }
         player.loop = guideFollow.current ? 'all' : (playback.current.repeat ? 'single' : 'none');
-        const loadedIndex = Math.max(0, playableIds.current.indexOf(track.id));
+        const loadedIndex = playableIds.current.indexOf(track.id);
         suppressUntil.current = Date.now() + 700;
-        if (player.trackCount > 0) player.skipTo(Math.min(loadedIndex, player.trackCount - 1));
+        if (loadedIndex < 0 || !player.trackCount) {
+          setPlaybackNote('This sound could not be played.');
+          return;
+        }
+        player.skipTo(Math.min(loadedIndex, player.trackCount - 1));
         player.play();
         showLock(player, track);
       } else {
         player.loop = guideFollow.current ? false : playback.current.repeat;
-        player.replace(source);
+        player.replace(playerSource(source) || source);
         player.play();
       }
     } catch {
@@ -613,6 +639,7 @@ export function AppProvider({ children }) {
       nextQueue = [track, ...nextQueue.filter((item) => item.id !== track.id)];
     }
     const nextIndex = collection ? 0 : Math.max(0, nextQueue.findIndex((item) => item.id === track.id));
+    playback.current = { ...playback.current, queue: nextQueue, index: nextIndex };
     setQueue(nextQueue);
     setIndex(nextIndex);
     setHistory((items) => [track, ...items.filter((item) => item.id !== track.id)].slice(0, 30));
@@ -796,6 +823,8 @@ export function AppProvider({ children }) {
     setHistory([]);
     setHelped([]);
     setDownloads([]);
+    setUserId(null);
+    waitIds.current = [];
     setIsArtist(false);
     setArtistName('');
     setArtistBio('');
@@ -814,7 +843,9 @@ export function AppProvider({ children }) {
 
   const writeWait = React.useCallback((ids) => {
     waitIds.current = ids;
-    AsyncStorage.setItem('xoundra-download-wait', JSON.stringify(ids)).catch(() => {});
+    const owner = userRef.current;
+    if (!owner) return;
+    AsyncStorage.setItem(`xoundra-download-wait:${owner}`, JSON.stringify(ids)).catch(() => {});
   }, []);
 
   const emitDownload = React.useCallback((payload) => {
@@ -854,37 +885,26 @@ export function AppProvider({ children }) {
       batchRef.current = { total: 1, index: 1, title: track.title, saved: 0, own: true };
     }
     noteDownload(track, 0);
+    const owner = userRef.current;
+    if (!owner) return 'missing';
+    const remote = track.audioUrl || soundSource(track.id);
     try {
-      const bundled = audioFiles[track.id];
-      if (!bundled && !track.audioUrl) return 'missing';
+      if (!remote) return 'missing';
       if (Platform.OS === 'web') {
         noteDownload(track, 0.45);
-        const ids = await readWebDownloads();
+        const ids = await readWebDownloads(owner);
         if (!ids.includes(track.id)) {
-          await AsyncStorage.setItem(webDownloadKey, JSON.stringify([track.id, ...ids]));
+          await AsyncStorage.setItem(webDownloadKey(owner), JSON.stringify([track.id, ...ids]));
         }
         noteDownload(track, 1);
-      } else if (track.audioUrl && !audioFiles[track.id]) {
-        const folder = new Directory(Paths.document, 'downloads');
-        if (!folder.exists) folder.create();
-        const destination = new File(folder, `${track.id}.mp3`);
+      } else {
+        const destination = ensureDownloadFile(owner, track.id);
         if (!destination.exists) {
-          await File.downloadFileAsync(track.audioUrl, destination, {
+          await File.downloadFileAsync(remote, destination, {
             onProgress: ({ bytesWritten, totalBytes }) => {
               noteDownload(track, totalBytes > 0 ? bytesWritten / totalBytes : 0.5);
             },
           });
-        }
-        noteDownload(track, 1);
-      } else {
-        noteDownload(track, 0.35);
-        const folder = new Directory(Paths.document, 'downloads');
-        if (!folder.exists) folder.create();
-        const asset = Asset.fromModule(bundled);
-        await asset.downloadAsync();
-        const destination = new File(folder, `${track.id}.mp3`);
-        if (!destination.exists && asset.localUri) {
-          await new File(asset.localUri).copy(destination);
         }
         noteDownload(track, 1);
       }
@@ -898,7 +918,7 @@ export function AppProvider({ children }) {
     } catch {
       return 'missing';
     }
-  }, [noteDownload, writeWait]);
+  }, [noteDownload, soundSource, writeWait]);
 
   const finishDownloadBatch = React.useCallback((title) => {
     const batch = batchRef.current;
@@ -974,15 +994,17 @@ export function AppProvider({ children }) {
       wifiOnlyRef.current = wifiOnly;
       setDownloadOnWifiOnlyState(wifiOnly);
     }).catch(() => {});
-    AsyncStorage.getItem('xoundra-download-wait').then((value) => {
-      try {
-        const ids = JSON.parse(value || '[]');
-        if (Array.isArray(ids)) waitIds.current = ids.filter((id) => typeof id === 'string');
-      } catch {
-        waitIds.current = [];
-      }
-      flushRef.current();
-    }).catch(() => {});
+    if (userRef.current) {
+      AsyncStorage.getItem(`xoundra-download-wait:${userRef.current}`).then((value) => {
+        try {
+          const ids = JSON.parse(value || '[]');
+          if (Array.isArray(ids)) waitIds.current = ids.filter((id) => typeof id === 'string');
+        } catch {
+          waitIds.current = [];
+        }
+        flushRef.current();
+      }).catch(() => {});
+    }
     const markOnline = (state) => {
       const next = connectionOnline(state);
       onlineRef.current = next;
@@ -1005,12 +1027,13 @@ export function AppProvider({ children }) {
   }, []);
 
   const removeDownload = React.useCallback(async (track) => {
+    const owner = userRef.current;
     if (Platform.OS === 'web') {
-      const ids = (await readWebDownloads()).filter((id) => id !== track.id);
-      await AsyncStorage.setItem(webDownloadKey, JSON.stringify(ids));
+      const ids = (await readWebDownloads(owner)).filter((id) => id !== track.id);
+      if (owner) await AsyncStorage.setItem(webDownloadKey(owner), JSON.stringify(ids));
     } else {
-      const file = downloadFile(track.id);
-      if (file.exists) file.delete();
+      const file = downloadFile(owner, track.id);
+      if (file?.exists) file.delete();
     }
     if (userRef.current) {
       await supabase.from('downloads').delete().eq('user_id', userRef.current).eq('track_id', track.id);
@@ -1069,36 +1092,41 @@ export function AppProvider({ children }) {
   }, [mix, mixPlaying]);
 
   React.useEffect(() => {
-    if (Platform.OS === 'web') {
-      readWebDownloads().then((saved) => {
-        const found = saved
-          .map((id) => tracksRef.current.find((item) => item.id === id) || localTracks.find((item) => item.id === id))
-          .filter(Boolean);
-        setDownloads((items) => {
-          const fresh = new Map(found.map((item) => [item.id, item]));
-          const ordered = [...found];
-          for (const item of items) {
-            if (!fresh.has(item.id)) ordered.push(item);
-          }
-          return ordered;
-        });
-      }).catch(() => {});
-      return;
+    if (!userId) {
+      setDownloads([]);
+      return undefined;
     }
-    try {
-      const folder = new Directory(Paths.document, 'downloads');
-      if (!folder.exists) return;
-      const saved = folder.list()
-        .map((entry) => String(entry.uri || entry.name || '').split('/').pop().replace(/\.mp3$/, ''))
-        .filter(Boolean);
-      const found = saved
+    let alive = true;
+    const apply = (ids) => {
+      if (!alive) return;
+      const found = ids
         .map((id) => tracksRef.current.find((item) => item.id === id) || localTracks.find((item) => item.id === id))
         .filter(Boolean);
       setDownloads(found);
-    } catch {
-      // documents folder is unavailable on this platform
+    };
+    if (Platform.OS === 'web') {
+      readWebDownloads(userId).then(apply).catch(() => {});
+      return () => {
+        alive = false;
+      };
     }
-  }, [ready, tracks]);
+    try {
+      const folder = new Directory(Paths.document, 'downloads', userId);
+      if (!folder.exists) {
+        setDownloads([]);
+        return undefined;
+      }
+      const saved = folder.list()
+        .map((entry) => String(entry.name || entry.uri || '').split('/').pop().replace(/\.mp3$/, ''))
+        .filter((id) => id && !id.includes('/'));
+      apply(saved);
+    } catch {
+      setDownloads([]);
+    }
+    return () => {
+      alive = false;
+    };
+  }, [userId, tracks]);
 
   React.useEffect(() => {
     if (!continueHydrated) return;
