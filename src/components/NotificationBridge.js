@@ -8,7 +8,7 @@ import { openNotice } from '../lib/openNotice';
 import { supabase } from '../lib/supabase';
 
 const icon = require('../../assets/icon.png');
-let openFromNotice = async () => {};
+const noticeOpener = { open: async () => {} };
 
 export function NotificationBridge() {
   const { addNote, notifyEnabled, userId, play, tracks, refreshInbox } = useApp();
@@ -17,7 +17,7 @@ export function NotificationBridge() {
   const tracksRef = useRef(tracks);
   const refreshRef = useRef(refreshInbox);
   enabled.current = notifyEnabled;
-  openFromNotice = (data) => openNotice(data, playRef.current, tracksRef.current);
+  noticeOpener.open = (data) => openNotice(data, playRef.current, tracksRef.current);
   playRef.current = play;
   tracksRef.current = tracks;
   refreshRef.current = refreshInbox;
@@ -87,7 +87,7 @@ async function showWebNotice(title, body, data) {
   notice.onclick = () => {
     notice.close();
     if (typeof window !== 'undefined') window.focus();
-    if (data) openFromNotice(data);
+    if (data) noticeOpener.open(data);
   };
 }
 
