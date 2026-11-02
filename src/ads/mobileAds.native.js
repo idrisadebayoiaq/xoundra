@@ -1,5 +1,3 @@
-import { Platform } from 'react-native';
-
 const ANDROID_APP_ID = process.env.EXPO_PUBLIC_ADMOB_ANDROID_APP_ID || 'ca-app-pub-9287775024440500~8194705195';
 const REWARDED_UNIT = process.env.EXPO_PUBLIC_ADMOB_REWARDED_ID || 'ca-app-pub-9287775024440500/5587676974';
 const BANNER_UNIT = process.env.EXPO_PUBLIC_ADMOB_BANNER_ID || 'ca-app-pub-9287775024440500/2961513637';
@@ -8,7 +6,7 @@ let ready = false;
 let initPromise = null;
 
 export function adsConfigured() {
-  return Platform.OS !== 'web' && Boolean(ANDROID_APP_ID && REWARDED_UNIT);
+  return Boolean(ANDROID_APP_ID && REWARDED_UNIT);
 }
 
 export function bannerUnitId() {
@@ -19,9 +17,8 @@ export function rewardedUnitId() {
   return REWARDED_UNIT;
 }
 
-/** Initialize the native Mobile Ads SDK once (no-op on web / missing config). */
+/** Initialize the native Mobile Ads SDK once (no-op when missing). */
 export function ensureMobileAds() {
-  if (Platform.OS === 'web') return Promise.resolve(false);
   if (ready) return Promise.resolve(true);
   if (initPromise) return initPromise;
   initPromise = (async () => {
@@ -43,7 +40,7 @@ export function ensureMobileAds() {
  * Falls back to false if the SDK/unit is unavailable (caller may use placeholder).
  */
 export async function showRewardedAd() {
-  if (Platform.OS === 'web' || !REWARDED_UNIT) return false;
+  if (!REWARDED_UNIT) return false;
   const ok = await ensureMobileAds();
   if (!ok) return false;
 

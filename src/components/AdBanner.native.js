@@ -1,38 +1,16 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Platform, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { font } from '../theme';
 import { useTheme } from '../state/ThemeState';
 import { bannerUnitId } from '../ads/mobileAds';
 
-/**
- * Optional banner — only renders when explicitly mounted by a screen AND the user is Free.
- * Do not place this on Premium-only surfaces. Paid Premium must pass premium={true} (returns null).
- * Not mounted globally; keep placements limited to intentional Free spots.
- */
+/** Native AdMob banner — fails soft so a missing/failed ad never crashes the screen. */
 export function AdBanner({ premium = false, label = 'Sponsored' }) {
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const unit = bannerUnitId();
 
-  if (premium) return null;
-
-  if (Platform.OS === 'web') {
-    const adsenseClient = process.env.EXPO_PUBLIC_ADSENSE_CLIENT || '';
-    const adsenseSlot = process.env.EXPO_PUBLIC_ADSENSE_SLOT || '';
-    if (!adsenseClient) return null;
-    return (
-      <View style={styles.slot} accessibilityLabel={label}>
-        <Text style={styles.caption}>{label}</Text>
-        <View
-          nativeID={adsenseSlot ? `adsense-${adsenseSlot}` : 'adsense-auto'}
-          dataSet={{ adClient: adsenseClient, adSlot: adsenseSlot || '' }}
-          style={styles.box}
-        />
-      </View>
-    );
-  }
-
-  if (!unit) return null;
+  if (premium || !unit) return null;
 
   return (
     <View style={styles.slot} accessibilityLabel={label}>
@@ -49,7 +27,6 @@ function NativeBanner({ unit, fallbackStyle }) {
   useEffect(() => {
     let alive = true;
     try {
-      // Lazy require so web bundles do not pull the native module.
       const mod = require('react-native-google-mobile-ads');
       if (alive) setSdk(mod);
     } catch {
