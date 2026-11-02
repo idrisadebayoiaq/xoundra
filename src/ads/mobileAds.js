@@ -1,8 +1,8 @@
 import { Platform } from 'react-native';
 
-const ANDROID_APP_ID = process.env.EXPO_PUBLIC_ADMOB_ANDROID_APP_ID || '';
-const REWARDED_UNIT = process.env.EXPO_PUBLIC_ADMOB_REWARDED_ID || '';
-const BANNER_UNIT = process.env.EXPO_PUBLIC_ADMOB_BANNER_ID || '';
+const ANDROID_APP_ID = process.env.EXPO_PUBLIC_ADMOB_ANDROID_APP_ID || 'ca-app-pub-9287775024440500~8194705195';
+const REWARDED_UNIT = process.env.EXPO_PUBLIC_ADMOB_REWARDED_ID || 'ca-app-pub-9287775024440500/5587676974';
+const BANNER_UNIT = process.env.EXPO_PUBLIC_ADMOB_BANNER_ID || 'ca-app-pub-9287775024440500/2961513637';
 
 let ready = false;
 let initPromise = null;

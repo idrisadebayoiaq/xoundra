@@ -8,6 +8,12 @@
       "distribution": "internal",
       "android": {
         "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_ADMOB_ANDROID_APP_ID": "ca-app-pub-9287775024440500~8194705195",
+        "EXPO_PUBLIC_ADMOB_BANNER_ID": "ca-app-pub-9287775024440500/2961513637",
+        "EXPO_PUBLIC_ADMOB_REWARDED_ID": "ca-app-pub-9287775024440500/5587676974",
+        "EXPO_PUBLIC_ADSENSE_CLIENT": "ca-pub-9287775024440500"
       }
     },
     "production": {
