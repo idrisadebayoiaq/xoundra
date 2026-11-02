@@ -1,12 +1,15 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Redirect } from 'expo-router';
 import { ScreenHeader } from '../src/components/ScreenHeader';
 import { accountAction, drainNotices, supabase } from '../src/lib/supabase';
-import { colors, font } from '../src/theme';
+import { font } from '../src/theme';
+import { useTheme } from '../src/state/ThemeState';
 import { useApp } from '../src/state/AppState';
 
 export default function AdminScreen() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const { isAdmin, ready } = useApp();
   const [overview, setOverview] = useState(null);
   const [error, setError] = useState('');
@@ -81,6 +84,8 @@ export default function AdminScreen() {
 }
 
 function Stat({ label, value }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   return (
     <View style={styles.stat}>
       <Text style={styles.value}>{value}</Text>
@@ -89,7 +94,8 @@ function Stat({ label, value }) {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors) {
+  return StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
   content: { paddingBottom: 28 },
   input: {
@@ -119,4 +125,5 @@ const styles = StyleSheet.create({
   meta: { color: colors.muted, fontFamily: font.regular, fontSize: 13, marginTop: 2 },
   empty: { color: colors.muted, fontFamily: font.regular, marginHorizontal: 20 },
   error: { color: colors.amber, fontFamily: font.regular, marginHorizontal: 20, marginBottom: 10 },
-});
+  });
+}

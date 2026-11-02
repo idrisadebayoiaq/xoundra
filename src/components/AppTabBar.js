@@ -1,21 +1,26 @@
+import { useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colors, font } from '../theme';
+import { font } from '../theme';
+import { useTheme } from '../state/ThemeState';
 import { MiniPlayer } from './MiniPlayer';
 import { useShell } from '../state/ShellState';
 
 const items = {
   index: { label: 'Home', icon: 'home', href: '/' },
   explore: { label: 'Explore', icon: 'compass', href: '/explore' },
+  studio: { label: 'Studio', icon: 'layers', href: '/studio' },
   guide: { label: 'Guide', icon: 'mic', href: '/guide' },
   library: { label: 'Library', icon: 'albums', href: '/library' },
 };
 
-const hidden = new Set(['studio', 'profile']);
+const hidden = new Set(['profile']);
 
 export function AppTabBar({ state }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
   const { desktop } = useShell();
   if (desktop) return null;
@@ -47,7 +52,8 @@ export function AppTabBar({ state }) {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors) {
+  return StyleSheet.create({
   bar: {
     flexDirection: 'row',
     borderTopWidth: StyleSheet.hairlineWidth,
@@ -64,4 +70,5 @@ const styles = StyleSheet.create({
     fontFamily: font.medium,
     fontSize: 10,
   },
-});
+  });
+}

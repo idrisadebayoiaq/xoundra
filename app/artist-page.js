@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useState, useMemo } from 'react';
 import { Image, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useFocusEffect } from 'expo-router';
@@ -9,10 +9,13 @@ import { cleanArtistLinks, platformById } from '../src/data/artistPlatforms';
 import { TrackRow } from '../src/components/Cards';
 import { coverSource } from '../src/data/artwork';
 import { avatarUrl, drainNotices, supabase } from '../src/lib/supabase';
-import { colors, font } from '../src/theme';
+import { font } from '../src/theme';
+import { useTheme } from '../src/state/ThemeState';
 import { useApp } from '../src/state/AppState';
 
 export default function ArtistPageScreen() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const { id } = useLocalSearchParams();
   const artistId = Array.isArray(id) ? id[0] : id;
   const { userId, tracks, play, avatarStamp } = useApp();
@@ -146,6 +149,8 @@ export default function ArtistPageScreen() {
 }
 
 function Stat({ label, value }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   return (
     <View style={styles.stat}>
       <Text style={styles.statValue}>{value}</Text>
@@ -154,7 +159,8 @@ function Stat({ label, value }) {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors) {
+  return StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
   content: { paddingBottom: 36 },
   banner: {
@@ -231,4 +237,5 @@ const styles = StyleSheet.create({
   mine: { color: colors.muted, fontFamily: font.regular, fontSize: 14, marginHorizontal: 20, marginTop: 16 },
   list: { marginTop: 18, paddingHorizontal: 20 },
   empty: { color: colors.muted, fontFamily: font.regular, fontSize: 15 },
-});
+  });
+}

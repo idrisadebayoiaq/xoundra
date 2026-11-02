@@ -1,6 +1,8 @@
+import { useMemo } from 'react';
 import { Linking, Platform, Pressable, StyleSheet, Text, useWindowDimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, font } from '../theme';
+import { font } from '../theme';
+import { useTheme } from '../state/ThemeState';
 
 export const androidApkUrl = 'https://expo.dev/artifacts/eas/3ozUc45ttAHJLXSCS28n0iLqPFPkdT3AimBB3NCv4OM.apk';
 
@@ -9,6 +11,8 @@ export function openAndroidApp() {
 }
 
 export function DownloadAppButton({ compact = false }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const { width } = useWindowDimensions();
   if (Platform.OS !== 'web') return null;
   const iconOnly = compact && width < 420;
@@ -27,7 +31,8 @@ export function DownloadAppButton({ compact = false }) {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors) {
+  return StyleSheet.create({
   button: {
     height: 52,
     borderRadius: 26,
@@ -64,4 +69,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-});
+  });
+}

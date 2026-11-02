@@ -19,6 +19,21 @@ export function trackAudioUrl(path) {
   return `${url}/storage/v1/object/public/track-audio/${clean}`;
 }
 
+/** Prefer signed media URLs (gates Premium tracks / downloads). Falls back to public URL. */
+export async function resolveTrackAudioUrl(track, purpose = 'stream') {
+  if (!track) return '';
+  if (track.localUri) return track.localUri;
+  try {
+    const { data, error } = await supabase.functions.invoke('media-sign', {
+      body: { track_id: track.id, purpose },
+    });
+    if (!error && data?.url) return data.url;
+  } catch {
+    // fall through to public URL while the bucket remains public
+  }
+  return track.audioUrl || trackAudioUrl(track.audio || track.audio_path || '');
+}
+
 export async function fetchPublishedTracks() {
   const [trackResult, statResult, signalResult] = await Promise.all([
     supabase
@@ -64,7 +79,7 @@ export async function fetchPublishedTracks() {
 export async function fetchProfile(userId) {
   const { data } = await supabase
     .from('profiles')
-    .select('first_name, country_code, intention, avatar_path, email_confirmed, is_artist, artist_name, artist_bio, artist_location, artist_tagline, artist_focus, artist_website, artist_links, artist_banner_path, onboarding_done')
+    .select('first_name, country_code, intention, avatar_path, email_confirmed, is_artist, artist_name, artist_bio, artist_location, artist_tagline, artist_focus, artist_website, artist_links, artist_banner_path, onboarding_done, check_in_emails, last_check_in_at')
     .eq('id', userId)
     .maybeSingle();
   return data;

@@ -6,10 +6,13 @@ import { createAudioPlayer, createAudioPlaylist, setAudioModeAsync } from 'expo-
 import { Directory, File, Paths } from 'expo-file-system';
 import localTracks from '../data/tracks.json';
 import { coverSource } from '../data/artwork';
-import { drainNotices, fetchCategories, fetchPremium, fetchProfile, fetchPublishedTracks, supabase, trackAudioUrl } from '../lib/supabase';
+import { drainNotices, fetchCategories, fetchPremium, fetchProfile, fetchPublishedTracks, resolveTrackAudioUrl, supabase, trackAudioUrl } from '../lib/supabase';
 import { presentNotice } from '../lib/notices';
 import { publishDownloadProgress } from '../lib/downloadNotice';
 import { connectionOnline, downloadGate, readOnline, watchNetwork } from '../lib/network';
+import { STREAK_LIMIT } from '../ads/rewards';
+import { requestStreakAds } from '../ads/streakGate';
+import { hasAdPremiumAccess, hasAdSleepAccess, hasAdStudioAccess, requestAdUnlock } from '../ads/unlockGate';
 
 const AppContext = React.createContext(null);
 
@@ -161,6 +164,8 @@ export function AppProvider({ children }) {
   const [artistWebsite, setArtistWebsite] = React.useState('');
   const [artistLinks, setArtistLinks] = React.useState([]);
   const [artistBanner, setArtistBanner] = React.useState('');
+  const [followedArtists, setFollowedArtists] = React.useState([]);
+  const [playCounts, setPlayCounts] = React.useState({});
   const [continueHydrated, setContinueHydrated] = React.useState(false);
   const [country, setCountryState] = React.useState('NG');
   const [premium, setPremium] = React.useState(false);
@@ -186,6 +191,7 @@ export function AppProvider({ children }) {
   const [notes, setNotes] = React.useState(starterNotes);
   const [inbox, setInbox] = React.useState([]);
   const [notifyEnabled, setNotifyEnabled] = React.useState(true);
+  const [checkInEmails, setCheckInEmailsState] = React.useState(true);
   const [reducedMotion, setReducedMotion] = React.useState(false);
   const [mix, setMix] = React.useState(emptyMix);
   const mixRef = React.useRef(emptyMix);
@@ -214,6 +220,8 @@ export function AppProvider({ children }) {
   const queueKey = React.useRef('');
   const playableIds = React.useRef([]);
   const suppressUntil = React.useRef(0);
+  const streakRef = React.useRef(0);
+  const streakBusy = React.useRef(false);
   const [sleepPlan, setSleepPlan] = React.useState(null);
   const sleepPlanRef = React.useRef(null);
   const sleepWindow = React.useRef('');
@@ -354,6 +362,8 @@ export function AppProvider({ children }) {
       setFavourites([]);
       setLikes([]);
       setHistory([]);
+      setPlayCounts({});
+      setFollowedArtists([]);
       setHelped([]);
       setIsArtist(false);
       setArtistName('');
@@ -376,17 +386,19 @@ export function AppProvider({ children }) {
     let role = { data: null };
     let notes = { data: [] };
     let picked = { data: [] };
+    let follows = { data: [] };
     let accountFailed = false;
     try {
-      [profileResult, isPremium, saved, liked, played, role, notes, picked] = await withTimeout(Promise.all([
+      [profileResult, isPremium, saved, liked, played, role, notes, picked, follows] = await withTimeout(Promise.all([
         fetchProfile(sessionUser.id),
         fetchPremium(sessionUser.id),
         supabase.from('favorites').select('track_id, created_at').eq('user_id', sessionUser.id),
         supabase.from('likes').select('track_id, created_at').eq('user_id', sessionUser.id),
-        supabase.from('listening_history').select('track_id').eq('user_id', sessionUser.id).order('played_at', { ascending: false }).limit(40),
+        supabase.from('listening_history').select('track_id, played_at').eq('user_id', sessionUser.id).order('played_at', { ascending: false }).limit(400),
         supabase.from('user_roles').select('role').eq('user_id', sessionUser.id).eq('role', 'admin').maybeSingle(),
         supabase.from('track_comments').select('helped').eq('user_id', sessionUser.id),
         supabase.from('profile_picks').select('track_id').eq('user_id', sessionUser.id),
+        supabase.from('artist_follows').select('artist_id, created_at').eq('follower_id', sessionUser.id).order('created_at', { ascending: false }).limit(40),
       ]), 8000);
     } catch {
       accountFailed = true;
@@ -413,6 +425,7 @@ export function AppProvider({ children }) {
     setAvatarStamp(Date.now());
     setIntention(profile?.intention || '');
     setOnboardingDone(accountFailed ? profile?.onboarding_done !== false : profile?.onboarding_done === true);
+    setCheckInEmailsState(profile?.check_in_emails !== false);
     if (!accountFailed) {
       AsyncStorage.setItem('xoundra-account', JSON.stringify({
         id: sessionUser.id,
@@ -452,12 +465,43 @@ export function AppProvider({ children }) {
     setLikes((liked.data || []).map(withAdded).filter(Boolean));
     setPicks((picked.data || []).map((row) => row.track_id));
     setHelped((notes.data || []).map((row) => row.helped).filter(Boolean));
+    const counts = {};
+    for (const row of played.data || []) {
+      if (!row?.track_id) continue;
+      counts[row.track_id] = (counts[row.track_id] || 0) + 1;
+    }
+    setPlayCounts(counts);
     const seen = new Set();
-    setHistory((played.data || []).map((row) => byId(row.track_id)).filter((item) => {
-      if (!item || seen.has(item.id)) return false;
-      seen.add(item.id);
-      return true;
-    }));
+    setHistory((played.data || []).map((row) => {
+      const track = byId(row.track_id);
+      if (!track || seen.has(track.id)) return null;
+      seen.add(track.id);
+      return { ...track, playCount: counts[track.id] || 1 };
+    }).filter(Boolean));
+
+    const followRows = follows.data || [];
+    if (followRows.length) {
+      const ids = followRows.map((row) => row.artist_id);
+      const { data: artists } = await supabase
+        .from('artists')
+        .select('id, artist_name, artist_tagline, avatar_path, artist_banner_path')
+        .in('id', ids);
+      const byArtist = new Map((artists || []).map((item) => [item.id, item]));
+      setFollowedArtists(followRows.map((row) => {
+        const artist = byArtist.get(row.artist_id);
+        if (!artist) return null;
+        return {
+          id: artist.id,
+          name: artist.artist_name || 'Artist',
+          tagline: artist.artist_tagline || '',
+          avatarPath: artist.avatar_path || '',
+          bannerPath: artist.artist_banner_path || '',
+          followedAt: row.created_at || '',
+        };
+      }).filter(Boolean));
+    } else {
+      setFollowedArtists([]);
+    }
     return profile?.onboarding_done === true;
   }, []);
 
@@ -571,13 +615,34 @@ export function AppProvider({ children }) {
   }, []);
   adjustRef.current = adjustCount;
 
-  const startSound = React.useCallback((track) => {
+  const startSound = React.useCallback(async (track) => {
     const player = playerRef.current;
-    if (!track || !player) return;
+    if (!track || !player || streakBusy.current) return;
     const source = soundSource(track.id);
     if (!source) {
       setPlaybackNote(onlineRef.current ? 'This sound is not on this device.' : 'Download this sound to play it offline.');
       return;
+    }
+    const freeListener = !premiumRef.current && !hasAdPremiumAccess();
+    if (freeListener) {
+      if (streakRef.current >= STREAK_LIMIT) {
+        streakBusy.current = true;
+        try {
+          try { player.pause(); } catch { /* ignore */ }
+          setPlaying(false);
+          const ok = await requestStreakAds();
+          if (!ok) {
+            setPlaybackNote('Watch the ads to keep listening, or go Premium.');
+            return;
+          }
+          streakRef.current = 0;
+        } finally {
+          streakBusy.current = false;
+        }
+      }
+      streakRef.current += 1;
+    } else {
+      streakRef.current = 0;
     }
     setPlaybackNote('');
     stopMix();
@@ -676,10 +741,13 @@ export function AppProvider({ children }) {
   }, []);
   advanceRef.current = advanceQueue;
 
-  const play = React.useCallback((track, list, options) => {
-    if (track?.access === 'premium' && !premiumRef.current) {
-      router.push('/plans');
-      return;
+  const play = React.useCallback(async (track, list, options) => {
+    if (track?.access === 'premium' && !premiumRef.current && !hasAdPremiumAccess()) {
+      const unlocked = await requestAdUnlock('premium24h');
+      if (!unlocked) {
+        router.push('/plans');
+        return;
+      }
     }
     const ordered = Boolean(options?.ordered);
     const collection = Boolean(options?.collection) || ordered;
@@ -693,7 +761,11 @@ export function AppProvider({ children }) {
     playback.current = { ...playback.current, queue: nextQueue, index: nextIndex, collection };
     setQueue(nextQueue);
     setIndex(nextIndex);
-    setHistory((items) => [track, ...items.filter((item) => item.id !== track.id)].slice(0, 30));
+    setPlayCounts((counts) => {
+      const next = (counts[track.id] || 0) + 1;
+      setHistory((items) => [{ ...track, playCount: next }, ...items.filter((item) => item.id !== track.id)].slice(0, 30));
+      return { ...counts, [track.id]: next };
+    });
     startSound(track);
   }, [startSound]);
   playRef.current = play;
@@ -865,6 +937,7 @@ export function AppProvider({ children }) {
 
   const clearHistory = React.useCallback(() => {
     setHistory([]);
+    setPlayCounts({});
     if (userRef.current) {
       supabase.from('listening_history').delete().eq('user_id', userRef.current).then(() => {});
     }
@@ -908,6 +981,8 @@ export function AppProvider({ children }) {
     setFavourites([]);
     setLikes([]);
     setHistory([]);
+    setPlayCounts({});
+    setFollowedArtists([]);
     setHelped([]);
     setDownloads([]);
     setUserId(null);
@@ -978,9 +1053,7 @@ export function AppProvider({ children }) {
     noteDownload(track, 0);
     const owner = userRef.current;
     if (!owner) return 'missing';
-    const remote = track.audioUrl || soundSource(track.id);
     try {
-      if (!remote) return 'missing';
       if (Platform.OS === 'web') {
         noteDownload(track, 0.45);
         const ids = await readWebDownloads(owner);
@@ -989,6 +1062,8 @@ export function AppProvider({ children }) {
         }
         noteDownload(track, 1);
       } else {
+        const remote = (await resolveTrackAudioUrl(track, 'download')) || track.audioUrl || soundSource(track.id);
+        if (!remote) return 'missing';
         const destination = ensureDownloadFile(owner, track.id);
         if (!destination.exists) {
           await File.downloadFileAsync(remote, destination, {
@@ -1057,9 +1132,9 @@ export function AppProvider({ children }) {
   flushRef.current = flushWaiting;
 
   const saveDownload = React.useCallback(async (track) => {
-    if (!premiumRef.current) {
-      router.push('/plans');
-      return 'premium';
+    if (!premiumRef.current && !hasAdPremiumAccess()) {
+      const unlocked = await requestAdUnlock('download');
+      if (!unlocked) return 'ads';
     }
     const gate = await downloadGate(wifiOnlyRef.current);
     if (gate === 'offline') return 'offline';
@@ -1134,10 +1209,13 @@ export function AppProvider({ children }) {
 
   const mixShape = mix.map((layer) => layer.id).join('|');
 
-  const playMix = React.useCallback(() => {
-    if (!premiumRef.current) {
-      router.push('/plans');
-      return;
+  const playMix = React.useCallback(async () => {
+    if (!premiumRef.current && !hasAdStudioAccess()) {
+      const unlocked = await requestAdUnlock('studio');
+      if (!unlocked) {
+        router.push('/plans');
+        return;
+      }
     }
     if (mixPlaying) {
       stopMix();
@@ -1286,7 +1364,7 @@ export function AppProvider({ children }) {
     load().catch(() => {});
     const timer = setInterval(() => {
       const plan = sleepPlanRef.current;
-      if (!plan?.enabled || !premiumRef.current) return;
+      if (!plan?.enabled || (!premiumRef.current && !hasAdSleepAccess())) return;
       const start = clockMinutes(plan.start);
       const stop = clockMinutes(plan.stop);
       const minute = new Date().getHours() * 60 + new Date().getMinutes();
@@ -1354,6 +1432,8 @@ export function AppProvider({ children }) {
     favourites,
     likes,
     history,
+    playCounts,
+    followedArtists,
     resumeId,
     signals,
     helped,
@@ -1395,6 +1475,14 @@ export function AppProvider({ children }) {
     unread: notes.filter((item) => !item.read).length + inbox.filter((item) => !item.read_at).length,
     notifyEnabled,
     setNotifyEnabled,
+    checkInEmails,
+    setCheckInEmails: (on) => {
+      const next = Boolean(on);
+      setCheckInEmailsState(next);
+      if (userRef.current) {
+        supabase.from('profiles').update({ check_in_emails: next }).eq('id', userRef.current).then(() => {});
+      }
+    },
     reducedMotion,
     setReducedMotion,
     mix,

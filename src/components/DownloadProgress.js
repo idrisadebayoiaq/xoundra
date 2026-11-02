@@ -1,8 +1,12 @@
+import { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { colors, font } from '../theme';
+import { font } from '../theme';
+import { useTheme } from '../state/ThemeState';
 import { useApp } from '../state/AppState';
 
 export function DownloadProgress({ style }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const { downloadProgress } = useApp();
   if (!downloadProgress) return null;
   const amount = Math.max(0, Math.min(1, downloadProgress.percent || 0));
@@ -17,7 +21,8 @@ export function DownloadProgress({ style }) {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors) {
+  return StyleSheet.create({
   box: {
     marginBottom: 12,
     padding: 12,
@@ -38,11 +43,12 @@ const styles = StyleSheet.create({
   track: {
     height: 4,
     borderRadius: 2,
-    backgroundColor: '#2A2E36',
+    backgroundColor: colors.switchOff,
     overflow: 'hidden',
   },
   fill: {
     height: 4,
     backgroundColor: colors.mint,
   },
-});
+  });
+}

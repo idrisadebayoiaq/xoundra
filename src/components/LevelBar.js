@@ -1,8 +1,10 @@
-import { useRef } from 'react';
+import { useRef, useMemo } from 'react';
 import { PanResponder, StyleSheet, View } from 'react-native';
-import { colors } from '../theme';
+import { useTheme } from '../state/ThemeState';
 
 export function LevelBar({ value, onChange, color = colors.mint, label = 'Volume' }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const box = useRef({ x: 0, width: 1 });
   const onChangeRef = useRef(onChange);
   const bar = useRef(null);
@@ -42,7 +44,8 @@ export function LevelBar({ value, onChange, color = colors.mint, label = 'Volume
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors) {
+  return StyleSheet.create({
   track: {
     height: 28,
     justifyContent: 'center',
@@ -50,11 +53,12 @@ const styles = StyleSheet.create({
   rail: {
     height: 4,
     borderRadius: 2,
-    backgroundColor: 'rgba(243,246,248,0.16)',
+    backgroundColor: colors.line,
     overflow: 'hidden',
   },
   fill: {
     height: 4,
     borderRadius: 2,
   },
-});
+  });
+}

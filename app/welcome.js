@@ -1,10 +1,14 @@
+import { useMemo } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colors, font } from '../src/theme';
+import { font } from '../src/theme';
+import { useTheme } from '../src/state/ThemeState';
 import { DownloadAppButton } from '../src/components/DownloadAppButton';
 
 export default function WelcomeScreen() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
 
   return (
@@ -25,10 +29,11 @@ export default function WelcomeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors) {
+  return StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: '#000000',
+    backgroundColor: colors.canvas,
     paddingHorizontal: 24,
     justifyContent: 'center',
   },
@@ -80,4 +85,5 @@ const styles = StyleSheet.create({
     fontFamily: font.semibold,
     fontSize: 16,
   },
-});
+  });
+}

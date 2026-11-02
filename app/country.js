@@ -1,11 +1,15 @@
+import { useMemo } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { ScreenHeader } from '../src/components/ScreenHeader';
 import { Dropdown } from '../src/components/Dropdown';
 import { countries } from '../src/data/catalogue';
-import { colors, font } from '../src/theme';
+import { font } from '../src/theme';
+import { useTheme } from '../src/state/ThemeState';
 import { useApp } from '../src/state/AppState';
 
 export default function CountryScreen() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const { country, setCountry } = useApp();
 
   return (
@@ -26,7 +30,8 @@ export default function CountryScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors) {
+  return StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
   content: { paddingBottom: 28 },
   lead: {
@@ -38,4 +43,5 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   drop: { marginHorizontal: 20 },
-});
+  });
+}

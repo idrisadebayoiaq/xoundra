@@ -1,12 +1,15 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { ScreenHeader } from '../src/components/ScreenHeader';
 import { supabase } from '../src/lib/supabase';
-import { colors, font } from '../src/theme';
+import { font } from '../src/theme';
+import { useTheme } from '../src/state/ThemeState';
 import { useApp } from '../src/state/AppState';
 
 export default function NewPlaylistScreen() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const { trackId } = useLocalSearchParams();
   const soundId = Array.isArray(trackId) ? trackId[0] : trackId;
   const { userId } = useApp();
@@ -70,6 +73,8 @@ export default function NewPlaylistScreen() {
 }
 
 function Choice({ title, body, selected, onPress }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   return (
     <Pressable onPress={onPress} style={[styles.choice, selected && styles.choiceOn]} accessibilityLabel={title}>
       <Text style={styles.choiceTitle}>{title}</Text>
@@ -78,7 +83,8 @@ function Choice({ title, body, selected, onPress }) {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors) {
+  return StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
   label: {
     color: colors.muted,
@@ -120,4 +126,5 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   buttonText: { color: colors.mintInk, fontFamily: font.semibold, fontSize: 16 },
-});
+  });
+}

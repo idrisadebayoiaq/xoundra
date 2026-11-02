@@ -3,6 +3,8 @@
   "outputDirectory": "dist",
   "framework": null,
   "rewrites": [
-    { "source": "/(.*)", "destination": "/index.html" }
+    { "source": "/ads.txt", "destination": "/ads.txt" },
+    { "source": "/app-ads.txt", "destination": "/app-ads.txt" },
+    { "source": "/((?!ads\\.txt|app-ads\\.txt).*)", "destination": "/index.html" }
   ]
 }

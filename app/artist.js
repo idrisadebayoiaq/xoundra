@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { ScreenHeader } from '../src/components/ScreenHeader';
 import { supabase } from '../src/lib/supabase';
-import { colors, font } from '../src/theme';
+import { font } from '../src/theme';
+import { useTheme } from '../src/state/ThemeState';
 import { useApp } from '../src/state/AppState';
 
 const links = [
@@ -14,6 +15,8 @@ const links = [
 ];
 
 export default function ArtistScreen() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const app = useApp();
   const [name, setName] = useState(app.artistName || app.firstName || '');
   const [notice, setNotice] = useState('');
@@ -80,7 +83,8 @@ export default function ArtistScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors) {
+  return StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
   content: { paddingBottom: 40, paddingHorizontal: 20 },
   lead: { color: colors.muted, fontFamily: font.regular, fontSize: 15, lineHeight: 22, marginBottom: 18 },
@@ -105,10 +109,11 @@ const styles = StyleSheet.create({
     padding: 14,
     marginBottom: 12,
   },
-  icon: { width: 42, height: 42, borderRadius: 12, backgroundColor: '#1C2430', alignItems: 'center', justifyContent: 'center' },
+  icon: { width: 42, height: 42, borderRadius: 12, backgroundColor: colors.cardRaised, alignItems: 'center', justifyContent: 'center' },
   copy: { flex: 1 },
   label: { color: colors.text, fontFamily: font.semibold, fontSize: 16 },
   copyText: { color: colors.muted, fontFamily: font.regular, fontSize: 13, lineHeight: 18, marginTop: 3 },
   later: { color: colors.muted, fontFamily: font.regular, fontSize: 13, lineHeight: 19, marginTop: 12 },
   notice: { color: colors.amber, fontFamily: font.regular, fontSize: 14, marginTop: 14 },
-});
+  });
+}

@@ -1,9 +1,12 @@
+import { useMemo } from 'react';
 import { Image, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors } from '../theme';
+import { useTheme } from '../state/ThemeState';
 import { avatarUrl } from '../lib/supabase';
 
 export function Avatar({ path, stamp, uri, size = 34 }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const photo = uri || (path ? `${avatarUrl(path)}?v=${stamp || 0}` : '');
   const radius = size / 2;
 
@@ -22,13 +25,15 @@ export function Avatar({ path, stamp, uri, size = 34 }) {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors) {
+  return StyleSheet.create({
   ring: {
     borderWidth: 1.5,
     borderColor: colors.mint,
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
-    backgroundColor: '#12161C',
+    backgroundColor: colors.card,
   },
-});
+  });
+}

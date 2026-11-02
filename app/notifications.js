@@ -1,12 +1,15 @@
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect } from 'expo-router';
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { ScreenHeader } from '../src/components/ScreenHeader';
 import { openNotice } from '../src/lib/openNotice';
-import { colors, font } from '../src/theme';
+import { font } from '../src/theme';
+import { useTheme } from '../src/state/ThemeState';
 import { useApp } from '../src/state/AppState';
 
 export default function NotificationsScreen() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const { notes, inbox, markNotesRead, markNoticeRead, notifyEnabled, play, tracks, refreshInbox } = useApp();
 
   useFocusEffect(useCallback(() => {
@@ -72,7 +75,8 @@ export default function NotificationsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors) {
+  return StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
   content: { paddingBottom: 28 },
   note: {
@@ -121,4 +125,5 @@ const styles = StyleSheet.create({
   markOne: { alignSelf: 'flex-start', marginTop: 4 },
   markOneText: { color: colors.mint, fontFamily: font.medium, fontSize: 13 },
   readLabel: { color: colors.muted, fontFamily: font.regular, fontSize: 12, marginTop: 4 },
-});
+  });
+}

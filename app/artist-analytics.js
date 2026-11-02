@@ -1,13 +1,16 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useState, useMemo } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Redirect, useFocusEffect } from 'expo-router';
 import { ScreenHeader } from '../src/components/ScreenHeader';
 import { loadArtistWorks } from '../src/lib/artistMedia';
 import { supabase } from '../src/lib/supabase';
-import { colors, font } from '../src/theme';
+import { font } from '../src/theme';
+import { useTheme } from '../src/state/ThemeState';
 import { useApp } from '../src/state/AppState';
 
 export default function ArtistAnalyticsScreen() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const app = useApp();
   const [followers, setFollowers] = useState(0);
   const [listeners, setListeners] = useState(0);
@@ -102,6 +105,8 @@ export default function ArtistAnalyticsScreen() {
 }
 
 function PerformanceChart({ rows }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const plays = rows.reduce((sum, row) => sum + Number(row.plays || 0), 0);
   const likes = rows.reduce((sum, row) => sum + Number(row.likes || 0), 0);
   const favorites = rows.reduce((sum, row) => sum + Number(row.favorites || 0), 0);
@@ -140,6 +145,8 @@ function count(value, word) {
 }
 
 function Stat({ label, value }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   return (
     <View style={styles.stat}>
       <Text style={styles.value}>{value}</Text>
@@ -148,7 +155,8 @@ function Stat({ label, value }) {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors) {
+  return StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
   content: { paddingBottom: 40, paddingHorizontal: 20 },
   lead: { color: colors.muted, fontFamily: font.regular, fontSize: 15, lineHeight: 22, marginBottom: 16 },
@@ -176,4 +184,5 @@ const styles = StyleSheet.create({
   row: { paddingVertical: 12, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.line },
   title: { color: colors.text, fontFamily: font.semibold, fontSize: 16 },
   meta: { color: colors.muted, fontFamily: font.regular, fontSize: 13, marginTop: 4 },
-});
+  });
+}

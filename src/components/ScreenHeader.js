@@ -1,23 +1,38 @@
+import { useMemo } from 'react';
 import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colors, font } from '../theme';
+import { font } from '../theme';
+import { useTheme } from '../state/ThemeState';
 import { useApp } from '../state/AppState';
 import { useShell } from '../state/ShellState';
 import { goBack } from '../lib/navigation';
 import { Avatar } from './Avatar';
 import { DownloadAppButton } from './DownloadAppButton';
 
-export function ScreenHeader({ title, back = false }) {
+export function ScreenHeader({ title, back = false, onBack }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
   const { unread, avatarPath, avatarStamp } = useApp();
   const { desktop } = useShell();
+  const params = useLocalSearchParams();
+  const fromMenu = params.from === 'menu';
+
+  function handleBack() {
+    if (onBack) {
+      onBack();
+      return;
+    }
+    goBack({ from: fromMenu ? 'menu' : undefined });
+  }
+
   return (
     <View style={[styles.row, { paddingTop: insets.top + 10 }]}>
       <View style={styles.titleSide}>
         {back ? (
-          <Pressable onPress={goBack} hitSlop={10} style={styles.back}>
+          <Pressable onPress={handleBack} hitSlop={10} style={styles.back} accessibilityLabel="Go back">
             <Ionicons name="chevron-back" size={26} color={colors.text} />
           </Pressable>
         ) : null}
@@ -52,7 +67,8 @@ export function ScreenHeader({ title, back = false }) {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors) {
+  return StyleSheet.create({
   row: {
     paddingHorizontal: 20,
     paddingBottom: 16,
@@ -99,4 +115,5 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: colors.bg,
   },
-});
+  });
+}

@@ -1,14 +1,17 @@
+import { useMemo } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, font } from '../theme';
+import { font } from '../theme';
+import { useTheme } from '../state/ThemeState';
 import { coverSource } from '../data/artwork';
-import { statLine } from '../data/shelves';
 import { useApp } from '../state/AppState';
 import { SoundMenuButton } from './SoundMenu';
 import { ArtistLink } from './ArtistLink';
 import { DownloadMark } from './DownloadMark';
 
 export function PhotoTile({ track, onPress, style }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   return (
     <View style={[styles.tile, style]}>
       <Pressable onPress={onPress} style={[StyleSheet.absoluteFill, styles.tilePress]}>
@@ -28,6 +31,8 @@ export function PhotoTile({ track, onPress, style }) {
 }
 
 export function AlbumCard({ track, onPress }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   return (
     <View style={styles.album}>
       <Pressable onPress={onPress} accessibilityLabel={track.title}>
@@ -41,12 +46,13 @@ export function AlbumCard({ track, onPress }) {
       </View>
       <Text style={styles.albumTitle} numberOfLines={2}>{track.title}</Text>
       <ArtistLink track={track} style={styles.albumArtist} />
-      <Text style={styles.albumStats} numberOfLines={2}>{statLine(track)}</Text>
     </View>
   );
 }
 
 export function TrackRow({ track, onPress, subtitle }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const { track: current, playing, isLiked } = useApp();
   const active = current?.id === track.id;
   const liked = isLiked(track.id);
@@ -58,7 +64,6 @@ export function TrackRow({ track, onPress, subtitle }) {
           <Text style={[styles.title, active && styles.active]} numberOfLines={1}>{track.title}</Text>
           <Text style={styles.sub} numberOfLines={1}>{subtitle || track.category}</Text>
           <ArtistLink track={track} style={styles.subArtist} />
-          <Text style={styles.sub} numberOfLines={1}>{statLine(track)}</Text>
         </View>
         {liked ? <Ionicons name="heart" size={14} color={colors.mint} /> : null}
         {active && playing ? <Ionicons name="volume-medium" size={16} color={colors.mint} /> : null}
@@ -70,6 +75,8 @@ export function TrackRow({ track, onPress, subtitle }) {
 }
 
 export function PillButton({ label, icon, filled, onPress, style }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   return (
     <Pressable onPress={onPress} accessibilityLabel={label} style={[styles.pill, filled ? styles.pillFilled : styles.pillOutline, style]}>
       <Ionicons name={icon} size={16} color={filled ? colors.mintInk : colors.text} />
@@ -78,7 +85,8 @@ export function PillButton({ label, icon, filled, onPress, style }) {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors) {
+  return StyleSheet.create({
   tile: {
     width: '48%',
     aspectRatio: 1.15,
@@ -216,4 +224,5 @@ const styles = StyleSheet.create({
   pillTextFilled: {
     color: colors.mintInk,
   },
-});
+  });
+}

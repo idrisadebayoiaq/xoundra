@@ -1,14 +1,17 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ScreenHeader } from '../src/components/ScreenHeader';
 import { accountAction, supabase } from '../src/lib/supabase';
 import { clearPendingAuth, passwordFor } from '../src/lib/pendingAuth';
-import { colors, font } from '../src/theme';
+import { font } from '../src/theme';
+import { useTheme } from '../src/state/ThemeState';
 import { useApp } from '../src/state/AppState';
 
 export default function ConfirmEmailScreen() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams();
   const { email: signedInEmail, signOut, adoptSession } = useApp();
@@ -96,7 +99,8 @@ export default function ConfirmEmailScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors) {
+  return StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
   lead: { color: colors.muted, fontFamily: font.regular, fontSize: 15, lineHeight: 22, marginHorizontal: 20, marginBottom: 16 },
   code: {
@@ -123,4 +127,5 @@ const styles = StyleSheet.create({
   },
   buttonText: { color: colors.mintInk, fontFamily: font.semibold, fontSize: 16 },
   link: { color: colors.mint, fontFamily: font.medium, textAlign: 'center', marginTop: 16 },
-});
+  });
+}

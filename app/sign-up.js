@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { router } from 'expo-router';
 import { ScreenHeader } from '../src/components/ScreenHeader';
@@ -7,9 +7,12 @@ import { Dropdown } from '../src/components/Dropdown';
 import { accountAction } from '../src/lib/supabase';
 import { passwordProblems } from '../src/lib/password';
 import { rememberSignIn } from '../src/lib/pendingAuth';
-import { colors, font } from '../src/theme';
+import { font } from '../src/theme';
+import { useTheme } from '../src/state/ThemeState';
 
 export default function SignUpScreen() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const [firstName, setFirstName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -70,6 +73,8 @@ export default function SignUpScreen() {
 }
 
 function Field({ label, ...props }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   return (
     <View style={styles.field}>
       <Text style={styles.label}>{label}</Text>
@@ -83,7 +88,8 @@ function Field({ label, ...props }) {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors) {
+  return StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
   content: { paddingBottom: 32 },
   field: { marginHorizontal: 20, marginBottom: 14 },
@@ -117,4 +123,5 @@ const styles = StyleSheet.create({
   buttonText: { color: colors.mintInk, fontFamily: font.semibold, fontSize: 16 },
   link: { color: colors.mint, fontFamily: font.medium, textAlign: 'center', marginTop: 18 },
   hint: { color: colors.muted, fontFamily: font.regular, fontSize: 12, marginHorizontal: 20, marginTop: -6, marginBottom: 12 },
-});
+  });
+}

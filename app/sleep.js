@@ -1,11 +1,15 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { ScreenHeader } from '../src/components/ScreenHeader';
-import { colors, font } from '../src/theme';
+import { font } from '../src/theme';
+import { useTheme } from '../src/state/ThemeState';
 import { useApp } from '../src/state/AppState';
+import { useAds } from '../src/state/AdState';
+import { AD_COSTS } from '../src/ads/rewards';
 import { coverSource } from '../src/data/artwork';
+import { useKeyboardPad } from '../src/hooks/useKeyboardPad';
 
 function cleanTime(value) {
   const digits = value.replace(/[^\d]/g, '').slice(0, 4);
@@ -18,7 +22,11 @@ function validTime(value) {
 }
 
 export default function SleepScreen() {
-  const { premium, tracks, sleepPlan, saveSleep } = useApp();
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const { tracks, sleepPlan, saveSleep } = useApp();
+  const { hasSleepAccess, requestUnlock } = useAds();
+  const keyboardPad = useKeyboardPad(12);
   const [enabled, setEnabled] = useState(false);
   const [start, setStart] = useState('22:00');
   const [stop, setStop] = useState('06:00');
@@ -53,9 +61,14 @@ export default function SleepScreen() {
     setPicked(next);
   }
 
+  async function ensureAccess() {
+    if (hasSleepAccess) return true;
+    return requestUnlock('sleep');
+  }
+
   async function save() {
-    if (!premium) {
-      router.push('/plans');
+    if (!(await ensureAccess())) {
+      setNotice(`Watch ${AD_COSTS.sleep} ads to use Sleep timer, or see plans.`);
       return;
     }
     if (!validTime(start) || !validTime(stop)) {
@@ -78,19 +91,33 @@ export default function SleepScreen() {
   }
 
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+    <KeyboardAvoidingView style={styles.screen} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+    <ScrollView
+      style={styles.screen}
+      contentContainerStyle={[styles.content, { paddingBottom: 40 + keyboardPad }]}
+      keyboardShouldPersistTaps="handled"
+      keyboardDismissMode="on-drag"
+    >
       <ScreenHeader title="Sleep timer" back />
       <Text style={styles.lead}>
         Pick the sounds and the times. They play in order when the start time arrives, and they stop at the stop time.
       </Text>
-      {premium ? null : (
-        <Pressable style={styles.plans} onPress={() => router.push('/plans')} accessibilityLabel="See plans">
-          <Text style={styles.plansText}>Sleep timer is part of Premium. See plans</Text>
-        </Pressable>
+      {hasSleepAccess ? null : (
+        <View style={styles.gate}>
+          <Pressable style={styles.plans} onPress={() => requestUnlock('sleep')} accessibilityLabel="Watch ads for sleep timer">
+            <Text style={styles.plansText}>Watch {AD_COSTS.sleep} ads to unlock Sleep timer</Text>
+          </Pressable>
+          <Pressable onPress={() => router.push('/plans')} accessibilityLabel="See plans">
+            <Text style={styles.alt}>Or see Premium plans</Text>
+          </Pressable>
+        </View>
       )}
       <Pressable
         style={styles.switchRow}
-        onPress={() => premium && setEnabled((value) => !value)}
+        onPress={async () => {
+          if (!(await ensureAccess())) return;
+          setEnabled((value) => !value);
+        }}
         accessibilityLabel={enabled ? 'Turn sleep timer off' : 'Turn sleep timer on'}
       >
         <Text style={styles.switchLabel}>{enabled ? 'On' : 'Off'}</Text>
@@ -167,18 +194,22 @@ export default function SleepScreen() {
       </Pressable>
       {notice ? <Text style={styles.notice}>{notice}</Text> : null}
     </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors) {
+  return StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
   content: { paddingBottom: 40, paddingHorizontal: 20 },
   lead: { color: colors.muted, fontFamily: font.regular, fontSize: 15, lineHeight: 22, marginBottom: 16 },
-  plans: { borderWidth: 1, borderColor: colors.mint, borderRadius: 14, padding: 14, marginBottom: 16 },
+  gate: { gap: 10, marginBottom: 16 },
+  plans: { borderWidth: 1, borderColor: colors.mint, borderRadius: 14, padding: 14 },
   plansText: { color: colors.mint, fontFamily: font.semibold, fontSize: 15 },
+  alt: { color: colors.muted, fontFamily: font.medium, fontSize: 14 },
   switchRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
   switchLabel: { color: colors.text, fontFamily: font.semibold, fontSize: 16 },
-  switch: { width: 48, height: 28, borderRadius: 14, backgroundColor: '#2A3140', padding: 3 },
+  switch: { width: 48, height: 28, borderRadius: 14, backgroundColor: colors.switchOff, padding: 3 },
   switchOn: { backgroundColor: colors.mint },
   knob: { width: 22, height: 22, borderRadius: 11, backgroundColor: colors.text },
   knobOn: { alignSelf: 'flex-end', backgroundColor: colors.mintInk },
@@ -197,4 +228,5 @@ const styles = StyleSheet.create({
   save: { height: 50, borderRadius: 25, backgroundColor: colors.mint, alignItems: 'center', justifyContent: 'center', marginTop: 16 },
   saveText: { color: colors.mintInk, fontFamily: font.semibold, fontSize: 16 },
   notice: { color: colors.amber, fontFamily: font.medium, fontSize: 14, marginTop: 12 },
-});
+  });
+}

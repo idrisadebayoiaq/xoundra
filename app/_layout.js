@@ -5,10 +5,11 @@ import { useFonts, Outfit_400Regular, Outfit_500Medium, Outfit_600SemiBold, Outf
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, useState } from 'react';
 import { AppProvider, useApp } from '../src/state/AppState';
+import { AdProvider } from '../src/state/AdState';
 import { ShellProvider, useShell } from '../src/state/ShellState';
 import { MiniPlayer } from '../src/components/MiniPlayer';
 import { NotificationBridge } from '../src/components/NotificationBridge';
-import { colors } from '../src/theme';
+import { ThemeProvider, useTheme } from '../src/state/ThemeState';
 import { AppFrame } from '../src/components/AppFrame';
 import { WebDeck } from '../src/components/DesktopShell';
 import { OfflineNotice } from '../src/components/OfflineNotice';
@@ -17,11 +18,20 @@ SplashScreen.preventAutoHideAsync().catch(() => {});
 
 export function ErrorBoundary({ error, retry }) {
   return (
-    <View style={{ flex: 1, backgroundColor: '#07080D', alignItems: 'flex-start', justifyContent: 'center', padding: 24 }}>
-      <Text style={{ color: '#F3F6F8', fontSize: 24, fontWeight: '700' }}>Something interrupted Xoundra.</Text>
-      <Text style={{ color: '#8E98A3', fontSize: 15, marginTop: 10 }}>{error?.message || 'Open the app again.'}</Text>
+    <ThemeProvider>
+      <ErrorBody error={error} retry={retry} />
+    </ThemeProvider>
+  );
+}
+
+function ErrorBody({ error, retry }) {
+  const { colors } = useTheme();
+  return (
+    <View style={{ flex: 1, backgroundColor: colors.bg, alignItems: 'flex-start', justifyContent: 'center', padding: 24 }}>
+      <Text style={{ color: colors.text, fontSize: 24, fontWeight: '700' }}>Something interrupted Xoundra.</Text>
+      <Text style={{ color: colors.muted, fontSize: 15, marginTop: 10 }}>{error?.message || 'Open the app again.'}</Text>
       <Pressable onPress={retry} style={{ marginTop: 18 }}>
-        <Text style={{ color: '#8BE1CF', fontSize: 16 }}>Try again</Text>
+        <Text style={{ color: colors.mint, fontSize: 16 }}>Try again</Text>
       </Pressable>
     </View>
   );
@@ -48,26 +58,42 @@ export default function RootLayout() {
   if (!loaded && !error && !fontsGaveUp) return null;
 
   return (
-    <AppProvider>
-      <ShellProvider>
-        <StatusBar style="light" />
-        <Frame>
-          <NotificationBridge />
-          <Gate />
-        </Frame>
-      </ShellProvider>
-    </AppProvider>
+    <ThemeProvider>
+      <AppProvider>
+        <AdBridge>
+          <ShellProvider>
+            <ThemedStatusBar />
+            <Frame>
+              <NotificationBridge />
+              <Gate />
+            </Frame>
+          </ShellProvider>
+        </AdBridge>
+      </AppProvider>
+    </ThemeProvider>
   );
 }
 
+function AdBridge({ children }) {
+  const { premium } = useApp();
+  return <AdProvider isPaidPremium={premium}>{children}</AdProvider>;
+}
+
+function ThemedStatusBar() {
+  const { colors } = useTheme();
+  return <StatusBar style={colors.statusBar} />;
+}
+
 function Frame({ children }) {
+  const { colors } = useTheme();
   const { desktop } = useShell();
   useEffect(() => {
     if (Platform.OS !== 'web' || typeof document === 'undefined') return;
-    document.documentElement.style.backgroundColor = '#000000';
+    document.documentElement.style.backgroundColor = colors.canvas;
+    document.documentElement.style.colorScheme = colors.scheme;
     document.documentElement.style.height = '100%';
     document.documentElement.style.overflow = 'hidden';
-    document.body.style.backgroundColor = '#000000';
+    document.body.style.backgroundColor = colors.canvas;
     document.body.style.height = '100%';
     document.body.style.margin = '0';
     document.body.style.overflow = 'hidden';
@@ -77,13 +103,15 @@ function Frame({ children }) {
       root.style.display = 'flex';
       root.style.flexDirection = 'column';
       root.style.overflow = 'hidden';
+      root.style.backgroundColor = colors.canvas;
     }
-  }, []);
-  if (desktop) return <View style={{ flex: 1, backgroundColor: '#000000' }}>{children}</View>;
+  }, [colors]);
+  if (desktop) return <View style={{ flex: 1, backgroundColor: colors.canvas }}>{children}</View>;
   return <AppFrame>{children}</AppFrame>;
 }
 
 function Gate() {
+  const { colors } = useTheme();
   const { ready, userId, emailConfirmed, onboardingDone, online, onlineKnown } = useApp();
   const { desktop } = useShell();
   const path = usePathname();
@@ -116,7 +144,7 @@ function Gate() {
       {offlineHere ? <OfflineNotice /> : null}
       {ready && !desktop && !offlineHere ? <OutsideTabsPlayer /> : null}
       {ready ? null : (
-        <View style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, backgroundColor: '#000000', alignItems: 'center', justifyContent: 'center' }}>
+        <View style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, backgroundColor: colors.canvas, alignItems: 'center', justifyContent: 'center' }}>
           <Image source={require('../assets/icon.png')} style={{ width: 168, height: 168 }} resizeMode="contain" />
         </View>
       )}

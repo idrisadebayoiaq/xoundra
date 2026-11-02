@@ -1,8 +1,9 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useState, useMemo } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { drainNotices, supabase } from '../lib/supabase';
-import { colors, font } from '../theme';
+import { font } from '../theme';
+import { useTheme } from '../state/ThemeState';
 import { useApp } from '../state/AppState';
 
 const helpedOptions = [
@@ -13,6 +14,8 @@ const helpedOptions = [
 ];
 
 export function Comments({ trackId }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const { userId, noteHelped } = useApp();
   const [items, setItems] = useState([]);
   const [body, setBody] = useState('');
@@ -98,7 +101,8 @@ export function Comments({ trackId }) {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors) {
+  return StyleSheet.create({
   wrap: { marginTop: 28, gap: 10 },
   heading: { color: colors.text, fontFamily: font.bold, fontSize: 18 },
   lead: { color: colors.muted, fontFamily: font.regular, fontSize: 13 },
@@ -124,4 +128,5 @@ const styles = StyleSheet.create({
   author: { color: colors.muted, fontFamily: font.medium, fontSize: 12 },
   body: { color: colors.text, fontFamily: font.regular, fontSize: 15 },
   remove: { color: colors.amber, fontFamily: font.medium, fontSize: 12 },
-});
+  });
+}

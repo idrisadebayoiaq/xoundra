@@ -5,10 +5,11 @@ import { ScreenHeader } from '../src/components/ScreenHeader';
 import { SoundCollection } from '../src/components/SoundCollection';
 import { coverSource } from '../src/data/artwork';
 import { supabase, trackAudioUrl } from '../src/lib/supabase';
-import { colors } from '../src/theme';
+import { useTheme } from '../src/state/ThemeState';
 import { useApp } from '../src/state/AppState';
 
 export default function AlbumScreen() {
+  const { colors } = useTheme();
   const { id } = useLocalSearchParams();
   const albumId = Array.isArray(id) ? id[0] : id;
   const { tracks, userId } = useApp();

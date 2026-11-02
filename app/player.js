@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -7,9 +8,9 @@ import { LevelBar } from '../src/components/LevelBar';
 import { coverSource } from '../src/data/artwork';
 import { formatTime } from '../src/data/catalogue';
 import { SoundMenuButton } from '../src/components/SoundMenu';
-import { Comments } from '../src/components/Comments';
 import { statLine } from '../src/data/shelves';
-import { colors, font } from '../src/theme';
+import { font } from '../src/theme';
+import { useTheme } from '../src/state/ThemeState';
 import { useApp } from '../src/state/AppState';
 import { useAudioOutput } from '../src/lib/audioRoute';
 import { ArtistLink } from '../src/components/ArtistLink';
@@ -22,6 +23,8 @@ function coverSize(width, height) {
 }
 
 export default function PlayerScreen() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
   const {
     track,
@@ -133,12 +136,12 @@ export default function PlayerScreen() {
           {sleepMinutes ? `Sleep ${sleepMinutes} min` : 'Sleep timer'}
         </Text>
       </Pressable>
-      <Comments trackId={track.id} />
     </ScrollView>
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors) {
+  return StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: colors.bg,
@@ -244,4 +247,5 @@ const styles = StyleSheet.create({
     fontFamily: font.medium,
     fontSize: 15,
   },
-});
+  });
+}

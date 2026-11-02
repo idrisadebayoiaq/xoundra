@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -6,21 +6,26 @@ import { ScreenHeader } from '../../src/components/ScreenHeader';
 import { TrackRow } from '../../src/components/Cards';
 import { moods, searchTracks } from '../../src/data/catalogue';
 import { coverSource } from '../../src/data/artwork';
-import { colors, font } from '../../src/theme';
+import { font } from '../../src/theme';
+import { useTheme } from '../../src/state/ThemeState';
 import { useApp } from '../../src/state/AppState';
 import { supabase } from '../../src/lib/supabase';
 import { PlaylistCover } from '../../src/components/PlaylistCover';
 import { useShell } from '../../src/state/ShellState';
 
 export default function ExploreScreen() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const [localQuery, setLocalQuery] = useState('');
   const { desktop, search, setSearch } = useShell();
   const query = desktop ? search : localQuery;
   const setQuery = desktop ? setSearch : setLocalQuery;
   const { play, tracks, categories } = useApp();
   const [publicLists, setPublicLists] = useState([]);
+  const [freeOnly, setFreeOnly] = useState(false);
   const shelf = categories.length ? categories : moods;
-  const results = searchTracks(query, tracks);
+  const filteredTracks = freeOnly ? tracks.filter((item) => item.access !== 'premium') : tracks;
+  const results = searchTracks(query, filteredTracks);
   const featured = shelf.slice(0, 4);
   const more = shelf.slice(4);
   const foundLists = publicLists.filter((item) => item.title.toLowerCase().includes(query.trim().toLowerCase()));
@@ -54,6 +59,16 @@ export default function ExploreScreen() {
           autoCapitalize="none"
         />
       </View>}
+      <Pressable
+        onPress={() => setFreeOnly((value) => !value)}
+        style={[styles.filter, freeOnly && styles.filterOn]}
+        accessibilityRole="button"
+        accessibilityState={{ selected: freeOnly }}
+        accessibilityLabel="Show free sounds only"
+      >
+        <Ionicons name={freeOnly ? 'checkmark-circle' : 'ellipse-outline'} size={18} color={freeOnly ? colors.mint : colors.muted} />
+        <Text style={[styles.filterText, freeOnly && styles.filterTextOn]}>Free only</Text>
+      </Pressable>
       {query.trim() ? (
         <View style={styles.list}>
           {foundLists.map((item) => (
@@ -114,6 +129,8 @@ export default function ExploreScreen() {
 }
 
 function PlaylistResult({ item }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   return (
     <Pressable style={styles.moreRow} onPress={() => router.push({ pathname: '/playlist', params: { id: item.id } })} accessibilityLabel={item.title}>
       <PlaylistCover tracks={item.sounds} size={52} />
@@ -125,12 +142,13 @@ function PlaylistResult({ item }) {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors) {
+  return StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
   content: { paddingBottom: 28 },
   search: {
     marginHorizontal: 20,
-    marginBottom: 18,
+    marginBottom: 10,
     height: 48,
     borderRadius: 14,
     backgroundColor: colors.card,
@@ -139,6 +157,23 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingHorizontal: 14,
   },
+  filter: {
+    alignSelf: 'flex-start',
+    marginHorizontal: 20,
+    marginBottom: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.line,
+    backgroundColor: colors.card,
+  },
+  filterOn: { borderColor: colors.mint },
+  filterText: { color: colors.muted, fontFamily: font.medium, fontSize: 13 },
+  filterTextOn: { color: colors.mint },
   input: {
     flex: 1,
     color: colors.text,
@@ -205,4 +240,5 @@ const styles = StyleSheet.create({
     fontFamily: font.semibold,
     fontSize: 16,
   },
-});
+  });
+}

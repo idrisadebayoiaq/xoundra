@@ -1,11 +1,15 @@
+import { useMemo } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { ScreenHeader } from '../src/components/ScreenHeader';
 import { countries, plans } from '../src/data/catalogue';
-import { colors, font } from '../src/theme';
+import { font } from '../src/theme';
+import { useTheme } from '../src/state/ThemeState';
 import { useApp } from '../src/state/AppState';
 
 export default function PlansScreen() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const { country, premium } = useApp();
   const current = countries.find((item) => item.code === country) || countries[0];
   const naira = current.currency === 'NGN';
@@ -39,7 +43,8 @@ export default function PlansScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors) {
+  return StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
   content: { paddingBottom: 32, paddingHorizontal: 20 },
   lead: {
@@ -98,4 +103,5 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     marginTop: 6,
   },
-});
+  });
+}

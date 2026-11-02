@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
@@ -8,7 +8,8 @@ import { ScreenHeader } from '../src/components/ScreenHeader';
 import { coverSource } from '../src/data/artwork';
 import { imageExtension, uploadArtistFile } from '../src/lib/artistMedia';
 import { drainNotices, supabase } from '../src/lib/supabase';
-import { colors, font } from '../src/theme';
+import { font } from '../src/theme';
+import { useTheme } from '../src/state/ThemeState';
 import { useApp } from '../src/state/AppState';
 
 const fallback = [
@@ -49,6 +50,8 @@ async function pickAudio() {
 }
 
 export default function ArtistUploadScreen() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const app = useApp();
   const [extras, setExtras] = useState([]);
   const [custom, setCustom] = useState('');
@@ -253,6 +256,8 @@ export default function ArtistUploadScreen() {
 }
 
 function Field({ label, ...props }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   return (
     <View>
       <Text style={styles.fieldLabel}>{label}</Text>
@@ -262,6 +267,8 @@ function Field({ label, ...props }) {
 }
 
 function Chips({ choices, value, onChange }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   return (
     <View style={styles.chips}>
       {choices.map(([slug, label]) => (
@@ -274,6 +281,8 @@ function Chips({ choices, value, onChange }) {
 }
 
 function ArtPicker({ label, asset, onPress }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   return (
     <Pressable onPress={onPress} accessibilityLabel={label} style={styles.art}>
       {asset?.uri ? <Image source={{ uri: asset.uri }} style={styles.artImage} /> : <Image source={coverSource('rain')} style={styles.artImage} />}
@@ -286,6 +295,8 @@ function ArtPicker({ label, asset, onPress }) {
 }
 
 function FilePicker({ label, onPress }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   return (
     <Pressable onPress={onPress} accessibilityLabel="Choose audio" style={styles.file}>
       <Ionicons name="musical-note" size={16} color={colors.mint} />
@@ -294,7 +305,8 @@ function FilePicker({ label, onPress }) {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors) {
+  return StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
   content: { paddingBottom: 48, paddingHorizontal: 20 },
   modes: { flexDirection: 'row', gap: 8, marginBottom: 16 },
@@ -312,13 +324,13 @@ const styles = StyleSheet.create({
   chipText: { color: colors.text, fontFamily: font.medium, fontSize: 13 },
   chipTextOn: { color: colors.mintInk },
   art: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.card, borderRadius: 14, padding: 10 },
-  artImage: { width: 72, height: 72, borderRadius: 10, backgroundColor: '#1C2430' },
+  artImage: { width: 72, height: 72, borderRadius: 10, backgroundColor: colors.cardRaised },
   artCopy: { flex: 1 },
   artLabel: { color: colors.text, fontFamily: font.semibold, fontSize: 15 },
   artHint: { color: colors.muted, fontFamily: font.regular, fontSize: 13, marginTop: 3 },
   file: { height: 46, borderRadius: 12, borderWidth: 1, borderColor: colors.line, flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 12 },
   fileText: { color: colors.text, fontFamily: font.medium, fontSize: 14, flex: 1 },
-  card: { backgroundColor: '#10151E', borderRadius: 16, padding: 12, gap: 10, borderWidth: 1, borderColor: colors.line },
+  card: { backgroundColor: colors.card, borderRadius: 16, padding: 12, gap: 10, borderWidth: 1, borderColor: colors.line },
   cardHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   cardTitle: { color: colors.text, fontFamily: font.bold, fontSize: 16 },
   customCategory: { flexDirection: 'row', gap: 8, alignItems: 'center' },
@@ -329,4 +341,5 @@ const styles = StyleSheet.create({
   publish: { height: 50, borderRadius: 25, backgroundColor: colors.mint, alignItems: 'center', justifyContent: 'center', marginTop: 4 },
   publishText: { color: colors.mintInk, fontFamily: font.semibold, fontSize: 16 },
   notice: { color: colors.amber, fontFamily: font.medium, fontSize: 14, marginTop: 14 },
-});
+  });
+}

@@ -1,9 +1,12 @@
+import { useMemo } from 'react';
 import { Image, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { coverSource } from '../data/artwork';
-import { colors } from '../theme';
+import { useTheme } from '../state/ThemeState';
 
 export function PlaylistCover({ tracks = [], size = 56, radius = 8 }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const arts = tracks.filter((track) => track?.artwork).slice(0, 4);
   if (arts.length < 4) {
     if (!arts[0]) {
@@ -25,7 +28,8 @@ export function PlaylistCover({ tracks = [], size = 56, radius = 8 }) {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors) {
+  return StyleSheet.create({
   empty: {
     backgroundColor: colors.card,
     alignItems: 'center',
@@ -37,4 +41,5 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     backgroundColor: colors.card,
   },
-});
+  });
+}

@@ -1,10 +1,15 @@
-import { useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useState, useMemo } from 'react';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { ScreenHeader } from '../src/components/ScreenHeader';
 import { accountAction } from '../src/lib/supabase';
-import { colors, font } from '../src/theme';
+import { useKeyboardPad } from '../src/hooks/useKeyboardPad';
+import { font } from '../src/theme';
+import { useTheme } from '../src/state/ThemeState';
 
 export default function SupportScreen() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const keyboardPad = useKeyboardPad(12);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
@@ -24,27 +29,34 @@ export default function SupportScreen() {
   }
 
   return (
-    <View style={styles.screen}>
+    <KeyboardAvoidingView style={styles.screen} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScreenHeader title="Support" back />
-      <Text style={styles.lead}>Write to Xoundra. Replies come from xoundra.support@gmail.com.</Text>
-      <TextInput
-        value={message}
-        onChangeText={setMessage}
-        multiline
-        placeholder="What do you need?"
-        placeholderTextColor={colors.muted}
-        style={styles.input}
-      />
-      {error ? <Text style={styles.error}>{error}</Text> : null}
-      {notice ? <Text style={styles.notice}>{notice}</Text> : null}
-      <Pressable style={styles.button} onPress={send} disabled={busy}>
-        <Text style={styles.buttonText}>{busy ? 'Sending' : 'Send'}</Text>
-      </Pressable>
-    </View>
+      <ScrollView
+        contentContainerStyle={{ paddingBottom: 24 + keyboardPad }}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+      >
+        <Text style={styles.lead}>Write to Xoundra. Replies come from xoundra.support@gmail.com.</Text>
+        <TextInput
+          value={message}
+          onChangeText={setMessage}
+          multiline
+          placeholder="What do you need?"
+          placeholderTextColor={colors.muted}
+          style={styles.input}
+        />
+        {error ? <Text style={styles.error}>{error}</Text> : null}
+        {notice ? <Text style={styles.notice}>{notice}</Text> : null}
+        <Pressable style={styles.button} onPress={send} disabled={busy}>
+          <Text style={styles.buttonText}>{busy ? 'Sending' : 'Send'}</Text>
+        </Pressable>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors) {
+  return StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
   lead: { color: colors.muted, fontFamily: font.regular, fontSize: 15, lineHeight: 22, marginHorizontal: 20, marginBottom: 16 },
   input: {
@@ -62,4 +74,5 @@ const styles = StyleSheet.create({
   notice: { color: colors.mint, fontFamily: font.regular, marginHorizontal: 20, marginTop: 12 },
   button: { marginHorizontal: 20, marginTop: 16, height: 50, borderRadius: 25, backgroundColor: colors.mint, alignItems: 'center', justifyContent: 'center' },
   buttonText: { color: colors.mintInk, fontFamily: font.semibold, fontSize: 16 },
-});
+  });
+}

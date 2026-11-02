@@ -1,8 +1,11 @@
+import { useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors } from '../theme';
+import { useTheme } from '../state/ThemeState';
 
 export function LikedCover({ size = 168 }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   return (
     <View style={[styles.liked, { width: size, height: size }]}>
       <View style={styles.mint} />
@@ -12,7 +15,8 @@ export function LikedCover({ size = 168 }) {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors) {
+  return StyleSheet.create({
   liked: {
     borderRadius: 8,
     overflow: 'hidden',
@@ -39,4 +43,5 @@ const styles = StyleSheet.create({
     top: '-20%',
     opacity: 0.72,
   },
-});
+  });
+}

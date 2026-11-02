@@ -1,17 +1,27 @@
-import { useCallback, useState } from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useCallback, useState, useMemo } from 'react';
+import { Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useFocusEffect } from 'expo-router';
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { ScreenHeader } from '../../src/components/ScreenHeader';
 import { LevelBar } from '../../src/components/LevelBar';
 import { PillButton } from '../../src/components/Cards';
 import { SoundMenuButton } from '../../src/components/SoundMenu';
 import { coverSource } from '../../src/data/artwork';
+import { studioPresets } from '../../src/data/studioPresets';
 import { supabase } from '../../src/lib/supabase';
-import { colors, font } from '../../src/theme';
+import { goBack } from '../../src/lib/navigation';
+import { useKeyboardPad } from '../../src/hooks/useKeyboardPad';
+import { font } from '../../src/theme';
+import { useTheme } from '../../src/state/ThemeState';
 import { useApp } from '../../src/state/AppState';
+import { useAds } from '../../src/state/AdState';
+import { AD_COSTS } from '../../src/ads/rewards';
 
 export default function StudioScreen() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const params = useLocalSearchParams();
+  const fromMenu = params.from === 'menu';
   const {
     mixTracks,
     setLayerVolume,
@@ -23,13 +33,15 @@ export default function StudioScreen() {
     openMix,
     premium,
     userId,
+    tracks,
   } = useApp();
+  const { hasStudioAccess, requestUnlock } = useAds();
+  const keyboardPad = useKeyboardPad(12);
   const [picking, setPicking] = useState(false);
   const [query, setQuery] = useState('');
   const [name, setName] = useState('');
   const [saved, setSaved] = useState([]);
   const [notice, setNotice] = useState('');
-  const { tracks } = useApp();
   const chosen = new Set(mixTracks.map((layer) => layer.id));
   const results = tracks.filter((track) => {
     const said = query.trim().toLowerCase();
@@ -54,16 +66,20 @@ export default function StudioScreen() {
     refreshSaved();
   }, [refreshSaved]));
 
+  async function ensureStudio() {
+    if (hasStudioAccess || premium) return true;
+    const ok = await requestUnlock('studio');
+    if (!ok) setNotice(`Watch ${AD_COSTS.studio} ads to unlock Studio, or see plans.`);
+    return ok;
+  }
+
   async function saveMix() {
     const title = name.trim();
     if (!userId) {
       setNotice('Sign in to save a mix.');
       return;
     }
-    if (!premium) {
-      setNotice('Saving a mix is part of Premium.');
-      return;
-    }
+    if (!(await ensureStudio())) return;
     if (!title || !mixTracks.length) {
       setNotice('Name the mix and add at least one sound.');
       return;
@@ -146,14 +162,56 @@ export default function StudioScreen() {
     );
   }
 
+  async function applyPreset(preset) {
+    if (!(await ensureStudio())) return;
+    const layers = preset.layers
+      .map((layer) => {
+        const track = tracks.find((item) => item.id === layer.id);
+        return track ? { track_id: track.id, gain: layer.volume, muted: false } : null;
+      })
+      .filter(Boolean);
+    if (!layers.length) {
+      setNotice('That preset needs sounds that are still in the catalogue.');
+      return;
+    }
+    openMix(layers, true);
+    setName(preset.title);
+    setNotice(`${preset.title} is ready. Adjust volumes or save it.`);
+  }
+
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-      <ScreenHeader title="Studio" />
+    <KeyboardAvoidingView style={styles.screen} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+    <ScrollView
+      style={styles.screen}
+      contentContainerStyle={[styles.content, { paddingBottom: 32 + keyboardPad }]}
+      keyboardShouldPersistTaps="handled"
+      keyboardDismissMode="on-drag"
+    >
+      <ScreenHeader title="Studio" back={fromMenu} onBack={() => goBack({ from: 'menu' })} />
       <Text style={styles.lead}>
         Choose sounds and set each volume. They play together. A saved mix keeps those choices on your account.
       </Text>
+      {hasStudioAccess || premium ? null : (
+        <View style={styles.gate}>
+          <Pressable style={styles.unlock} onPress={() => requestUnlock('studio')} accessibilityLabel="Watch ads for Studio">
+            <Text style={styles.unlockText}>Watch {AD_COSTS.studio} ads to unlock Studio</Text>
+          </Pressable>
+          <Pressable onPress={() => router.push('/plans')} accessibilityLabel="See plans">
+            <Text style={styles.alt}>Or see Premium plans</Text>
+          </Pressable>
+        </View>
+      )}
+      <Text style={styles.section}>Presets</Text>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.presetRow}>
+        {studioPresets.map((preset) => (
+          <Pressable key={preset.id} style={styles.preset} onPress={() => applyPreset(preset)} accessibilityLabel={preset.title}>
+            <Text style={styles.presetTitle}>{preset.title}</Text>
+            <Text style={styles.presetBlurb}>{preset.blurb}</Text>
+          </Pressable>
+        ))}
+      </ScrollView>
       {mixTracks.length === 0 ? (
-        <Text style={styles.empty}>No sounds in this mix yet.</Text>
+        <Text style={styles.empty}>No sounds in this mix yet. Start from a preset or add sounds.</Text>
       ) : (
         <View style={styles.layers}>
           {mixTracks.map((layer) => (
@@ -179,7 +237,14 @@ export default function StudioScreen() {
           filled
           label={mixPlaying ? 'Pause mix' : 'Play mix'}
           icon={mixPlaying ? 'pause' : 'play'}
-          onPress={playMix}
+          onPress={async () => {
+            if (mixPlaying) {
+              playMix();
+              return;
+            }
+            if (!(await ensureStudio())) return;
+            playMix();
+          }}
         />
       </View>
       <View style={styles.saveRow}>
@@ -212,12 +277,23 @@ export default function StudioScreen() {
         ))
       )}
     </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors) {
+  return StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
   content: { paddingBottom: 32 },
+  gate: { marginHorizontal: 20, marginBottom: 14, gap: 8 },
+  unlock: {
+    borderWidth: 1,
+    borderColor: colors.mint,
+    borderRadius: 14,
+    padding: 14,
+  },
+  unlockText: { color: colors.mint, fontFamily: font.semibold, fontSize: 15 },
+  alt: { color: colors.muted, fontFamily: font.medium, fontSize: 14 },
   lead: {
     color: colors.muted,
     fontFamily: font.regular,
@@ -265,6 +341,16 @@ const styles = StyleSheet.create({
     marginHorizontal: 20,
     marginTop: 10,
   },
+  presetRow: { paddingHorizontal: 20, gap: 10, paddingBottom: 8 },
+  preset: {
+    width: 180,
+    backgroundColor: colors.card,
+    borderRadius: 16,
+    padding: 14,
+    marginRight: 10,
+  },
+  presetTitle: { color: colors.text, fontFamily: font.semibold, fontSize: 15 },
+  presetBlurb: { color: colors.muted, fontFamily: font.regular, fontSize: 12, lineHeight: 17, marginTop: 6 },
   section: {
     color: colors.text,
     fontFamily: font.bold,
@@ -309,4 +395,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
   },
   pickArt: { width: 48, height: 48, borderRadius: 10, backgroundColor: colors.card },
-});
+  });
+}

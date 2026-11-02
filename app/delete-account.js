@@ -1,12 +1,15 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { router } from 'expo-router';
 import { ScreenHeader } from '../src/components/ScreenHeader';
 import { accountAction } from '../src/lib/supabase';
-import { colors, font } from '../src/theme';
+import { font } from '../src/theme';
+import { useTheme } from '../src/state/ThemeState';
 import { useApp } from '../src/state/AppState';
 
 export default function DeleteAccountScreen() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const { signOut } = useApp();
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -38,11 +41,13 @@ export default function DeleteAccountScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors) {
+  return StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
   lead: { color: colors.muted, fontFamily: font.regular, fontSize: 15, lineHeight: 22, marginHorizontal: 20, marginBottom: 16 },
   input: { marginHorizontal: 20, height: 48, borderRadius: 14, backgroundColor: colors.card, color: colors.text, fontFamily: font.regular, fontSize: 16, paddingHorizontal: 14 },
   error: { color: colors.amber, fontFamily: font.regular, marginHorizontal: 20, marginTop: 12 },
   button: { marginHorizontal: 20, marginTop: 18, height: 50, borderRadius: 25, backgroundColor: colors.amber, alignItems: 'center', justifyContent: 'center' },
-  buttonText: { color: '#1C1608', fontFamily: font.semibold, fontSize: 16 },
-});
+  buttonText: { color: colors.mintInk, fontFamily: font.semibold, fontSize: 16 },
+  });
+}

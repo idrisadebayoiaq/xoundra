@@ -1,11 +1,14 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { ScreenHeader } from '../src/components/ScreenHeader';
 import { accountAction } from '../src/lib/supabase';
-import { colors, font } from '../src/theme';
+import { font } from '../src/theme';
+import { useTheme } from '../src/state/ThemeState';
 import { useApp } from '../src/state/AppState';
 
 export default function ChangeEmailScreen() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const { email, refreshAccount } = useApp();
   const [next, setNext] = useState('');
   const [password, setPassword] = useState('');
@@ -68,6 +71,8 @@ export default function ChangeEmailScreen() {
 }
 
 function Field({ label, ...props }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   return (
     <View style={styles.field}>
       <Text style={styles.label}>{label}</Text>
@@ -76,7 +81,8 @@ function Field({ label, ...props }) {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors) {
+  return StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
   lead: { color: colors.muted, fontFamily: font.regular, fontSize: 15, lineHeight: 22, marginHorizontal: 20, marginBottom: 16 },
   field: { marginHorizontal: 20, marginBottom: 14 },
@@ -86,4 +92,5 @@ const styles = StyleSheet.create({
   notice: { color: colors.mint, fontFamily: font.regular, marginHorizontal: 20 },
   button: { marginHorizontal: 20, marginTop: 12, height: 50, borderRadius: 25, backgroundColor: colors.mint, alignItems: 'center', justifyContent: 'center' },
   buttonText: { color: colors.mintInk, fontFamily: font.semibold, fontSize: 16 },
-});
+  });
+}

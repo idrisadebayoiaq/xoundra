@@ -1,14 +1,17 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useState, useMemo } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Redirect, router, useFocusEffect } from 'expo-router';
 import { ScreenHeader } from '../src/components/ScreenHeader';
 import { TrackRow } from '../src/components/Cards';
 import { coverSource } from '../src/data/artwork';
 import { loadArtistWorks } from '../src/lib/artistMedia';
-import { colors, font } from '../src/theme';
+import { font } from '../src/theme';
+import { useTheme } from '../src/state/ThemeState';
 import { useApp } from '../src/state/AppState';
 
 export default function ArtistSoundsScreen() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const app = useApp();
   const [albums, setAlbums] = useState([]);
   const [singles, setSingles] = useState([]);
@@ -68,7 +71,8 @@ function playable(sound, app) {
   };
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors) {
+  return StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
   content: { paddingBottom: 40, paddingHorizontal: 12 },
   section: { color: colors.text, fontFamily: font.bold, fontSize: 18, marginHorizontal: 8, marginTop: 8, marginBottom: 8 },
@@ -78,4 +82,5 @@ const styles = StyleSheet.create({
   copy: { flex: 1 },
   title: { color: colors.text, fontFamily: font.semibold, fontSize: 16 },
   meta: { color: colors.muted, fontFamily: font.regular, fontSize: 13, marginTop: 3 },
-});
+  });
+}

@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useGlobalSearchParams, usePathname } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colors, font } from '../theme';
+import { font } from '../theme';
+import { useTheme } from '../state/ThemeState';
 import { useApp } from '../state/AppState';
 import { useShell } from '../state/ShellState';
 import { coverSource } from '../data/artwork';
@@ -20,11 +21,15 @@ import { DownloadMark } from './DownloadMark';
 const nav = [
   { href: '/', label: 'Home', icon: 'home', match: (path) => path === '/' },
   { href: '/explore', label: 'Explore', icon: 'compass', match: (path) => path === '/explore' || path === '/browse' },
+  { href: '/studio', label: 'Studio', icon: 'sparkles', match: (path) => path === '/studio' },
   { href: '/guide', label: 'Guide', icon: 'mic', match: (path) => path === '/guide' || path === '/ai' },
   { href: '/library', label: 'Library', icon: 'albums', match: (path) => path === '/library' || path === '/playlist' || path === '/new-playlist' },
+  { href: '/profile', label: 'Profile', icon: 'person', match: (path) => path === '/profile' },
 ];
 
 export function WebDeck({ children }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const { desktop, sidebar, panel } = useShell();
   const { track, mixPlaying } = useApp();
   const { width } = useWindowDimensions();
@@ -52,6 +57,8 @@ export function WebDeck({ children }) {
 }
 
 function TopBar() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
   const { sidebar, toggleSidebar, search, setSearch } = useShell();
   const { unread, avatarPath, avatarStamp } = useApp();
@@ -87,6 +94,8 @@ function TopBar() {
 }
 
 function Sidebar() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const params = useGlobalSearchParams();
   const path = usePathname();
   const { likes, downloads, play, userId, track, tracks } = useApp();
@@ -184,8 +193,8 @@ function Sidebar() {
             </Pressable>
           ))
         ) : null}
-        {filter === 'liked' ? likedRows(likes, needle, track, play) : null}
-        {filter === 'downloads' ? likedRows(downloads, needle, track, play) : null}
+        {filter === 'liked' ? likedRows(likes, needle, track, play, styles) : null}
+        {filter === 'downloads' ? likedRows(downloads, needle, track, play, styles) : null}
         {filter === 'playlists' && playlists.length === 0 ? <Text style={styles.sideEmpty}>Playlists you create show up here.</Text> : null}
         {filter === 'liked' && likes.length === 0 ? <Text style={styles.sideEmpty}>Liked sounds show up here.</Text> : null}
         {filter === 'downloads' && downloads.length === 0 ? <Text style={styles.sideEmpty}>Downloaded sounds show up here.</Text> : null}
@@ -194,7 +203,7 @@ function Sidebar() {
   );
 }
 
-function likedRows(list, needle, current, play) {
+function likedRows(list, needle, current, play, styles) {
   return list
     .filter((item) => item.title.toLowerCase().includes(needle))
     .map((item) => (
@@ -210,6 +219,8 @@ function likedRows(list, needle, current, play) {
 }
 
 function NowPanel() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const { closePanel } = useShell();
   const {
     track, mixPlaying, mixTracks, playing, isLiked, toggleLike, closePlayback,
@@ -254,6 +265,8 @@ function NowPanel() {
 }
 
 function Transport() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const { panel, openPanel, closePanel } = useShell();
@@ -328,10 +341,11 @@ function Transport() {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors) {
+  return StyleSheet.create({
   deck: {
     flex: 1,
-    backgroundColor: '#000000',
+    backgroundColor: colors.canvas,
   },
   body: {
     flex: 1,
@@ -362,7 +376,7 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingHorizontal: 12,
     paddingBottom: 8,
-    backgroundColor: '#000000',
+    backgroundColor: colors.canvas,
   },
   mark: {
     width: 28,
@@ -389,7 +403,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   navRowOn: {
-    backgroundColor: '#1C212B',
+    backgroundColor: colors.cardRaised,
   },
   navLabel: {
     color: colors.text,
@@ -405,7 +419,7 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#181B22',
+    backgroundColor: colors.card,
   },
   navBtnOn: {
     backgroundColor: colors.mint,
@@ -415,7 +429,7 @@ const styles = StyleSheet.create({
     minWidth: 120,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#181B22',
+    backgroundColor: colors.card,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
@@ -461,7 +475,7 @@ const styles = StyleSheet.create({
   side: {
     width: 280,
     minHeight: 0,
-    backgroundColor: '#12141A',
+    backgroundColor: colors.card,
     borderRadius: 12,
     marginBottom: 8,
     paddingTop: 14,
@@ -489,7 +503,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 14,
-    backgroundColor: '#1C2028',
+    backgroundColor: colors.cardRaised,
   },
   chipOn: {
     backgroundColor: colors.text,
@@ -500,7 +514,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
   chipTextOn: {
-    color: '#101218',
+    color: colors.bg,
   },
   sideProgress: {
     marginHorizontal: 12,
@@ -510,7 +524,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     height: 36,
     borderRadius: 8,
-    backgroundColor: '#1C2028',
+    backgroundColor: colors.cardRaised,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
@@ -557,7 +571,7 @@ const styles = StyleSheet.create({
     width: 46,
     height: 46,
     borderRadius: 4,
-    backgroundColor: '#1C2028',
+    backgroundColor: colors.cardRaised,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -577,7 +591,7 @@ const styles = StyleSheet.create({
   },
   now: {
     width: 320,
-    backgroundColor: '#12141A',
+    backgroundColor: colors.card,
     borderRadius: 12,
     marginBottom: 8,
     padding: 16,
@@ -627,7 +641,7 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingTop: 8,
     paddingHorizontal: 12,
-    backgroundColor: '#0C0E13',
+    backgroundColor: colors.canvas,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: colors.line,
   },
@@ -699,4 +713,5 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
     alignItems: 'center',
   },
-});
+  });
+}

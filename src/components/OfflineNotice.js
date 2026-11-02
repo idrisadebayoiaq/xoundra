@@ -1,8 +1,12 @@
+import { useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
-import { colors, font } from '../theme';
+import { font } from '../theme';
+import { useTheme } from '../state/ThemeState';
 
 export function OfflineNotice() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   return (
     <View style={styles.fill}>
       <Text style={styles.title}>You're offline</Text>
@@ -14,7 +18,8 @@ export function OfflineNotice() {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors) {
+  return StyleSheet.create({
   fill: {
     position: 'absolute',
     top: 0,
@@ -55,4 +60,5 @@ const styles = StyleSheet.create({
     fontFamily: font.semibold,
     fontSize: 16,
   },
-});
+  });
+}

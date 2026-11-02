@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { colors, font } from '../theme';
+import { font } from '../theme';
+import { useTheme } from '../state/ThemeState';
 import { useApp } from '../state/AppState';
 
 const messages = {
@@ -10,9 +11,13 @@ const messages = {
   offline: 'Connect to the internet, then try again.',
   missing: 'This sound is not available to download.',
   saved: 'Saved on this device.',
+  ads: 'Watch the ads to download, or go Premium.',
 };
 
-export function SoundMenuButton({ track, color = colors.text }) {
+export function SoundMenuButton({ track, color }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const iconColor = color || colors.text;
   const [open, setOpen] = useState(false);
   const [notice, setNotice] = useState('');
   const { play, isLiked, toggleLike, isFavourite, toggleFavourite, addLayer, saveDownload, removeDownload, isDownloaded } = useApp();
@@ -33,8 +38,12 @@ export function SoundMenuButton({ track, color = colors.text }) {
       return;
     }
     const result = await saveDownload(track);
-    if (result === 'premium') {
-      close();
+    if (result === 'premium' || result === 'ads') {
+      setNotice(messages[result] || '');
+      if (result === 'premium') {
+        close();
+        router.push('/plans');
+      }
       return;
     }
     setNotice(messages[result] || '');
@@ -58,7 +67,7 @@ export function SoundMenuButton({ track, color = colors.text }) {
         accessibilityLabel={`Options for ${track.title}`}
         style={styles.hit}
       >
-        <Ionicons name="ellipsis-horizontal" size={20} color={color} />
+        <Ionicons name="ellipsis-horizontal" size={20} color={iconColor} />
       </Pressable>
       <Modal visible={open} transparent animationType="fade" onRequestClose={close}>
         <Pressable style={styles.backdrop} onPress={close}>
@@ -78,7 +87,8 @@ export function SoundMenuButton({ track, color = colors.text }) {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors) {
+  return StyleSheet.create({
   hit: {
     width: 32,
     height: 32,
@@ -91,7 +101,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   sheet: {
-    backgroundColor: '#101725',
+    backgroundColor: colors.card,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     paddingTop: 18,
@@ -122,4 +132,5 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     marginTop: 4,
   },
-});
+  });
+}

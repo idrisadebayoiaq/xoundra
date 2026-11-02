@@ -1,12 +1,16 @@
+import { useMemo } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { ScreenHeader } from '../src/components/ScreenHeader';
 import { PillButton, TrackRow } from '../src/components/Cards';
 import { tracksForMood } from '../src/data/catalogue';
-import { colors, font } from '../src/theme';
+import { font } from '../src/theme';
+import { useTheme } from '../src/state/ThemeState';
 import { useApp } from '../src/state/AppState';
 
 export default function BrowseScreen() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const { mood } = useLocalSearchParams();
   const name = Array.isArray(mood) ? mood[0] : mood || 'Sounds';
   const { play, tracks } = useApp();
@@ -33,7 +37,8 @@ export default function BrowseScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors) {
+  return StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
   content: { paddingBottom: 28 },
   count: {
@@ -56,4 +61,5 @@ const styles = StyleSheet.create({
     fontFamily: font.regular,
     marginHorizontal: 20,
   },
-});
+  });
+}

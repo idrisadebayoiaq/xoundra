@@ -1,13 +1,17 @@
+import { useMemo } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { colors, font } from '../theme';
+import { font } from '../theme';
+import { useTheme } from '../state/ThemeState';
 import { coverSource } from '../data/artwork';
 import { useApp } from '../state/AppState';
 import { useAudioOutput } from '../lib/audioRoute';
 import { ArtistLink } from './ArtistLink';
 
 export function MiniPlayer() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const { track, playing, position, togglePlay, mixPlaying, mixTracks, playMix, closePlayback } = useApp();
   const output = useAudioOutput();
   if (mixPlaying && mixTracks.length) {
@@ -80,13 +84,14 @@ export function MiniPlayer() {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors) {
+  return StyleSheet.create({
   bar: {
     height: 68,
     marginHorizontal: 10,
     marginBottom: 6,
     borderRadius: 14,
-    backgroundColor: '#12151B',
+    backgroundColor: colors.card,
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 10,
@@ -125,4 +130,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-});
+  });
+}

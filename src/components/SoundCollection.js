@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, useMemo } from 'react';
 import { Modal, Platform, Pressable, ScrollView, Share, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -6,7 +6,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { goBack } from '../lib/navigation';
 import { Avatar } from './Avatar';
 import { TrackRow } from './Cards';
-import { colors, font } from '../theme';
+import { font } from '../theme';
+import { useTheme } from '../state/ThemeState';
 import { useApp } from '../state/AppState';
 
 export function SoundCollection({
@@ -26,6 +27,8 @@ export function SoundCollection({
   rename,
   onRemoveTrack,
 }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const { play, saveDownload, isDownloaded, premium } = useApp();
@@ -78,10 +81,6 @@ export function SoundCollection({
   }
 
   async function downloadAll() {
-    if (!premium) {
-      router.push('/plans');
-      return;
-    }
     const pending = tracks.filter((track) => !isDownloaded(track.id));
     if (!pending.length) {
       setNote('These sounds are already on this device.');
@@ -90,7 +89,7 @@ export function SoundCollection({
     setNote('');
     for (const track of pending) {
       const result = await saveDownload(track);
-      if (result === 'offline' || result === 'premium') break;
+      if (result === 'offline' || result === 'ads' || result === 'premium') break;
     }
   }
 
@@ -241,11 +240,12 @@ function shuffle(list) {
   return items;
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors) {
+  return StyleSheet.create({
   screen: { flex: 1, minHeight: 0, backgroundColor: colors.bg },
   screenWeb: { height: '100%', overflow: 'hidden' },
   hero: {
-    backgroundColor: '#121A24',
+    backgroundColor: colors.card,
     paddingHorizontal: 16,
     paddingBottom: 8,
     flexDirection: 'row',
@@ -258,7 +258,7 @@ const styles = StyleSheet.create({
   search: {
     height: 40,
     borderRadius: 8,
-    backgroundColor: '#1C2430',
+    backgroundColor: colors.cardRaised,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
@@ -272,7 +272,7 @@ const styles = StyleSheet.create({
     height: 40,
   },
   top: {
-    backgroundColor: '#121A24',
+    backgroundColor: colors.card,
     paddingHorizontal: 16,
     paddingBottom: 18,
   },
@@ -332,9 +332,9 @@ const styles = StyleSheet.create({
   list: { paddingHorizontal: 8 },
   trackLine: { flexDirection: 'row', alignItems: 'center' },
   trackMain: { flex: 1 },
-  backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.55)', justifyContent: 'flex-end' },
+  backdrop: { flex: 1, backgroundColor: colors.overlay, justifyContent: 'flex-end' },
   sheet: {
-    backgroundColor: '#161A22',
+    backgroundColor: colors.card,
     borderTopLeftRadius: 18,
     borderTopRightRadius: 18,
     paddingTop: 8,
@@ -343,4 +343,5 @@ const styles = StyleSheet.create({
   sheetRow: { paddingHorizontal: 20, paddingVertical: 14 },
   sheetText: { color: colors.text, fontFamily: font.medium, fontSize: 16 },
   danger: { color: colors.amber },
-});
+  });
+}

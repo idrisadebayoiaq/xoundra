@@ -1,12 +1,17 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { Animated, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useCallback, useEffect, useRef, useState, useMemo } from 'react';
+import { Animated, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { router, useFocusEffect } from 'expo-router';
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { askGuide } from '../../src/lib/supabase';
 import { listenOnce, speakLine, stopSpeaking } from '../../src/lib/speech';
-import { colors, font } from '../../src/theme';
+import { goBack } from '../../src/lib/navigation';
+import { useKeyboardPad } from '../../src/hooks/useKeyboardPad';
+import { font } from '../../src/theme';
+import { useTheme } from '../../src/state/ThemeState';
 import { useApp } from '../../src/state/AppState';
+import { useAds } from '../../src/state/AdState';
+import { AD_COSTS } from '../../src/ads/rewards';
 
 const greeting = 'Hello. How are you feeling, or what kind of sound would you like?';
 
@@ -23,8 +28,15 @@ function relatedTracks(choice, catalogue, ids) {
 }
 
 export default function GuideScreen() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
-  const { play, playing, togglePlay, skip, reducedMotion, setAiChats, track, premium, tracks, online } = useApp();
+  const keyboardPad = useKeyboardPad(8);
+  const params = useLocalSearchParams();
+  const fromMenu = params.from === 'menu';
+  const voiceReady = Platform.OS === 'web';
+  const { play, playing, togglePlay, skip, reducedMotion, setAiChats, track, tracks, online } = useApp();
+  const { hasPremiumAccess, requestUnlock } = useAds();
   const [phase, setPhase] = useState('ready');
   const [notice, setNotice] = useState('');
   const [draft, setDraft] = useState('');
@@ -34,11 +46,11 @@ export default function GuideScreen() {
   phaseRef.current = phase;
 
   useFocusEffect(useCallback(() => {
-    if (!premium || !online) return undefined;
+    if (!hasPremiumAccess || !online) return undefined;
     if (phaseRef.current !== 'ready') return undefined;
     speakLine(greeting);
     return () => stopSpeaking();
-  }, [online, premium]));
+  }, [online, hasPremiumAccess]));
 
   useEffect(() => {
     if (reducedMotion || phase === 'ready' || phase === 'playing') {
@@ -55,12 +67,18 @@ export default function GuideScreen() {
     return () => loop.stop();
   }, [glow, phase, reducedMotion]);
 
+  async function ensureAccess() {
+    if (hasPremiumAccess) return true;
+    const ok = await requestUnlock('premium24h');
+    if (!ok) {
+      setNotice(`Watch ${AD_COSTS.premium24h} ads for 24 hours of Premium, or see plans.`);
+    }
+    return ok;
+  }
+
   async function ask(text) {
     const said = String(text || '').replace(/\s+/g, ' ').trim();
-    if (!premium) {
-      router.push('/plans');
-      return;
-    }
+    if (!(await ensureAccess())) return;
     if (!online) {
       setNotice('The guide needs a connection.');
       return;
@@ -94,10 +112,7 @@ export default function GuideScreen() {
   }
 
   async function listen() {
-    if (!premium) {
-      router.push('/plans');
-      return;
-    }
+    if (!(await ensureAccess())) return;
     if (!online) {
       setNotice('The guide needs a connection.');
       return;
@@ -117,14 +132,18 @@ export default function GuideScreen() {
       setPhase('ready');
       const reason = error instanceof Error ? error.message : '';
       if (reason === 'not-allowed') setNotice('Allow the microphone, then tap again.');
-      else if (reason === 'unavailable') setNotice('This browser cannot hear you yet. Type a request instead.');
+      else if (reason === 'unavailable') {
+        setNotice(Platform.OS === 'web'
+          ? 'This browser cannot hear you yet. Type a request instead.'
+          : 'Voice input works in the web app for now. Type a request here.');
+      }
       else if (reason === 'timeout' || reason === 'empty' || reason === 'no-speech') setNotice('Nothing came through. Type a request, or tap the mic again.');
       else setNotice('The guide could not hear that. Type a request, or tap the mic again.');
     }
   }
 
-  const caption = !premium
-    ? 'The guide is Premium'
+  const caption = !hasPremiumAccess
+    ? 'Guide unlocks with Premium or ads'
     : phase === 'listening'
       ? 'Listening'
       : phase === 'choosing'
@@ -133,11 +152,15 @@ export default function GuideScreen() {
           ? (playing ? 'Playing' : 'Paused')
           : '';
 
+  const bottomPad = Math.max(insets.bottom, 12) + 18 + keyboardPad;
+
   return (
-    <KeyboardAvoidingView
-      style={[styles.screen, { paddingTop: insets.top + 8 }]}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
+    <View style={[styles.screen, { paddingTop: insets.top + 8 }]}>
+      {fromMenu ? (
+        <Pressable onPress={() => goBack({ from: 'menu' })} hitSlop={10} style={styles.back} accessibilityLabel="Back to menu">
+          <Ionicons name="chevron-back" size={26} color={colors.text} />
+        </Pressable>
+      ) : null}
       <View style={styles.center}>
         <Animated.View style={[styles.glow, { opacity: glow }]}>
           <View style={styles.orb} />
@@ -145,13 +168,23 @@ export default function GuideScreen() {
         {caption ? <Text style={styles.caption}>{caption}</Text> : null}
         {phase === 'playing' && track ? <Text style={styles.track}>{track.title}</Text> : null}
         {notice ? <Text style={styles.track}>{notice}</Text> : null}
+        {!hasPremiumAccess ? (
+          <View style={styles.unlockRow}>
+            <Pressable style={styles.unlock} onPress={() => requestUnlock('premium24h')} accessibilityLabel="Watch ads for Premium">
+              <Text style={styles.unlockText}>Watch {AD_COSTS.premium24h} ads · 24h Premium</Text>
+            </Pressable>
+            <Pressable onPress={() => router.push('/plans')} accessibilityLabel="See plans">
+              <Text style={styles.plansLink}>See plans</Text>
+            </Pressable>
+          </View>
+        ) : null}
       </View>
-      <View style={[styles.bottom, { paddingBottom: insets.bottom + 18 }]}>
+      <View style={[styles.bottom, { paddingBottom: bottomPad }]}>
         <View style={styles.composer}>
           <TextInput
             value={draft}
             onChangeText={setDraft}
-            placeholder="Type a sound, or tap the mic"
+            placeholder={voiceReady ? 'Type a sound, or tap the mic' : 'Type the sound you want'}
             placeholderTextColor={colors.muted}
             style={[styles.input, Platform.OS === 'web' ? { outlineStyle: 'none' } : null]}
             returnKeyType="send"
@@ -177,20 +210,35 @@ export default function GuideScreen() {
           <Pressable onPress={() => skip(1)} hitSlop={8} accessibilityLabel="Next sound">
             <Ionicons name="play-skip-forward" size={26} color={colors.text} />
           </Pressable>
-          <Pressable style={styles.mic} onPress={listen} accessibilityLabel="Speak">
-            <Ionicons name="mic" size={22} color={colors.mintInk} />
-          </Pressable>
+          {voiceReady ? (
+            <Pressable style={styles.mic} onPress={listen} accessibilityLabel="Speak">
+              <Ionicons name="mic" size={22} color={colors.mintInk} />
+            </Pressable>
+          ) : (
+            <Pressable
+              style={[styles.mic, styles.micOff]}
+              onPress={() => setNotice('Voice input works in the web app for now. Type a request here.')}
+              accessibilityLabel="Voice unavailable"
+            >
+              <Ionicons name="mic-off" size={22} color={colors.muted} />
+            </Pressable>
+          )}
         </View>
       </View>
-    </KeyboardAvoidingView>
+    </View>
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors) {
+  return StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: '#101725',
+    backgroundColor: colors.card,
     paddingHorizontal: 24,
+  },
+  back: {
+    alignSelf: 'flex-start',
+    marginBottom: 4,
   },
   center: {
     flex: 1,
@@ -211,7 +259,7 @@ const styles = StyleSheet.create({
     borderRadius: 84,
     backgroundColor: colors.mint,
     borderWidth: 18,
-    borderColor: '#9BE7D4',
+    borderColor: colors.mint,
     shadowColor: colors.lavender,
     shadowOpacity: 0.9,
     shadowRadius: 24,
@@ -230,16 +278,41 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     paddingHorizontal: 12,
   },
+  unlockRow: {
+    marginTop: 18,
+    alignItems: 'center',
+    gap: 10,
+  },
+  unlock: {
+    height: 44,
+    paddingHorizontal: 18,
+    borderRadius: 22,
+    backgroundColor: colors.mint,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  unlockText: {
+    color: colors.mintInk,
+    fontFamily: font.semibold,
+    fontSize: 14,
+  },
+  plansLink: {
+    color: colors.muted,
+    fontFamily: font.medium,
+    fontSize: 14,
+  },
   bottom: { gap: 22 },
   composer: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    backgroundColor: colors.card,
+    backgroundColor: colors.bg,
     borderRadius: 28,
     paddingLeft: 18,
     paddingRight: 6,
     minHeight: 56,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.line,
   },
   input: {
     flex: 1,
@@ -278,4 +351,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-});
+  micOff: {
+    backgroundColor: colors.cardRaised,
+  },
+  });
+}

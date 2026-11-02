@@ -1,9 +1,12 @@
+import { useMemo } from 'react';
 import { Alert, Platform, Pressable, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors } from '../theme';
+import { useTheme } from '../state/ThemeState';
 import { useApp } from '../state/AppState';
 
 export function DownloadMark({ track, size = 16 }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const { isDownloaded, saveDownload, removeDownload } = useApp();
   if (!track?.id) return null;
   const saved = isDownloaded(track.id);
@@ -33,6 +36,8 @@ export function DownloadMark({ track, size = 16 }) {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors) {
+  return StyleSheet.create({
   hit: { padding: 4 },
-});
+  });
+}

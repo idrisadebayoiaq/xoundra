@@ -1,6 +1,6 @@
-import { useEffect } from 'react';
-import { Platform, useWindowDimensions, View } from 'react-native';
-import { colors } from '../theme';
+import { useEffect, useMemo } from 'react';
+import { Platform, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { useTheme } from '../state/ThemeState';
 
 export function frameWidth(screenWidth) {
   if (screenWidth < 560) return screenWidth;
@@ -8,14 +8,17 @@ export function frameWidth(screenWidth) {
 }
 
 export function AppFrame({ children }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const { width } = useWindowDimensions();
   const column = frameWidth(width);
 
   useEffect(() => {
     if (Platform.OS !== 'web' || typeof document === 'undefined') return;
-    document.documentElement.style.backgroundColor = '#000000';
-    document.body.style.backgroundColor = '#000000';
-  }, []);
+    document.documentElement.style.backgroundColor = colors.canvas;
+    document.documentElement.style.colorScheme = colors.scheme;
+    document.body.style.backgroundColor = colors.canvas;
+  }, [colors]);
 
   return (
     <View style={styles.canvas}>
@@ -24,17 +27,19 @@ export function AppFrame({ children }) {
   );
 }
 
-const styles = {
-  canvas: {
-    flex: 1,
-    width: '100%',
-    backgroundColor: '#000000',
-    alignItems: 'center',
-  },
-  column: {
-    flex: 1,
-    width: '100%',
-    minHeight: 0,
-    backgroundColor: colors.bg,
-  },
-};
+function makeStyles(colors) {
+  return StyleSheet.create({
+    canvas: {
+      flex: 1,
+      width: '100%',
+      backgroundColor: colors.canvas,
+      alignItems: 'center',
+    },
+    column: {
+      flex: 1,
+      width: '100%',
+      minHeight: 0,
+      backgroundColor: colors.bg,
+    },
+  });
+}

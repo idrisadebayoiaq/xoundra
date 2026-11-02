@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -6,7 +6,8 @@ import * as WebBrowser from 'expo-web-browser';
 import { ScreenHeader } from '../src/components/ScreenHeader';
 import { plans } from '../src/data/catalogue';
 import { supabase } from '../src/lib/supabase';
-import { colors, font } from '../src/theme';
+import { font } from '../src/theme';
+import { useTheme } from '../src/state/ThemeState';
 import { useApp } from '../src/state/AppState';
 import { useShell } from '../src/state/ShellState';
 
@@ -30,6 +31,8 @@ function brandOf(number) {
 }
 
 export default function PayScreen() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const { plan: planId = 'premium_monthly' } = useLocalSearchParams();
   const { country, refreshPremium } = useApp();
   const plan = plans.find((item) => item.id === planId) || plans[0];
@@ -354,7 +357,8 @@ export default function PayScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors) {
+  return StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
   content: { paddingHorizontal: 20, paddingBottom: 32 },
   plan: { color: colors.muted, fontFamily: font.medium, fontSize: 13, marginTop: 8 },
@@ -407,7 +411,7 @@ const styles = StyleSheet.create({
   field: {
     minHeight: 52,
     borderRadius: 12,
-    backgroundColor: '#2A2E36',
+    backgroundColor: colors.switchOff,
     paddingHorizontal: 14,
     flexDirection: 'row',
     alignItems: 'center',
@@ -420,7 +424,7 @@ const styles = StyleSheet.create({
     height: 52,
   },
   marks: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  mark: { color: '#6E7780', fontFamily: font.semibold, fontSize: 10 },
+  mark: { color: colors.muted, fontFamily: font.semibold, fontSize: 10 },
   markOn: { color: colors.text },
   checkRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 4 },
   box: {
@@ -428,15 +432,15 @@ const styles = StyleSheet.create({
     height: 18,
     borderRadius: 4,
     borderWidth: 1,
-    borderColor: '#8E98A3',
+    borderColor: colors.muted,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  boxOn: { backgroundColor: '#F3F6F8', borderColor: '#F3F6F8' },
-  checkText: { color: '#C5CED6', fontFamily: font.regular, fontSize: 13, flex: 1 },
+  boxOn: { backgroundColor: colors.text, borderColor: colors.text },
+  checkText: { color: colors.text, fontFamily: font.regular, fontSize: 13, flex: 1 },
   summary: {
     width: '100%',
-    backgroundColor: '#1C2028',
+    backgroundColor: colors.cardRaised,
     borderRadius: 18,
     padding: 22,
   },
@@ -444,9 +448,9 @@ const styles = StyleSheet.create({
   summaryName: { color: colors.text, fontFamily: font.bold, fontSize: 26 },
   featuresLabel: { color: colors.text, fontFamily: font.semibold, fontSize: 14, marginTop: 18, marginBottom: 8 },
   feature: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 },
-  featureText: { color: '#C5CED6', fontFamily: font.regular, fontSize: 14, flex: 1 },
+  featureText: { color: colors.text, fontFamily: font.regular, fontSize: 14, flex: 1 },
   priceRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 12, marginTop: 14 },
-  priceLabel: { color: '#C5CED6', fontFamily: font.regular, fontSize: 14, flex: 1 },
+  priceLabel: { color: colors.text, fontFamily: font.regular, fontSize: 14, flex: 1 },
   priceValue: { color: colors.text, fontFamily: font.medium, fontSize: 14 },
   dueLabel: { color: colors.text, fontFamily: font.semibold, fontSize: 15 },
   dueValue: { color: colors.text, fontFamily: font.semibold, fontSize: 15 },
@@ -454,10 +458,11 @@ const styles = StyleSheet.create({
     marginTop: 20,
     height: 48,
     borderRadius: 24,
-    backgroundColor: '#F3F6F8',
+    backgroundColor: colors.text,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  subscribeText: { color: '#111318', fontFamily: font.semibold, fontSize: 16 },
-  legal: { color: '#8E98A3', fontFamily: font.regular, fontSize: 11, lineHeight: 16, marginTop: 14 },
-});
+  subscribeText: { color: colors.bg, fontFamily: font.semibold, fontSize: 16 },
+  legal: { color: colors.muted, fontFamily: font.regular, fontSize: 11, lineHeight: 16, marginTop: 14 },
+  });
+}

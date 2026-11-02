@@ -1,9 +1,12 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, font } from '../theme';
+import { font } from '../theme';
+import { useTheme } from '../state/ThemeState';
 
 export function Dropdown({ label, value, options, onChange }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const [open, setOpen] = useState(false);
   const current = options.find((item) => item.value === value);
 
@@ -45,7 +48,8 @@ export function Dropdown({ label, value, options, onChange }) {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors) {
+  return StyleSheet.create({
   wrap: { gap: 8 },
   label: {
     color: colors.muted,
@@ -70,7 +74,7 @@ const styles = StyleSheet.create({
   },
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(7,8,13,0.72)',
+    backgroundColor: colors.overlay,
     justifyContent: 'flex-end',
   },
   dismiss: { ...StyleSheet.absoluteFillObject },
@@ -106,4 +110,5 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   optionOn: { color: colors.mint },
-});
+  });
+}

@@ -102,6 +102,22 @@ export function forYou(tracks) {
 export function statLine(track) {
   const plays = Number(track?.plays) || 0;
   const likes = Number(track?.likes) || 0;
-  const favorites = Number(track?.favorites) || 0;
-  return `${plays} ${plays === 1 ? 'play' : 'plays'} · ${likes} ${likes === 1 ? 'like' : 'likes'} · ${favorites} ${favorites === 1 ? 'favorite' : 'favorites'}`;
+  return `${plays} ${plays === 1 ? 'play' : 'plays'} · ${likes} ${likes === 1 ? 'like' : 'likes'}`;
+}
+
+export function mostPlayedFromHistory(history, tracks, limit = 12) {
+  const counts = new Map();
+  for (const item of history || []) {
+    const id = item?.id || item?.track_id;
+    if (!id) continue;
+    counts.set(id, (counts.get(id) || 0) + (item.playCount || 1));
+  }
+  return [...counts.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .map(([id, playCount]) => {
+      const track = tracks.find((item) => item.id === id);
+      return track ? { ...track, userPlays: playCount } : null;
+    })
+    .filter(Boolean)
+    .slice(0, limit);
 }

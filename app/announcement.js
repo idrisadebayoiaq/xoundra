@@ -1,11 +1,14 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useState, useMemo } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { ScreenHeader } from '../src/components/ScreenHeader';
 import { supabase } from '../src/lib/supabase';
-import { colors, font } from '../src/theme';
+import { font } from '../src/theme';
+import { useTheme } from '../src/state/ThemeState';
 
 export default function AnnouncementScreen() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const { id } = useLocalSearchParams();
   const announcementId = Array.isArray(id) ? id[0] : id;
   const [card, setCard] = useState(null);
@@ -36,7 +39,8 @@ export default function AnnouncementScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors) {
+  return StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
   content: { paddingBottom: 40, paddingHorizontal: 20 },
   card: { backgroundColor: colors.card, borderRadius: 16, padding: 16 },
@@ -44,4 +48,5 @@ const styles = StyleSheet.create({
   when: { color: colors.muted, fontFamily: font.regular, fontSize: 13, marginTop: 8 },
   body: { color: colors.text, fontFamily: font.regular, fontSize: 16, lineHeight: 24, marginTop: 16 },
   missing: { color: colors.muted, fontFamily: font.regular, fontSize: 15 },
-});
+  });
+}

@@ -1,13 +1,16 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ScreenHeader } from '../src/components/ScreenHeader';
 import { supabase } from '../src/lib/supabase';
 import { rememberSignIn } from '../src/lib/pendingAuth';
-import { colors, font } from '../src/theme';
+import { font } from '../src/theme';
+import { useTheme } from '../src/state/ThemeState';
 
 export default function SignInScreen() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -47,6 +50,8 @@ export default function SignInScreen() {
 }
 
 function Field({ label, ...props }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   return (
     <View style={styles.field}>
       <Text style={styles.label}>{label}</Text>
@@ -61,7 +66,8 @@ function Field({ label, ...props }) {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors) {
+  return StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
   field: { marginHorizontal: 20, marginBottom: 14 },
   label: { color: colors.muted, fontFamily: font.medium, fontSize: 13, marginBottom: 6 },
@@ -86,4 +92,5 @@ const styles = StyleSheet.create({
   },
   buttonText: { color: colors.mintInk, fontFamily: font.semibold, fontSize: 16 },
   link: { color: colors.mint, fontFamily: font.medium, textAlign: 'center', marginTop: 18 },
-});
+  });
+}

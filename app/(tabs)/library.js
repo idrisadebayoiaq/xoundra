@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useMemo } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
@@ -11,7 +11,8 @@ import { LikedCover } from '../../src/components/LikedCover';
 import { DownloadMark } from '../../src/components/DownloadMark';
 import { coverSource } from '../../src/data/artwork';
 import { avatarUrl, supabase } from '../../src/lib/supabase';
-import { colors, font } from '../../src/theme';
+import { font } from '../../src/theme';
+import { useTheme } from '../../src/state/ThemeState';
 import { useApp } from '../../src/state/AppState';
 import { useShell } from '../../src/state/ShellState';
 
@@ -26,6 +27,8 @@ const chips = [
 ];
 
 export default function LibraryScreen() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const params = useLocalSearchParams();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
@@ -304,6 +307,8 @@ function emptyCopy(filter, premium) {
 }
 
 function LibraryCard({ tile, size, onPress }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   return (
     <View style={{ width: size }}>
       <Pressable onPress={onPress} accessibilityLabel={tile.title}>
@@ -321,6 +326,8 @@ function LibraryCard({ tile, size, onPress }) {
 }
 
 function TileArt({ tile, size }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const radius = tile.kind === 'artist' ? size / 2 : 8;
   if (tile.kind === 'artist') {
     const uri = tile.artist.avatarPath ? `${avatarUrl(tile.artist.avatarPath)}?v=1` : '';
@@ -342,7 +349,8 @@ function TileArt({ tile, size }) {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors) {
+  return StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
   content: { paddingBottom: 28 },
   head: {
@@ -363,11 +371,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 16,
-    backgroundColor: '#1C2028',
+    backgroundColor: colors.cardRaised,
   },
   chipOn: { backgroundColor: colors.text },
   chipText: { color: colors.text, fontFamily: font.medium, fontSize: 13 },
-  chipTextOn: { color: '#111318' },
+  chipTextOn: { color: colors.bg },
   sortRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -423,4 +431,5 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 4,
   },
-});
+  });
+}
