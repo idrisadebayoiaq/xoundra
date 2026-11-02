@@ -1,6 +1,7 @@
 import { Platform } from 'react-native';
 
 let deferred = null;
+let listening = false;
 
 function webWindow() {
   if (Platform.OS !== 'web') return null;
@@ -8,8 +9,11 @@ function webWindow() {
   return globalThis.window;
 }
 
-const win = webWindow();
-if (win && typeof win.addEventListener === 'function') {
+function ensureListener() {
+  if (listening || Platform.OS !== 'web') return;
+  const win = webWindow();
+  if (!win || typeof win.addEventListener !== 'function') return;
+  listening = true;
   win.addEventListener('beforeinstallprompt', (event) => {
     event.preventDefault();
     deferred = event;
@@ -18,6 +22,7 @@ if (win && typeof win.addEventListener === 'function') {
 
 export async function promptPwaInstall() {
   if (Platform.OS !== 'web') return 'unsupported';
+  ensureListener();
   const browser = webWindow();
   if (!browser) return 'unsupported';
   if (deferred && typeof deferred.prompt === 'function') {
