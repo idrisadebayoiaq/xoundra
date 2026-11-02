@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { font } from '../theme';
 import { useTheme } from '../state/ThemeState';
 
-export const androidApkUrl = 'https://expo.dev/artifacts/eas/ZQVcA55H6fz78LzgbYUtpyC054SPap2Vk775I5MMPOQ.apk';
+export const androidApkUrl = 'https://expo.dev/artifacts/eas/81_-0bxmNJH0ydJ7yBjBW4AtKJGISTKF8CBtWza0i4c.apk';
 
 export function openAndroidApp() {
   Linking.openURL(androidApkUrl);
