@@ -1,6 +1,7 @@
 import React from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AdRewardModal } from '../ads/AdRewardModal';
+import { ensureMobileAds } from '../ads/mobileAds';
 import {
   AD_COSTS,
   STORAGE_KEY,
@@ -37,6 +38,7 @@ export function AdProvider({ children, isPaidPremium = false }) {
         setUnlocks(emptyUnlocks());
       }
     }).catch(() => {});
+    ensureMobileAds().catch(() => {});
   }, []);
 
   const persist = React.useCallback((next) => {

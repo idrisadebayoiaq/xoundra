@@ -5,13 +5,13 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { font } from '../theme';
 import { useTheme } from '../state/ThemeState';
 import { AD_LABELS } from './rewards';
+import { adsConfigured, showRewardedAd } from './mobileAds';
 
 const AD_SECONDS = 5;
 
 /**
- * Plays a sequence of rewarded units for free-user unlocks.
- * When AdMob/AdSense unit IDs exist, swap the placeholder player for the real SDK.
- * Until then, a short countdown stands in so the unlock flow can be tested end-to-end.
+ * Free-user unlock flow only. Paid Premium never opens this modal (AdState gates).
+ * Native: real AdMob rewarded units. Web / missing SDK: short placeholder so unlocks stay testable.
  */
 export function AdRewardModal({ open, purpose, required = 1, onComplete, onCancel }) {
   const { colors } = useTheme();
@@ -20,7 +20,10 @@ export function AdRewardModal({ open, purpose, required = 1, onComplete, onCance
   const [index, setIndex] = useState(0);
   const [secondsLeft, setSecondsLeft] = useState(AD_SECONDS);
   const [playing, setPlaying] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [notice, setNotice] = useState('');
   const timer = useRef(null);
+  const useNative = Platform.OS !== 'web' && adsConfigured();
 
   useEffect(() => {
     if (!open) {
@@ -28,45 +31,75 @@ export function AdRewardModal({ open, purpose, required = 1, onComplete, onCance
       setIndex(0);
       setSecondsLeft(AD_SECONDS);
       setPlaying(false);
+      setBusy(false);
+      setNotice('');
       return undefined;
     }
     setIndex(0);
     setSecondsLeft(AD_SECONDS);
     setPlaying(false);
+    setBusy(false);
+    setNotice('');
     return () => clearInterval(timer.current);
   }, [open, purpose, required]);
 
+  const advanceAfterReward = () => {
+    const next = index + 1;
+    setPlaying(false);
+    setBusy(false);
+    if (next >= required) {
+      onComplete?.();
+      return;
+    }
+    setIndex(next);
+    setSecondsLeft(AD_SECONDS);
+    setNotice('');
+  };
+
   useEffect(() => {
-    if (!open || !playing) return undefined;
+    if (!open || !playing || useNative) return undefined;
     clearInterval(timer.current);
     timer.current = setInterval(() => {
       setSecondsLeft((value) => {
         if (value <= 1) {
           clearInterval(timer.current);
-          const next = index + 1;
-          if (next >= required) {
-            setPlaying(false);
-            onComplete?.();
-            return 0;
-          }
-          setIndex(next);
-          setPlaying(false);
-          return AD_SECONDS;
+          advanceAfterReward();
+          return 0;
         }
         return value - 1;
       });
     }, 1000);
     return () => clearInterval(timer.current);
-  }, [open, playing, index, required, onComplete]);
+  }, [open, playing, useNative, required]);
+
+  async function watch() {
+    if (busy || playing) return;
+    setNotice('');
+    if (useNative) {
+      setBusy(true);
+      const earned = await showRewardedAd();
+      if (!earned) {
+        setBusy(false);
+        setNotice('The ad did not finish. Try again, or Not now.');
+        return;
+      }
+      advanceAfterReward();
+      return;
+    }
+    setSecondsLeft(AD_SECONDS);
+    setPlaying(true);
+  }
 
   if (!open) return null;
   const label = AD_LABELS[purpose] || 'Continue';
-  const unitHint = Platform.OS === 'web'
-    ? (process.env.EXPO_PUBLIC_ADSENSE_SLOT ? 'AdSense slot ready' : 'AdSense unit pending — placeholder ad')
-    : (process.env.EXPO_PUBLIC_ADMOB_REWARDED_ID ? 'AdMob rewarded ready' : 'AdMob unit pending — placeholder ad');
+  const unitHint = useNative
+    ? 'AdMob rewarded ad'
+    : Platform.OS === 'web'
+      ? 'Web unlock preview — install the app for live ads'
+      : 'AdMob not ready — preview countdown';
 
   return (
-    <Modal visible transparent animationType="fade" onRequestClose={onCancel}>
+    <Modal visible transparent animationType="fade" onRequestClose={busy || playing ? undefined : onCancel}>
       <View style={[styles.scrim, { paddingTop: insets.top + 16, paddingBottom: Math.max(insets.bottom, 16) }]}>
         <View style={styles.card}>
           <Text style={styles.kicker}>Watch to unlock</Text>
@@ -76,10 +109,10 @@ export function AdRewardModal({ open, purpose, required = 1, onComplete, onCance
           </Text>
 
           <View style={styles.stage}>
-            {playing ? (
+            {playing || busy ? (
               <>
-                <Text style={styles.countdown}>{secondsLeft}</Text>
-                <Text style={styles.stageHint}>Ad playing…</Text>
+                {!useNative && playing ? <Text style={styles.countdown}>{secondsLeft}</Text> : null}
+                <Text style={styles.stageHint}>{busy ? 'Opening ad…' : 'Ad playing…'}</Text>
               </>
             ) : (
               <>
@@ -88,20 +121,20 @@ export function AdRewardModal({ open, purpose, required = 1, onComplete, onCance
               </>
             )}
           </View>
+          {notice ? <Text style={styles.notice}>{notice}</Text> : null}
 
           <Pressable
-            style={[styles.primary, playing && styles.primaryOff]}
-            disabled={playing}
-            onPress={() => {
-              setSecondsLeft(AD_SECONDS);
-              setPlaying(true);
-            }}
-            accessibilityLabel={playing ? 'Ad playing' : 'Watch ad'}
+            style={[styles.primary, (busy || playing) && styles.primaryOff]}
+            disabled={busy || playing}
+            onPress={watch}
+            accessibilityLabel={busy || playing ? 'Ad playing' : 'Watch ad'}
           >
-            <Text style={styles.primaryText}>{playing ? 'Watching…' : index === 0 ? 'Watch ad' : 'Watch next ad'}</Text>
+            <Text style={styles.primaryText}>
+              {busy || playing ? 'Watching…' : index === 0 ? 'Watch ad' : 'Watch next ad'}
+            </Text>
           </Pressable>
-          <Pressable style={styles.cancel} onPress={onCancel} disabled={playing} accessibilityLabel="Cancel">
-            <Text style={[styles.cancelText, playing && styles.cancelOff]}>Not now</Text>
+          <Pressable style={styles.cancel} onPress={onCancel} disabled={busy || playing} accessibilityLabel="Cancel">
+            <Text style={[styles.cancelText, (busy || playing) && styles.cancelOff]}>Not now</Text>
           </Pressable>
         </View>
       </View>
@@ -163,6 +196,11 @@ function makeStyles(colors) {
       fontSize: 13,
       textAlign: 'center',
       paddingHorizontal: 16,
+    },
+    notice: {
+      color: colors.amber,
+      fontFamily: font.regular,
+      fontSize: 13,
     },
     primary: {
       height: 50,
