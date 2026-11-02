@@ -6,9 +6,6 @@
     { "source": "/ads.txt", "destination": "/ads.txt" },
     { "source": "/app-ads.txt", "destination": "/app-ads.txt" },
     { "source": "/manifest.webmanifest", "destination": "/manifest.webmanifest" },
-    {
-      "source": "/((?!_expo/|assets/|ads\\.txt|app-ads\\.txt|manifest\\.webmanifest|favicon\\.ico|icon-|.*\\.(js|css|map|png|jpg|jpeg|gif|webp|svg|woff2?|ttf|ico)$).*)",
-      "destination": "/index.html"
-    }
+    { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
