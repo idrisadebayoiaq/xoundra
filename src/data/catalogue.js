@@ -35,6 +35,8 @@ export const moods = [
   { id: 'Ambient', title: 'Ambient', artwork: 'wind' },
   { id: 'Focus', title: 'Focus', artwork: 'storm' },
   { id: 'Meditation', title: 'Meditation', artwork: 'underwater' },
+  { id: 'Sleep', title: 'Sleep', artwork: 'night' },
+  { id: 'Children', title: 'Children', artwork: 'garden' },
 ];
 
 export function tracksForMood(id, list = tracks) {

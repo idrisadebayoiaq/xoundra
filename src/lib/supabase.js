@@ -95,6 +95,7 @@ export async function fetchCategories() {
     focus: 'storm',
     meditation: 'underwater',
     sleep: 'night',
+    children: 'garden',
   };
   const { data, error } = await supabase.from('categories').select('slug, name, sort_order').is('artist_id', null).order('sort_order');
   if (error) throw error;

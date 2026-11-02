@@ -1,0 +1,594 @@
+{
+  "tracks": [
+    {
+      "id": "soft-temple-bell",
+      "title": "Soft Temple Bell",
+      "category": "meditation",
+      "tags": [
+        "meditation",
+        "bell",
+        "calm"
+      ],
+      "shelf": "home",
+      "access": "free",
+      "duration": 150.0,
+      "durationLabel": "2:30",
+      "artwork": "soft-temple-bell",
+      "audio": "catalogue/soft-temple-bell.mp3",
+      "artwork_file": "catalog/artwork/originals/soft-temple-bell.jpg",
+      "audio_file": "catalog/audio/originals/soft-temple-bell.mp3",
+      "loop_ok": true
+    },
+    {
+      "id": "bronze-bowl-wave",
+      "title": "Bronze Bowl Wave",
+      "category": "meditation",
+      "tags": [
+        "meditation",
+        "bowl",
+        "focus"
+      ],
+      "shelf": "home",
+      "access": "free",
+      "duration": 150.0,
+      "durationLabel": "2:30",
+      "artwork": "bronze-bowl-wave",
+      "audio": "catalogue/bronze-bowl-wave.mp3",
+      "artwork_file": "catalog/artwork/originals/bronze-bowl-wave.jpg",
+      "audio_file": "catalog/audio/originals/bronze-bowl-wave.mp3",
+      "loop_ok": true
+    },
+    {
+      "id": "quiet-chime-path",
+      "title": "Quiet Chime Path",
+      "category": "meditation",
+      "tags": [
+        "meditation",
+        "chime",
+        "calm"
+      ],
+      "shelf": "home",
+      "access": "free",
+      "duration": 150.0,
+      "durationLabel": "2:30",
+      "artwork": "quiet-chime-path",
+      "audio": "catalogue/quiet-chime-path.mp3",
+      "artwork_file": "catalog/artwork/originals/quiet-chime-path.jpg",
+      "audio_file": "catalog/audio/originals/quiet-chime-path.mp3",
+      "loop_ok": true
+    },
+    {
+      "id": "still-breath-tone",
+      "title": "Still Breath Tone",
+      "category": "meditation",
+      "tags": [
+        "meditation",
+        "drone",
+        "breath"
+      ],
+      "shelf": "home",
+      "access": "free",
+      "duration": 150.0,
+      "durationLabel": "2:30",
+      "artwork": "still-breath-tone",
+      "audio": "catalogue/still-breath-tone.mp3",
+      "artwork_file": "catalog/artwork/originals/still-breath-tone.jpg",
+      "audio_file": "catalog/audio/originals/still-breath-tone.mp3",
+      "loop_ok": true
+    },
+    {
+      "id": "morning-gong-soft",
+      "title": "Morning Gong Soft",
+      "category": "meditation",
+      "tags": [
+        "meditation",
+        "gong",
+        "morning"
+      ],
+      "shelf": "explore",
+      "access": "free",
+      "duration": 150.0,
+      "durationLabel": "2:30",
+      "artwork": "morning-gong-soft",
+      "audio": "catalogue/morning-gong-soft.mp3",
+      "artwork_file": "catalog/artwork/originals/morning-gong-soft.jpg",
+      "audio_file": "catalog/audio/originals/morning-gong-soft.mp3",
+      "loop_ok": true
+    },
+    {
+      "id": "sandalwood-drift",
+      "title": "Sandalwood Drift",
+      "category": "meditation",
+      "tags": [
+        "meditation",
+        "warm",
+        "calm"
+      ],
+      "shelf": "home",
+      "access": "free",
+      "duration": 150.0,
+      "durationLabel": "2:30",
+      "artwork": "sandalwood-drift",
+      "audio": "catalogue/sandalwood-drift.mp3",
+      "artwork_file": "catalog/artwork/originals/sandalwood-drift.jpg",
+      "audio_file": "catalog/audio/originals/sandalwood-drift.mp3",
+      "loop_ok": true
+    },
+    {
+      "id": "deep-root-hum",
+      "title": "Deep Root Hum",
+      "category": "meditation",
+      "tags": [
+        "meditation",
+        "low",
+        "ground"
+      ],
+      "shelf": "home",
+      "access": "free",
+      "duration": 150.0,
+      "durationLabel": "2:30",
+      "artwork": "deep-root-hum",
+      "audio": "catalogue/deep-root-hum.mp3",
+      "artwork_file": "catalog/artwork/originals/deep-root-hum.jpg",
+      "audio_file": "catalog/audio/originals/deep-root-hum.mp3",
+      "loop_ok": true
+    },
+    {
+      "id": "lotus-pond-ripple",
+      "title": "Lotus Pond Ripple",
+      "category": "meditation",
+      "tags": [
+        "meditation",
+        "water",
+        "soft"
+      ],
+      "shelf": "explore",
+      "access": "free",
+      "duration": 150.0,
+      "durationLabel": "2:30",
+      "artwork": "lotus-pond-ripple",
+      "audio": "catalogue/lotus-pond-ripple.mp3",
+      "artwork_file": "catalog/artwork/originals/lotus-pond-ripple.jpg",
+      "audio_file": "catalog/audio/originals/lotus-pond-ripple.mp3",
+      "loop_ok": true
+    },
+    {
+      "id": "empty-room-bell",
+      "title": "Empty Room Bell",
+      "category": "meditation",
+      "tags": [
+        "meditation",
+        "bell",
+        "space"
+      ],
+      "shelf": "home",
+      "access": "free",
+      "duration": 150.0,
+      "durationLabel": "2:30",
+      "artwork": "empty-room-bell",
+      "audio": "catalogue/empty-room-bell.mp3",
+      "artwork_file": "catalog/artwork/originals/empty-room-bell.jpg",
+      "audio_file": "catalog/audio/originals/empty-room-bell.mp3",
+      "loop_ok": true
+    },
+    {
+      "id": "warm-overtones",
+      "title": "Warm Overtones",
+      "category": "meditation",
+      "tags": [
+        "meditation",
+        "harmonic",
+        "calm"
+      ],
+      "shelf": "home",
+      "access": "free",
+      "duration": 150.0,
+      "durationLabel": "2:30",
+      "artwork": "warm-overtones",
+      "audio": "catalogue/warm-overtones.mp3",
+      "artwork_file": "catalog/artwork/originals/warm-overtones.jpg",
+      "audio_file": "catalog/audio/originals/warm-overtones.mp3",
+      "loop_ok": true
+    },
+    {
+      "id": "steady-study-pulse",
+      "title": "Steady Study Pulse",
+      "category": "focus",
+      "tags": [
+        "focus",
+        "study",
+        "pulse"
+      ],
+      "shelf": "home",
+      "access": "free",
+      "duration": 150.0,
+      "durationLabel": "2:30",
+      "artwork": "steady-study-pulse",
+      "audio": "catalogue/steady-study-pulse.mp3",
+      "artwork_file": "catalog/artwork/originals/steady-study-pulse.jpg",
+      "audio_file": "catalog/audio/originals/steady-study-pulse.mp3",
+      "loop_ok": true
+    },
+    {
+      "id": "soft-pink-desk",
+      "title": "Soft Pink Desk",
+      "category": "focus",
+      "tags": [
+        "focus",
+        "pinknoise",
+        "study"
+      ],
+      "shelf": "home",
+      "access": "free",
+      "duration": 150.0,
+      "durationLabel": "2:30",
+      "artwork": "soft-pink-desk",
+      "audio": "catalogue/soft-pink-desk.mp3",
+      "artwork_file": "catalog/artwork/originals/soft-pink-desk.jpg",
+      "audio_file": "catalog/audio/originals/soft-pink-desk.mp3",
+      "loop_ok": true
+    },
+    {
+      "id": "clear-page-flow",
+      "title": "Clear Page Flow",
+      "category": "focus",
+      "tags": [
+        "focus",
+        "reading",
+        "clear"
+      ],
+      "shelf": "home",
+      "access": "free",
+      "duration": 150.0,
+      "durationLabel": "2:30",
+      "artwork": "clear-page-flow",
+      "audio": "catalogue/clear-page-flow.mp3",
+      "artwork_file": "catalog/artwork/originals/clear-page-flow.jpg",
+      "audio_file": "catalog/audio/originals/clear-page-flow.mp3",
+      "loop_ok": true
+    },
+    {
+      "id": "low-library-air",
+      "title": "Low Library Air",
+      "category": "focus",
+      "tags": [
+        "focus",
+        "library",
+        "quiet"
+      ],
+      "shelf": "home",
+      "access": "free",
+      "duration": 150.0,
+      "durationLabel": "2:30",
+      "artwork": "low-library-air",
+      "audio": "catalogue/low-library-air.mp3",
+      "artwork_file": "catalog/artwork/originals/low-library-air.jpg",
+      "audio_file": "catalog/audio/originals/low-library-air.mp3",
+      "loop_ok": true
+    },
+    {
+      "id": "quiet-desk-loop",
+      "title": "Quiet Desk Loop",
+      "category": "focus",
+      "tags": [
+        "focus",
+        "desk",
+        "loop"
+      ],
+      "shelf": "home",
+      "access": "free",
+      "duration": 150.0,
+      "durationLabel": "2:30",
+      "artwork": "quiet-desk-loop",
+      "audio": "catalogue/quiet-desk-loop.mp3",
+      "artwork_file": "catalog/artwork/originals/quiet-desk-loop.jpg",
+      "audio_file": "catalog/audio/originals/quiet-desk-loop.mp3",
+      "loop_ok": true
+    },
+    {
+      "id": "paper-soft-noise",
+      "title": "Paper Soft Noise",
+      "category": "focus",
+      "tags": [
+        "focus",
+        "noise",
+        "reading"
+      ],
+      "shelf": "explore",
+      "access": "free",
+      "duration": 150.0,
+      "durationLabel": "2:30",
+      "artwork": "paper-soft-noise",
+      "audio": "catalogue/paper-soft-noise.mp3",
+      "artwork_file": "catalog/artwork/originals/paper-soft-noise.jpg",
+      "audio_file": "catalog/audio/originals/paper-soft-noise.mp3",
+      "loop_ok": true
+    },
+    {
+      "id": "deep-focus-bed",
+      "title": "Deep Focus Bed",
+      "category": "focus",
+      "tags": [
+        "focus",
+        "deep",
+        "work"
+      ],
+      "shelf": "home",
+      "access": "free",
+      "duration": 150.0,
+      "durationLabel": "2:30",
+      "artwork": "deep-focus-bed",
+      "audio": "catalogue/deep-focus-bed.mp3",
+      "artwork_file": "catalog/artwork/originals/deep-focus-bed.jpg",
+      "audio_file": "catalog/audio/originals/deep-focus-bed.mp3",
+      "loop_ok": true
+    },
+    {
+      "id": "quiet-corridor-hum",
+      "title": "Quiet Corridor Hum",
+      "category": "focus",
+      "tags": [
+        "focus",
+        "hum",
+        "study"
+      ],
+      "shelf": "explore",
+      "access": "free",
+      "duration": 150.0,
+      "durationLabel": "2:30",
+      "artwork": "quiet-corridor-hum",
+      "audio": "catalogue/quiet-corridor-hum.mp3",
+      "artwork_file": "catalog/artwork/originals/quiet-corridor-hum.jpg",
+      "audio_file": "catalog/audio/originals/quiet-corridor-hum.mp3",
+      "loop_ok": true
+    },
+    {
+      "id": "soft-pencil-rain",
+      "title": "Soft Pencil Rain",
+      "category": "focus",
+      "tags": [
+        "focus",
+        "soft",
+        "reading"
+      ],
+      "shelf": "home",
+      "access": "free",
+      "duration": 150.0,
+      "durationLabel": "2:30",
+      "artwork": "soft-pencil-rain",
+      "audio": "catalogue/soft-pencil-rain.mp3",
+      "artwork_file": "catalog/artwork/originals/soft-pencil-rain.jpg",
+      "audio_file": "catalog/audio/originals/soft-pencil-rain.mp3",
+      "loop_ok": true
+    },
+    {
+      "id": "amber-lamp-tone",
+      "title": "Amber Lamp Tone",
+      "category": "focus",
+      "tags": [
+        "focus",
+        "warm",
+        "night"
+      ],
+      "shelf": "home",
+      "access": "free",
+      "duration": 150.0,
+      "durationLabel": "2:30",
+      "artwork": "amber-lamp-tone",
+      "audio": "catalogue/amber-lamp-tone.mp3",
+      "artwork_file": "catalog/artwork/originals/amber-lamp-tone.jpg",
+      "audio_file": "catalog/audio/originals/amber-lamp-tone.mp3",
+      "loop_ok": true
+    },
+    {
+      "id": "cloud-pillow-song",
+      "title": "Cloud Pillow Song",
+      "category": "children",
+      "tags": [
+        "children",
+        "soft",
+        "calm"
+      ],
+      "shelf": "home",
+      "access": "free",
+      "duration": 150.0,
+      "durationLabel": "2:30",
+      "artwork": "cloud-pillow-song",
+      "audio": "catalogue/cloud-pillow-song.mp3",
+      "artwork_file": "catalog/artwork/originals/cloud-pillow-song.jpg",
+      "audio_file": "catalog/audio/originals/cloud-pillow-song.mp3",
+      "loop_ok": true
+    },
+    {
+      "id": "tiny-rain-garden",
+      "title": "Tiny Rain Garden",
+      "category": "children",
+      "tags": [
+        "children",
+        "rain",
+        "gentle"
+      ],
+      "shelf": "home",
+      "access": "free",
+      "duration": 150.0,
+      "durationLabel": "2:30",
+      "artwork": "tiny-rain-garden",
+      "audio": "catalogue/tiny-rain-garden.mp3",
+      "artwork_file": "catalog/artwork/originals/tiny-rain-garden.jpg",
+      "audio_file": "catalog/audio/originals/tiny-rain-garden.mp3",
+      "loop_ok": true
+    },
+    {
+      "id": "friendly-forest-walk",
+      "title": "Friendly Forest Walk",
+      "category": "children",
+      "tags": [
+        "children",
+        "forest",
+        "walk"
+      ],
+      "shelf": "home",
+      "access": "free",
+      "duration": 150.0,
+      "durationLabel": "2:30",
+      "artwork": "friendly-forest-walk",
+      "audio": "catalogue/friendly-forest-walk.mp3",
+      "artwork_file": "catalog/artwork/originals/friendly-forest-walk.jpg",
+      "audio_file": "catalog/audio/originals/friendly-forest-walk.mp3",
+      "loop_ok": true
+    },
+    {
+      "id": "gentle-star-night",
+      "title": "Gentle Star Night",
+      "category": "children",
+      "tags": [
+        "children",
+        "night",
+        "sleep"
+      ],
+      "shelf": "home",
+      "access": "free",
+      "duration": 150.0,
+      "durationLabel": "2:30",
+      "artwork": "gentle-star-night",
+      "audio": "catalogue/gentle-star-night.mp3",
+      "artwork_file": "catalog/artwork/originals/gentle-star-night.jpg",
+      "audio_file": "catalog/audio/originals/gentle-star-night.mp3",
+      "loop_ok": true
+    },
+    {
+      "id": "soft-toybox-chimes",
+      "title": "Soft Toybox Chimes",
+      "category": "children",
+      "tags": [
+        "children",
+        "chime",
+        "play"
+      ],
+      "shelf": "explore",
+      "access": "free",
+      "duration": 150.0,
+      "durationLabel": "2:30",
+      "artwork": "soft-toybox-chimes",
+      "audio": "catalogue/soft-toybox-chimes.mp3",
+      "artwork_file": "catalog/artwork/originals/soft-toybox-chimes.jpg",
+      "audio_file": "catalog/audio/originals/soft-toybox-chimes.mp3",
+      "loop_ok": true
+    },
+    {
+      "id": "velvet-night-rest",
+      "title": "Velvet Night Rest",
+      "category": "sleep",
+      "tags": [
+        "sleep",
+        "night",
+        "rest"
+      ],
+      "shelf": "home",
+      "access": "free",
+      "duration": 150.0,
+      "durationLabel": "2:30",
+      "artwork": "velvet-night-rest",
+      "audio": "catalogue/velvet-night-rest.mp3",
+      "artwork_file": "catalog/artwork/originals/velvet-night-rest.jpg",
+      "audio_file": "catalog/audio/originals/velvet-night-rest.mp3",
+      "loop_ok": true
+    },
+    {
+      "id": "slow-heart-drift",
+      "title": "Slow Heart Drift",
+      "category": "sleep",
+      "tags": [
+        "sleep",
+        "slow",
+        "calm"
+      ],
+      "shelf": "home",
+      "access": "free",
+      "duration": 150.0,
+      "durationLabel": "2:30",
+      "artwork": "slow-heart-drift",
+      "audio": "catalogue/slow-heart-drift.mp3",
+      "artwork_file": "catalog/artwork/originals/slow-heart-drift.jpg",
+      "audio_file": "catalog/audio/originals/slow-heart-drift.mp3",
+      "loop_ok": true
+    },
+    {
+      "id": "soft-porch-rain",
+      "title": "Soft Porch Rain",
+      "category": "rain",
+      "tags": [
+        "rain",
+        "porch",
+        "sleep"
+      ],
+      "shelf": "home",
+      "access": "free",
+      "duration": 150.0,
+      "durationLabel": "2:30",
+      "artwork": "soft-porch-rain",
+      "audio": "catalogue/soft-porch-rain.mp3",
+      "artwork_file": "catalog/artwork/originals/soft-porch-rain.jpg",
+      "audio_file": "catalog/audio/originals/soft-porch-rain.mp3",
+      "loop_ok": true
+    },
+    {
+      "id": "quiet-shore-foam",
+      "title": "Quiet Shore Foam",
+      "category": "ocean",
+      "tags": [
+        "ocean",
+        "shore",
+        "calm"
+      ],
+      "shelf": "home",
+      "access": "free",
+      "duration": 150.0,
+      "durationLabel": "2:30",
+      "artwork": "quiet-shore-foam",
+      "audio": "catalogue/quiet-shore-foam.mp3",
+      "artwork_file": "catalog/artwork/originals/quiet-shore-foam.jpg",
+      "audio_file": "catalog/audio/originals/quiet-shore-foam.mp3",
+      "loop_ok": true
+    },
+    {
+      "id": "moss-path-wind",
+      "title": "Moss Path Wind",
+      "category": "forest",
+      "tags": [
+        "forest",
+        "wind",
+        "nature"
+      ],
+      "shelf": "home",
+      "access": "free",
+      "duration": 150.0,
+      "durationLabel": "2:30",
+      "artwork": "moss-path-wind",
+      "audio": "catalogue/moss-path-wind.mp3",
+      "artwork_file": "catalog/artwork/originals/moss-path-wind.jpg",
+      "audio_file": "catalog/audio/originals/moss-path-wind.mp3",
+      "loop_ok": true
+    },
+    {
+      "id": "warm-room-glow",
+      "title": "Warm Room Glow",
+      "category": "ambient",
+      "tags": [
+        "ambient",
+        "warm",
+        "room"
+      ],
+      "shelf": "home",
+      "access": "free",
+      "duration": 150.0,
+      "durationLabel": "2:30",
+      "artwork": "warm-room-glow",
+      "audio": "catalogue/warm-room-glow.mp3",
+      "artwork_file": "catalog/artwork/originals/warm-room-glow.jpg",
+      "audio_file": "catalog/audio/originals/warm-room-glow.mp3",
+      "loop_ok": true
+    }
+  ],
+  "rights": "Xoundra procedural originals \u2014 no third-party samples."
+}
