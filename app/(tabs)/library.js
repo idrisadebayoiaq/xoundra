@@ -15,12 +15,14 @@ import { font } from '../../src/theme';
 import { useTheme } from '../../src/state/ThemeState';
 import { useApp } from '../../src/state/AppState';
 import { useShell } from '../../src/state/ShellState';
+import { offlinePacks } from '../../src/data/offlinePacks';
 
 const chips = [
   ['playlists', 'Playlists'],
   ['artists', 'Artists'],
   ['liked', 'Liked'],
   ['downloads', 'Downloads'],
+  ['packs', 'Packs'],
   ['mixes', 'Mixes'],
   ['favorites', 'Favorites'],
   ['history', 'History'],
@@ -133,6 +135,29 @@ export default function LibraryScreen() {
         </View>
       </View>
       <DownloadProgress style={styles.progress} />
+      {filter === 'packs' || filter === '' ? (
+        <View style={styles.packs}>
+          <Text style={styles.packsTitle}>Offline packs</Text>
+          {offlinePacks.map((pack) => {
+            const sounds = pack.trackIds.map((id) => tracks.find((item) => item.id === id)).filter(Boolean);
+            return (
+              <Pressable
+                key={pack.id}
+                style={styles.packRow}
+                onPress={() => {
+                  if (sounds[0]) play(sounds[0], sounds);
+                }}
+              >
+                <Image source={coverSource(pack.artwork)} style={styles.packArt} />
+                <View style={styles.packCopy}>
+                  <Text style={styles.packName}>{pack.title}</Text>
+                  <Text style={styles.packMeta}>{pack.blurb}</Text>
+                </View>
+              </Pressable>
+            );
+          })}
+        </View>
+      ) : null}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
         {chips.map(([key, label]) => (
           <Pressable
@@ -351,6 +376,13 @@ function TileArt({ tile, size }) {
 
 function makeStyles(colors) {
   return StyleSheet.create({
+  packs: { marginHorizontal: 20, marginBottom: 12, gap: 10 },
+  packsTitle: { color: colors.text, fontFamily: font.bold, fontSize: 18, marginBottom: 4 },
+  packRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  packArt: { width: 56, height: 56, borderRadius: 10, backgroundColor: colors.card },
+  packCopy: { flex: 1 },
+  packName: { color: colors.text, fontFamily: font.semibold, fontSize: 15 },
+  packMeta: { color: colors.muted, fontFamily: font.regular, fontSize: 12, marginTop: 2 },
   screen: { flex: 1, backgroundColor: colors.bg },
   content: { paddingBottom: 28 },
   head: {

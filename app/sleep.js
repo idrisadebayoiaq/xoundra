@@ -7,8 +7,10 @@ import { font } from '../src/theme';
 import { useTheme } from '../src/state/ThemeState';
 import { useApp } from '../src/state/AppState';
 import { useAds } from '../src/state/AdState';
+import { useRewards } from '../src/state/RewardsState';
 import { AD_COSTS } from '../src/ads/rewards';
 import { coverSource } from '../src/data/artwork';
+import { studioPresets } from '../src/data/studioPresets';
 import { useKeyboardPad } from '../src/hooks/useKeyboardPad';
 
 function cleanTime(value) {
@@ -24,8 +26,9 @@ function validTime(value) {
 export default function SleepScreen() {
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
-  const { tracks, sleepPlan, saveSleep } = useApp();
+  const { tracks, sleepPlan, saveSleep, openMix, playMix, cycleSleep } = useApp();
   const { hasSleepAccess, requestUnlock } = useAds();
+  const { earnRitual } = useRewards();
   const keyboardPad = useKeyboardPad(12);
   const [enabled, setEnabled] = useState(false);
   const [start, setStart] = useState('22:00');
@@ -34,6 +37,10 @@ export default function SleepScreen() {
   const [query, setQuery] = useState('');
   const [notice, setNotice] = useState('');
   const [busy, setBusy] = useState(false);
+  const [ritualMinutes, setRitualMinutes] = useState(30);
+  const [wakeEnabled, setWakeEnabled] = useState(false);
+  const [wakeTime, setWakeTime] = useState('07:00');
+  const [focusUntil, setFocusUntil] = useState('');
 
   useEffect(() => {
     if (!sleepPlan) return;
@@ -66,28 +73,34 @@ export default function SleepScreen() {
     return requestUnlock('sleep');
   }
 
-  async function save() {
+  async function save(overrides = {}) {
     if (!(await ensureAccess())) {
       setNotice(`Watch ${AD_COSTS.sleep} ads to use Sleep timer, or see plans.`);
       return;
     }
-    if (!validTime(start) || !validTime(stop)) {
+    const nextStart = overrides.start || start;
+    const nextStop = overrides.stop || stop;
+    const nextEnabled = overrides.enabled ?? enabled;
+    if (!validTime(nextStart) || !validTime(nextStop)) {
       setNotice('Use a time like 22:00 and 06:00.');
       return;
     }
-    if (start === stop) {
+    if (nextStart === nextStop) {
       setNotice('The start and stop times need to be different.');
       return;
     }
-    if (enabled && !picked.length) {
+    if (nextEnabled && !picked.length) {
       setNotice('Pick at least one sound.');
       return;
     }
     setBusy(true);
     setNotice('');
-    await saveSleep({ enabled, start, stop, trackIds: picked });
+    setStart(nextStart);
+    setStop(nextStop);
+    setEnabled(nextEnabled);
+    await saveSleep({ enabled: nextEnabled, start: nextStart, stop: nextStop, trackIds: picked });
     setBusy(false);
-    setNotice(enabled ? 'The sleep timer is on.' : 'The sleep timer is saved and turned off.');
+    setNotice(nextEnabled ? 'The sleep timer is on.' : 'The sleep timer is saved and turned off.');
   }
 
   return (
@@ -98,7 +111,56 @@ export default function SleepScreen() {
       keyboardShouldPersistTaps="handled"
       keyboardDismissMode="on-drag"
     >
-      <ScreenHeader title="Sleep timer" back />
+      <ScreenHeader title="Evening" back />
+      <Text style={styles.lead}>
+        Start a ritual now, or schedule the sleep timer for later.
+      </Text>
+      <Text style={styles.section}>Start tonight</Text>
+      <View style={styles.ritualRow}>
+        {[15, 30, 45, 60].map((mins) => (
+          <Pressable
+            key={mins}
+            style={[styles.chip, ritualMinutes === mins && styles.chipOn]}
+            onPress={() => setRitualMinutes(mins)}
+          >
+            <Text style={[styles.chipText, ritualMinutes === mins && styles.chipTextOn]}>{mins}m</Text>
+          </Pressable>
+        ))}
+      </View>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.ritualScenes}>
+        {studioPresets.slice(0, 4).map((scene) => (
+          <Pressable
+            key={scene.id}
+            style={styles.ritualCard}
+            onPress={async () => {
+              if (!(await ensureAccess())) {
+                setNotice(`Watch ${AD_COSTS.sleep} ads for Evening, or see plans.`);
+                return;
+              }
+              const layers = scene.layers
+                .map((layer) => {
+                  const track = tracks.find((item) => item.id === layer.id);
+                  return track ? { track_id: track.id, gain: layer.volume, muted: false } : null;
+                })
+                .filter(Boolean);
+              if (!layers.length) return;
+              openMix(layers, false);
+              await playMix();
+              // Approximate sleep timer minutes via cycleSleep steps if available
+              if (typeof cycleSleep === 'function') {
+                for (let i = 0; i < Math.ceil(ritualMinutes / 15); i += 1) cycleSleep();
+              }
+              earnRitual();
+              setNotice(`${scene.title} · about ${ritualMinutes} minutes. Streak updated.`);
+              router.push('/player');
+            }}
+          >
+            <Image source={coverSource(scene.artwork)} style={styles.ritualArt} />
+            <Text style={styles.ritualTitle} numberOfLines={1}>{scene.title}</Text>
+          </Pressable>
+        ))}
+      </ScrollView>
+      <Text style={[styles.section, { marginTop: 22 }]}>Scheduled sleep timer</Text>
       <Text style={styles.lead}>
         Pick the sounds and the times. They play in order when the start time arrives, and they stop at the stop time.
       </Text>
@@ -189,7 +251,56 @@ export default function SleepScreen() {
           <Ionicons name="add" size={20} color={colors.mint} />
         </Pressable>
       ))}
-      <Pressable style={styles.save} onPress={save} disabled={busy} accessibilityLabel="Save sleep timer">
+      <Text style={[styles.section, { marginTop: 22 }]}>Focus until</Text>
+      <Text style={styles.lead}>Optional end clock (HH:MM). Saved with the sleep plan as the stop time when set.</Text>
+      <TextInput
+        value={focusUntil}
+        onChangeText={(value) => setFocusUntil(cleanTime(value))}
+        placeholder="11:30"
+        placeholderTextColor={colors.muted}
+        style={styles.input}
+        accessibilityLabel="Focus until"
+      />
+      <Pressable
+        style={[styles.switchRow, { marginTop: 16 }]}
+        onPress={() => setWakeEnabled((value) => !value)}
+        accessibilityLabel="Gentle wake"
+      >
+        <View style={{ flex: 1 }}>
+          <Text style={styles.switchLabel}>Gentle wake</Text>
+          <Text style={styles.meta}>Rise through your first sleep sound at wake time.</Text>
+        </View>
+        <View style={[styles.switch, wakeEnabled && styles.switchOn]}>
+          <View style={[styles.knob, wakeEnabled && styles.knobOn]} />
+        </View>
+      </Pressable>
+      {wakeEnabled ? (
+        <TextInput
+          value={wakeTime}
+          onChangeText={(value) => setWakeTime(cleanTime(value))}
+          placeholder="07:00"
+          placeholderTextColor={colors.muted}
+          style={[styles.input, { marginTop: 8 }]}
+          accessibilityLabel="Wake time"
+        />
+      ) : null}
+      <Pressable
+        style={styles.save}
+        onPress={async () => {
+          const overrides = {};
+          if (focusUntil && validTime(focusUntil)) overrides.stop = focusUntil;
+          if (wakeEnabled && validTime(wakeTime)) {
+            const [h, m] = wakeTime.split(':').map(Number);
+            const end = new Date(2000, 0, 1, h, m + 45);
+            overrides.start = wakeTime;
+            overrides.stop = `${String(end.getHours()).padStart(2, '0')}:${String(end.getMinutes()).padStart(2, '0')}`;
+            overrides.enabled = true;
+          }
+          await save(overrides);
+        }}
+        disabled={busy}
+        accessibilityLabel="Save sleep timer"
+      >
         <Text style={styles.saveText}>{busy ? 'Saving' : 'Save sleep timer'}</Text>
       </Pressable>
       {notice ? <Text style={styles.notice}>{notice}</Text> : null}
@@ -228,5 +339,14 @@ function makeStyles(colors) {
   save: { height: 50, borderRadius: 25, backgroundColor: colors.mint, alignItems: 'center', justifyContent: 'center', marginTop: 16 },
   saveText: { color: colors.mintInk, fontFamily: font.semibold, fontSize: 16 },
   notice: { color: colors.amber, fontFamily: font.medium, fontSize: 14, marginTop: 12 },
+  ritualRow: { flexDirection: 'row', gap: 8, marginBottom: 12 },
+  chip: { borderRadius: 16, borderWidth: 1, borderColor: colors.line, paddingHorizontal: 12, paddingVertical: 8 },
+  chipOn: { backgroundColor: colors.mint, borderColor: colors.mint },
+  chipText: { color: colors.text, fontFamily: font.medium, fontSize: 13 },
+  chipTextOn: { color: colors.mintInk },
+  ritualScenes: { gap: 10, paddingBottom: 4 },
+  ritualCard: { width: 120, marginRight: 4 },
+  ritualArt: { width: 120, height: 120, borderRadius: 12, backgroundColor: colors.card },
+  ritualTitle: { color: colors.text, fontFamily: font.medium, fontSize: 13, marginTop: 6 },
   });
 }

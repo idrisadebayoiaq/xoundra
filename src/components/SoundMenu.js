@@ -5,6 +5,7 @@ import { router } from 'expo-router';
 import { font } from '../theme';
 import { useTheme } from '../state/ThemeState';
 import { useApp } from '../state/AppState';
+import { shareListeningCard } from '../lib/shareCard';
 
 const messages = {
   wifi: 'Waiting for Wi-Fi. This download will not start on mobile data.',
@@ -56,6 +57,7 @@ export function SoundMenuButton({ track, color }) {
     { label: favourite ? 'Remove from favorite' : 'Add to favorite', icon: favourite ? 'bookmark' : 'bookmark-outline', onPress: () => { toggleFavourite(track); close(); } },
     { label: 'Add to playlist', icon: 'add-circle-outline', onPress: () => { close(); router.push({ pathname: '/save-playlist', params: { trackId: track.id } }); } },
     { label: 'Add to Studio', icon: 'layers-outline', onPress: () => { addLayer(track); close(); } },
+    { label: 'Share', icon: 'share-outline', onPress: async () => { await shareListeningCard(track); close(); } },
     { label: saved ? 'Remove download' : 'Download', icon: saved ? 'trash-outline' : 'download-outline', onPress: download },
   ];
 

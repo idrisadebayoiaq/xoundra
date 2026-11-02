@@ -13,6 +13,7 @@ import { connectionOnline, downloadGate, readOnline, watchNetwork } from '../lib
 import { STREAK_LIMIT } from '../ads/rewards';
 import { requestStreakAds } from '../ads/streakGate';
 import { hasAdPremiumAccess, hasAdSleepAccess, hasAdStudioAccess, requestAdUnlock } from '../ads/unlockGate';
+import { tryConsumeDownloadCredit } from '../rewards/downloadCreditGate';
 
 const AppContext = React.createContext(null);
 
@@ -1133,8 +1134,11 @@ export function AppProvider({ children }) {
 
   const saveDownload = React.useCallback(async (track) => {
     if (!premiumRef.current && !hasAdPremiumAccess()) {
-      const unlocked = await requestAdUnlock('download');
-      if (!unlocked) return 'ads';
+      const usedCredit = tryConsumeDownloadCredit();
+      if (!usedCredit) {
+        const unlocked = await requestAdUnlock('download');
+        if (!unlocked) return 'ads';
+      }
     }
     const gate = await downloadGate(wifiOnlyRef.current);
     if (gate === 'offline') return 'offline';

@@ -8,10 +8,9 @@ import { useApp } from '../state/AppState';
 import { openFromMenu } from '../lib/navigation';
 
 const links = [
-  { label: 'Studio', icon: 'layers-outline', href: '/studio' },
-  { label: 'Sleep timer', icon: 'moon-outline', href: '/sleep' },
-  { label: 'AI Guide', icon: 'mic-outline', href: '/guide' },
-  { label: 'Downloads', icon: 'download-outline', href: '/downloads' },
+  { label: 'Evening', icon: 'moon-outline', href: '/sleep' },
+  { label: 'Guide', icon: 'mic-outline', href: '/guide' },
+  { label: 'Support', icon: 'help-circle-outline', href: '/support' },
 ];
 
 export function HomeMenu({ open, onClose }) {
@@ -22,7 +21,6 @@ export function HomeMenu({ open, onClose }) {
 
   function go(href) {
     onClose?.();
-    // Let the modal finish closing before pushing, so back returns cleanly to Home + menu.
     setTimeout(() => openFromMenu(href), 40);
   }
 
@@ -94,49 +92,30 @@ function makeStyles(colors) {
       flexDirection: 'row',
       alignItems: 'center',
       gap: 12,
-      backgroundColor: colors.card,
-      borderRadius: 16,
-      padding: 14,
-      marginBottom: 12,
+      paddingVertical: 14,
+      marginBottom: 8,
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: colors.line,
     },
     badge: {
-      backgroundColor: colors.mint,
-      borderRadius: 12,
+      minWidth: 64,
       paddingHorizontal: 10,
-      paddingVertical: 5,
+      paddingVertical: 6,
+      borderRadius: 12,
+      backgroundColor: colors.mint,
+      alignItems: 'center',
     },
-    badgeFree: {
-      backgroundColor: 'transparent',
-      borderWidth: 1,
-      borderColor: colors.mint,
-    },
-    badgeText: {
-      color: colors.mintInk,
-      fontFamily: font.semibold,
-      fontSize: 12,
-    },
-    badgeTextFree: {
-      color: colors.mint,
-    },
+    badgeFree: { backgroundColor: colors.card },
+    badgeText: { color: colors.mintInk, fontFamily: font.semibold, fontSize: 12 },
+    badgeTextFree: { color: colors.text },
     tierCopy: { flex: 1 },
-    tierLabel: {
-      color: colors.text,
-      fontFamily: font.semibold,
-      fontSize: 15,
-    },
-    tierHint: {
-      color: colors.muted,
-      fontFamily: font.regular,
-      fontSize: 12,
-      marginTop: 2,
-    },
+    tierLabel: { color: colors.text, fontFamily: font.semibold, fontSize: 15 },
+    tierHint: { color: colors.muted, fontFamily: font.regular, fontSize: 12, marginTop: 2 },
     row: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 14,
-      paddingVertical: 16,
-      borderBottomWidth: StyleSheet.hairlineWidth,
-      borderBottomColor: colors.line,
+      gap: 12,
+      paddingVertical: 14,
     },
     rowLabel: {
       flex: 1,

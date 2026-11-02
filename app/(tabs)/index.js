@@ -6,12 +6,18 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AlbumCard, PhotoTile } from '../../src/components/Cards';
 import { HomeMenu } from '../../src/components/HomeMenu';
 import { Avatar } from '../../src/components/Avatar';
+import { ScenesRail } from '../../src/components/ScenesRail';
+import { PointsSpendModal } from '../../src/components/PointsSpendModal';
 import { pickSleep, pickTonight, greeting } from '../../src/data/catalogue';
+import { coverSource } from '../../src/data/artwork';
 import { continuePlaying, forYou, mostPlayedFromHistory, recommended, trending } from '../../src/data/shelves';
+import { soundDna } from '../../src/lib/sameEnergy';
 import { font } from '../../src/theme';
 import { useTheme } from '../../src/state/ThemeState';
 import { useApp } from '../../src/state/AppState';
+import { useRewards } from '../../src/state/RewardsState';
 import { avatarUrl } from '../../src/lib/supabase';
+import { useWeatherHint } from '../../src/hooks/useWeatherHint';
 
 export default function HomeScreen() {
   const { colors } = useTheme();
@@ -19,6 +25,7 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [spendOpen, setSpendOpen] = useState(false);
   const {
     play,
     tracks,
@@ -38,6 +45,8 @@ export default function HomeScreen() {
     avatarStamp,
     intention,
   } = useApp();
+  const { points, streakDays } = useRewards();
+  const weather = useWeatherHint();
 
   useEffect(() => {
     if (params.menu === '1') {
@@ -48,17 +57,19 @@ export default function HomeScreen() {
 
   const tonight = pickTonight(tracks);
   const forSleep = pickSleep(tracks);
-  const current = track || tracks.find((item) => item.id === resumeId) || null;
+  const current = track || tracks.find((item) => item.id === resumeId) || downloads[0] || tonight[0] || tracks[0] || null;
   const mostPlayed = mostPlayedFromHistory(history, tracks);
+  const dna = soundDna(history, tracks, 8);
   const intentionShelf = intentionShelfTracks(tracks, intention);
-  const shelves = [
-    ...(intentionShelf.length ? [[intentionShelfTitle(intention), intentionShelf]] : []),
-    ['Continue playing', continuePlaying(history, current)],
+  const primaryShelf = intentionShelf.length
+    ? [intentionShelfTitle(intention), intentionShelf]
+    : ['Continue playing', continuePlaying(history, current)];
+  const belowShelves = [
     ['Recommended', recommended(tracks, history, helped, signals, picks)],
     ['Trending', trending(tracks)],
     ['For you', forYou(tracks)],
   ];
-  if (!online && premium && downloads.length) shelves.unshift(['Downloaded', downloads]);
+  if (!online && premium && downloads.length) belowShelves.unshift(['Downloaded', downloads]);
 
   return (
     <>
@@ -73,7 +84,7 @@ export default function HomeScreen() {
               <Ionicons name="notifications-outline" size={22} color={colors.text} />
               {unread > 0 ? <View style={styles.dot} /> : null}
             </Pressable>
-            <Pressable onPress={() => router.navigate('/(tabs)/profile')} hitSlop={8} accessibilityLabel="Profile">
+            <Pressable onPress={() => router.navigate('/(tabs)/profile')} hitSlop={8} accessibilityLabel="You">
               <Avatar path={avatarPath} stamp={avatarStamp} size={34} />
             </Pressable>
           </View>
@@ -81,6 +92,40 @@ export default function HomeScreen() {
 
         {!online ? <Text style={styles.offline}>You're offline. Downloaded sounds still play. The guide needs a connection.</Text> : null}
         {playbackNote ? <Text style={styles.offline}>{playbackNote}</Text> : null}
+
+        {current ? (
+          <View style={styles.hero}>
+            <Image source={coverSource(current.artwork)} style={styles.heroArt} />
+            <Text style={styles.heroEyebrow}>Now</Text>
+            <Text style={styles.heroTitle} numberOfLines={2}>{current.title}</Text>
+            <Text style={styles.heroMeta} numberOfLines={1}>{current.category || 'Xoundra'}</Text>
+            <View style={styles.heroActions}>
+              <Pressable style={styles.playBtn} onPress={() => play(current)} accessibilityLabel={`Play ${current.title}`}>
+                <Ionicons name="play" size={20} color={colors.mintInk} />
+                <Text style={styles.playText}>Play</Text>
+              </Pressable>
+              <Pressable style={styles.ghostBtn} onPress={() => router.push('/sleep')} accessibilityLabel="Evening">
+                <Text style={styles.ghostText}>Evening</Text>
+              </Pressable>
+              <Pressable style={styles.ghostBtn} onPress={() => router.push('/guide')} accessibilityLabel="Ask Guide">
+                <Text style={styles.ghostText}>Guide</Text>
+              </Pressable>
+            </View>
+          </View>
+        ) : null}
+
+        <Pressable style={styles.quiet} onPress={() => setSpendOpen(true)} accessibilityLabel="Quiet points and streak">
+          <Text style={styles.quietText}>
+            {streakDays ? `${streakDays}-day streak` : 'Start a streak'} · {points} Quiet points
+          </Text>
+          {weather?.label ? <Text style={styles.weather}>{weather.label}</Text> : null}
+        </Pressable>
+
+        <Shelf title={primaryShelf[0]} list={primaryShelf[1]} onPlay={play} />
+
+        <ScenesRail />
+
+        {dna.length ? <Shelf title="Your sound DNA" list={dna} onPlay={play} /> : null}
 
         {followedArtists?.length ? (
           <View>
@@ -118,7 +163,7 @@ export default function HomeScreen() {
           />
         ) : null}
 
-        {shelves.map(([title, list]) => (
+        {belowShelves.map(([title, list]) => (
           <Shelf key={title} title={title} list={list} onPlay={play} />
         ))}
 
@@ -135,16 +180,9 @@ export default function HomeScreen() {
             <AlbumCard key={item.id} track={item} onPress={() => play(item, forSleep)} />
           ))}
         </ScrollView>
-
-        <Pressable style={styles.voice} onPress={() => router.navigate('/guide')}>
-          <View style={styles.orb} />
-          <View style={styles.voiceCopy}>
-            <Text style={styles.voiceTitle}>Talk with Xoundra</Text>
-            <Text style={styles.voiceBody}>{online ? 'Voice or typing. The guide answers out loud.' : 'The guide needs a connection.'}</Text>
-          </View>
-        </Pressable>
       </ScrollView>
       <HomeMenu open={menuOpen} onClose={() => setMenuOpen(false)} />
+      <PointsSpendModal open={spendOpen} onClose={() => setSpendOpen(false)} />
     </>
   );
 }
@@ -180,7 +218,7 @@ function intentionShelfTracks(tracks, intention) {
 function Shelf({ title, list, onPlay, subtitleFor }) {
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
-  if (!list.length) return null;
+  if (!list?.length) return null;
   return (
     <View>
       <Text style={styles.section}>{title}</Text>
@@ -250,6 +288,85 @@ function makeStyles(colors) {
       marginHorizontal: 20,
       marginBottom: 12,
     },
+    hero: {
+      marginHorizontal: 16,
+      marginBottom: 14,
+      borderRadius: 18,
+      overflow: 'hidden',
+      backgroundColor: colors.card,
+      paddingBottom: 16,
+    },
+    heroArt: {
+      width: '100%',
+      height: 220,
+      backgroundColor: colors.card,
+    },
+    heroEyebrow: {
+      color: colors.mint,
+      fontFamily: font.medium,
+      fontSize: 12,
+      marginTop: 14,
+      marginHorizontal: 16,
+      textTransform: 'uppercase',
+      letterSpacing: 0.6,
+    },
+    heroTitle: {
+      color: colors.text,
+      fontFamily: font.bold,
+      fontSize: 26,
+      marginHorizontal: 16,
+      marginTop: 4,
+    },
+    heroMeta: {
+      color: colors.muted,
+      fontFamily: font.regular,
+      fontSize: 14,
+      marginHorizontal: 16,
+      marginTop: 4,
+    },
+    heroActions: {
+      flexDirection: 'row',
+      gap: 8,
+      marginHorizontal: 16,
+      marginTop: 14,
+      flexWrap: 'wrap',
+    },
+    playBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      backgroundColor: colors.mint,
+      borderRadius: 22,
+      paddingHorizontal: 16,
+      height: 42,
+    },
+    playText: { color: colors.mintInk, fontFamily: font.semibold, fontSize: 15 },
+    ghostBtn: {
+      borderRadius: 22,
+      borderWidth: 1,
+      borderColor: colors.line,
+      paddingHorizontal: 14,
+      height: 42,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    ghostText: { color: colors.text, fontFamily: font.medium, fontSize: 14 },
+    quiet: {
+      marginHorizontal: 20,
+      marginBottom: 12,
+      paddingVertical: 10,
+    },
+    quietText: {
+      color: colors.muted,
+      fontFamily: font.medium,
+      fontSize: 13,
+    },
+    weather: {
+      color: colors.mint,
+      fontFamily: font.regular,
+      fontSize: 12,
+      marginTop: 4,
+    },
     section: {
       color: colors.text,
       fontFamily: font.bold,
@@ -318,35 +435,6 @@ function makeStyles(colors) {
       marginTop: -4,
       marginBottom: 8,
       maxWidth: 148,
-    },
-    voice: {
-      marginHorizontal: 20,
-      marginTop: 18,
-      backgroundColor: colors.card,
-      borderRadius: 18,
-      padding: 14,
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 14,
-    },
-    orb: {
-      width: 46,
-      height: 46,
-      borderRadius: 23,
-      backgroundColor: colors.lavender,
-      borderWidth: 6,
-      borderColor: colors.mint,
-    },
-    voiceCopy: { flex: 1, gap: 2 },
-    voiceTitle: {
-      color: colors.text,
-      fontFamily: font.semibold,
-      fontSize: 16,
-    },
-    voiceBody: {
-      color: colors.muted,
-      fontFamily: font.regular,
-      fontSize: 13,
     },
   });
 }

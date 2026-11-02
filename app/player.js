@@ -1,5 +1,5 @@
-import { useMemo } from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Animated, Image, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { goBack } from '../src/lib/navigation';
@@ -14,6 +14,9 @@ import { useTheme } from '../src/state/ThemeState';
 import { useApp } from '../src/state/AppState';
 import { useAudioOutput } from '../src/lib/audioRoute';
 import { ArtistLink } from '../src/components/ArtistLink';
+import { shareListeningCard } from '../src/lib/shareCard';
+import { similarTracks } from '../src/lib/sameEnergy';
+import { useRewards } from '../src/state/RewardsState';
 
 function coverSize(width, height) {
   const side = Math.min(width, 480);
@@ -47,10 +50,30 @@ export default function PlayerScreen() {
     index,
     premium,
     closePlayback,
+    play,
+    tracks,
   } = useApp();
+  const { bumpStreak } = useRewards();
   const output = useAudioOutput();
   const { width, height } = useWindowDimensions();
   const art = coverSize(width, height);
+  const [breathOn, setBreathOn] = useState(false);
+  const breath = useRef(new Animated.Value(0.35)).current;
+
+  useEffect(() => {
+    if (!breathOn) {
+      breath.setValue(0.35);
+      return undefined;
+    }
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(breath, { toValue: 0.85, duration: 4000, useNativeDriver: true }),
+        Animated.timing(breath, { toValue: 0.35, duration: 4000, useNativeDriver: true }),
+      ]),
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [breath, breathOn]);
 
   if (!track) {
     return (
@@ -122,20 +145,46 @@ export default function PlayerScreen() {
           <Ionicons name="repeat" size={22} color={repeat ? colors.mint : colors.text} />
         </Pressable>
       </View>
-      <Pressable
-        onPress={() => {
-          if (!premium) {
-            router.push('/plans');
-            return;
-          }
-          cycleSleep();
-        }}
-        style={styles.sleep}
-      >
-        <Text style={styles.sleepText}>
-          {sleepMinutes ? `Sleep ${sleepMinutes} min` : 'Sleep timer'}
-        </Text>
-      </Pressable>
+      <View style={styles.chips}>
+        <Pressable
+          onPress={() => {
+            if (!premium) {
+              router.push('/plans');
+              return;
+            }
+            cycleSleep();
+          }}
+          style={styles.chip}
+        >
+          <Text style={styles.chipText}>
+            {sleepMinutes ? `Sleep ${sleepMinutes} min` : 'Sleep'}
+          </Text>
+        </Pressable>
+        <Pressable
+          style={styles.chip}
+          onPress={async () => {
+            const result = await shareListeningCard(track);
+            if (result === 'shared') bumpStreak();
+          }}
+        >
+          <Text style={styles.chipText}>Share</Text>
+        </Pressable>
+        <Pressable style={styles.chip} onPress={() => setBreathOn((value) => !value)}>
+          <Text style={styles.chipText}>{breathOn ? 'Breath on' : 'Breath'}</Text>
+        </Pressable>
+        <Pressable
+          style={styles.chip}
+          onPress={() => {
+            const next = similarTracks(track, tracks, 12);
+            if (next.length) play(next[0], [track, ...next]);
+          }}
+        >
+          <Text style={styles.chipText}>Same energy</Text>
+        </Pressable>
+      </View>
+      {breathOn ? (
+        <Animated.View style={[styles.breath, { opacity: breath }]} pointerEvents="none" />
+      ) : null}
     </ScrollView>
   );
 }
@@ -238,14 +287,33 @@ function makeStyles(colors) {
     fontFamily: font.medium,
     fontSize: 12,
   },
-  sleep: {
+  chips: {
     marginTop: 22,
-    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    justifyContent: 'center',
   },
-  sleepText: {
+  chip: {
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.line,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  chipText: {
     color: colors.amber,
     fontFamily: font.medium,
-    fontSize: 15,
+    fontSize: 14,
+  },
+  breath: {
+    position: 'absolute',
+    alignSelf: 'center',
+    top: '28%',
+    width: 180,
+    height: 180,
+    borderRadius: 90,
+    backgroundColor: colors.mint,
   },
   });
 }

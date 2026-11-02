@@ -1,13 +1,15 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { PlatformIcon } from '../../src/components/PlatformIcon';
+import { PointsSpendModal } from '../../src/components/PointsSpendModal';
 import { cleanArtistLinks, platformById } from '../../src/data/artistPlatforms';
 import { font } from '../../src/theme';
 import { useTheme } from '../../src/state/ThemeState';
 import { useApp } from '../../src/state/AppState';
+import { useRewards } from '../../src/state/RewardsState';
 import { Avatar } from '../../src/components/Avatar';
 import { avatarUrl } from '../../src/lib/supabase';
 
@@ -16,6 +18,8 @@ export default function ProfileScreen() {
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
   const app = useApp();
+  const { points, streakDays, downloadCredits } = useRewards();
+  const [spendOpen, setSpendOpen] = useState(false);
   const {
     premium,
     firstName,
@@ -69,6 +73,19 @@ export default function ProfileScreen() {
         </View>
       </View>
 
+      <Pressable style={styles.rewards} onPress={() => setSpendOpen(true)} accessibilityLabel="Quiet points">
+        <Text style={styles.rewardsTitle}>{streakDays ? `${streakDays}-day streak` : 'No streak yet'}</Text>
+        <Text style={styles.rewardsMeta}>
+          {points} Quiet points{downloadCredits ? ` · ${downloadCredits} download credit${downloadCredits === 1 ? '' : 's'}` : ''}
+        </Text>
+        <Text style={styles.spendLink}>Spend points</Text>
+      </Pressable>
+
+      <Pressable style={styles.planRow} onPress={() => router.push('/plans')}>
+        <Text style={styles.planLabel}>Plan</Text>
+        <Text style={styles.planValue}>{premium ? 'Premium' : 'Free'} · Manage</Text>
+      </Pressable>
+
       {isArtist ? (
         <View style={styles.preview}>
           {artistLocation ? <Text style={styles.meta}>{artistLocation}</Text> : null}
@@ -98,6 +115,7 @@ export default function ProfileScreen() {
         <Ionicons name="create-outline" size={18} color={colors.mintInk} />
         <Text style={styles.editText}>Edit profile</Text>
       </Pressable>
+      <PointsSpendModal open={spendOpen} onClose={() => setSpendOpen(false)} />
     </ScrollView>
   );
 }
@@ -113,6 +131,26 @@ function makeStyles(colors) {
       alignItems: 'center',
       justifyContent: 'space-between',
     },
+    rewards: {
+      marginHorizontal: 20,
+      marginBottom: 14,
+      padding: 14,
+      borderRadius: 16,
+      backgroundColor: colors.card,
+      gap: 4,
+    },
+    rewardsTitle: { color: colors.text, fontFamily: font.semibold, fontSize: 16 },
+    rewardsMeta: { color: colors.muted, fontFamily: font.regular, fontSize: 13 },
+    spendLink: { color: colors.mint, fontFamily: font.medium, fontSize: 14, marginTop: 6 },
+    planRow: {
+      marginHorizontal: 20,
+      marginBottom: 16,
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    planLabel: { color: colors.text, fontFamily: font.semibold, fontSize: 15 },
+    planValue: { color: colors.mint, fontFamily: font.medium, fontSize: 14 },
     screenTitle: {
       color: colors.text,
       fontFamily: font.bold,

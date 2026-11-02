@@ -1,19 +1,27 @@
 import { useCallback, useEffect, useRef, useState, useMemo } from 'react';
-import { Animated, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Animated, Image, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { askGuide } from '../../src/lib/supabase';
-import { listenOnce, speakLine, stopSpeaking } from '../../src/lib/speech';
-import { goBack } from '../../src/lib/navigation';
-import { useKeyboardPad } from '../../src/hooks/useKeyboardPad';
-import { font } from '../../src/theme';
-import { useTheme } from '../../src/state/ThemeState';
-import { useApp } from '../../src/state/AppState';
-import { useAds } from '../../src/state/AdState';
-import { AD_COSTS } from '../../src/ads/rewards';
+import { askGuide } from '../src/lib/supabase';
+import { listenOnce, speakLine, stopSpeaking } from '../src/lib/speech';
+import { goBack } from '../src/lib/navigation';
+import { useKeyboardPad } from '../src/hooks/useKeyboardPad';
+import { font } from '../src/theme';
+import { useTheme } from '../src/state/ThemeState';
+import { useApp } from '../src/state/AppState';
+import { useAds } from '../src/state/AdState';
+import { AD_COSTS } from '../src/ads/rewards';
+import { listeningSessions } from '../src/data/sessions';
+import { coverSource } from '../src/data/artwork';
 
 const greeting = 'Hello. How are you feeling, or what kind of sound would you like?';
+
+const sessionCards = [
+  { id: 'rain-focus', label: 'Rain for focus', prompt: 'I need rain sounds for focus' },
+  { id: 'wind-down', label: 'Wind down', prompt: 'Help me wind down for sleep' },
+  { id: 'cant-sleep', label: "Can't sleep", prompt: "I can't sleep, pick a gentle sound" },
+];
 
 function relatedTracks(choice, catalogue, ids) {
   const picked = (ids || []).map((id) => catalogue.find((item) => item.id === id)).filter(Boolean);
@@ -154,13 +162,43 @@ export default function GuideScreen() {
 
   const bottomPad = Math.max(insets.bottom, 12) + 18 + keyboardPad;
 
+  function startSessionCard(card) {
+    setDraft(card.prompt);
+    ask(card.prompt);
+  }
+
+  function playListeningSession(session) {
+    const queue = session.chapters
+      .map((id) => tracks.find((item) => item.id === id))
+      .filter(Boolean);
+    if (!queue.length) {
+      setNotice('That session needs sounds still in the catalogue.');
+      return;
+    }
+    play(queue[0], queue);
+  }
+
   return (
     <View style={[styles.screen, { paddingTop: insets.top + 8 }]}>
-      {fromMenu ? (
-        <Pressable onPress={() => goBack({ from: 'menu' })} hitSlop={10} style={styles.back} accessibilityLabel="Back to menu">
-          <Ionicons name="chevron-back" size={26} color={colors.text} />
-        </Pressable>
-      ) : null}
+      <Pressable onPress={() => (fromMenu ? goBack({ from: 'menu' }) : router.back())} hitSlop={10} style={styles.back} accessibilityLabel="Back">
+        <Ionicons name="chevron-back" size={26} color={colors.text} />
+      </Pressable>
+      <View style={styles.sessionRow}>
+        {sessionCards.map((card) => (
+          <Pressable key={card.id} style={styles.sessionChip} onPress={() => startSessionCard(card)}>
+            <Text style={styles.sessionChipText}>{card.label}</Text>
+          </Pressable>
+        ))}
+      </View>
+      <View style={styles.sessionRail}>
+        {listeningSessions.map((session) => (
+          <Pressable key={session.id} style={styles.sessionCard} onPress={() => playListeningSession(session)}>
+            <Image source={coverSource(session.artwork)} style={styles.sessionArt} />
+            <Text style={styles.sessionTitle}>{session.title}</Text>
+            <Text style={styles.sessionBlurb}>{session.blurb}</Text>
+          </Pressable>
+        ))}
+      </View>
       <View style={styles.center}>
         <Animated.View style={[styles.glow, { opacity: glow }]}>
           <View style={styles.orb} />
@@ -240,6 +278,20 @@ function makeStyles(colors) {
     alignSelf: 'flex-start',
     marginBottom: 4,
   },
+  sessionRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 10 },
+  sessionChip: {
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.line,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  sessionChipText: { color: colors.text, fontFamily: font.medium, fontSize: 13 },
+  sessionRail: { flexDirection: 'row', gap: 10, marginBottom: 8 },
+  sessionCard: { width: 120 },
+  sessionArt: { width: 120, height: 72, borderRadius: 10, backgroundColor: colors.bg },
+  sessionTitle: { color: colors.text, fontFamily: font.semibold, fontSize: 13, marginTop: 6 },
+  sessionBlurb: { color: colors.muted, fontFamily: font.regular, fontSize: 11, marginTop: 2 },
   center: {
     flex: 1,
     alignItems: 'center',

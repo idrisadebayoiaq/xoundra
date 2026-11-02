@@ -10,13 +10,13 @@ import { useShell } from '../state/ShellState';
 
 const items = {
   index: { label: 'Home', icon: 'home', href: '/' },
-  explore: { label: 'Explore', icon: 'compass', href: '/explore' },
+  explore: { label: 'Discover', icon: 'compass', href: '/explore' },
   studio: { label: 'Studio', icon: 'layers', href: '/studio' },
-  guide: { label: 'Guide', icon: 'mic', href: '/guide' },
   library: { label: 'Library', icon: 'albums', href: '/library' },
+  profile: { label: 'You', icon: 'person', href: '/profile' },
 };
 
-const hidden = new Set(['profile']);
+const hidden = new Set(['guide']);
 
 export function AppTabBar({ state }) {
   const { colors } = useTheme();

@@ -5,6 +5,7 @@
   "rewrites": [
     { "source": "/ads.txt", "destination": "/ads.txt" },
     { "source": "/app-ads.txt", "destination": "/app-ads.txt" },
-    { "source": "/((?!ads\\.txt|app-ads\\.txt).*)", "destination": "/index.html" }
+    { "source": "/manifest.webmanifest", "destination": "/manifest.webmanifest" },
+    { "source": "/((?!ads\\.txt|app-ads\\.txt|manifest\\.webmanifest).*)", "destination": "/index.html" }
   ]
 }

@@ -16,7 +16,6 @@ import { useTheme } from '../../src/state/ThemeState';
 import { useApp } from '../../src/state/AppState';
 import { useAds } from '../../src/state/AdState';
 import { AD_COSTS } from '../../src/ads/rewards';
-
 export default function StudioScreen() {
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
@@ -37,6 +36,7 @@ export default function StudioScreen() {
   } = useApp();
   const { hasStudioAccess, requestUnlock } = useAds();
   const keyboardPad = useKeyboardPad(12);
+  const [mode, setMode] = useState(params.mode === 'edit' || mixTracks.length ? 'edit' : 'gallery');
   const [picking, setPicking] = useState(false);
   const [query, setQuery] = useState('');
   const [name, setName] = useState('');
@@ -64,13 +64,43 @@ export default function StudioScreen() {
 
   useFocusEffect(useCallback(() => {
     refreshSaved();
-  }, [refreshSaved]));
+    if (params.mode === 'edit') setMode('edit');
+  }, [refreshSaved, params.mode]));
 
   async function ensureStudio() {
     if (hasStudioAccess || premium) return true;
     const ok = await requestUnlock('studio');
     if (!ok) setNotice(`Watch ${AD_COSTS.studio} ads to unlock Studio, or see plans.`);
     return ok;
+  }
+
+  function layersFromScene(scene) {
+    return scene.layers
+      .map((layer) => {
+        const track = tracks.find((item) => item.id === layer.id);
+        return track ? { track_id: track.id, gain: layer.volume, muted: false } : null;
+      })
+      .filter(Boolean);
+  }
+
+  async function playScene(scene) {
+    if (!(await ensureStudio())) return;
+    const layers = layersFromScene(scene);
+    if (!layers.length) {
+      setNotice('That scene needs sounds that are still in the catalogue.');
+      return;
+    }
+    openMix(layers, false);
+    setName(scene.title);
+    await playMix();
+  }
+
+  async function editScene(scene) {
+    if (!(await ensureStudio())) return;
+    const layers = layersFromScene(scene);
+    openMix(layers, false);
+    setName(scene.title);
+    setMode('edit');
   }
 
   async function saveMix() {
@@ -106,6 +136,27 @@ export default function StudioScreen() {
     setName('');
     setNotice('Saved on your account. Find it here and in Library, under Mixes.');
     refreshSaved();
+  }
+
+  async function shareMixCode() {
+    if (!mixTracks.length) {
+      setNotice('Add sounds before sharing a collab code.');
+      return;
+    }
+    const payload = {
+      v: 1,
+      title: name.trim() || 'Shared scene',
+      layers: mixTracks.map((layer) => ({ id: layer.id, volume: layer.volume, muted: Boolean(layer.muted) })),
+    };
+    const code = `xoundra-scene:${encodeURIComponent(JSON.stringify(payload))}`;
+    try {
+      if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(code);
+        setNotice('Collab code copied. Friends can paste it on Join scene.');
+        return;
+      }
+    } catch { /* fall through */ }
+    setNotice(`Share this code:\n${code}`);
   }
 
   async function removeSaved(item) {
@@ -162,21 +213,56 @@ export default function StudioScreen() {
     );
   }
 
-  async function applyPreset(preset) {
-    if (!(await ensureStudio())) return;
-    const layers = preset.layers
-      .map((layer) => {
-        const track = tracks.find((item) => item.id === layer.id);
-        return track ? { track_id: track.id, gain: layer.volume, muted: false } : null;
-      })
-      .filter(Boolean);
-    if (!layers.length) {
-      setNotice('That preset needs sounds that are still in the catalogue.');
-      return;
-    }
-    openMix(layers, true);
-    setName(preset.title);
-    setNotice(`${preset.title} is ready. Adjust volumes or save it.`);
+  if (mode === 'gallery') {
+    return (
+      <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
+        <ScreenHeader title="Studio" back={fromMenu} onBack={() => goBack({ from: 'menu' })} />
+        <Text style={styles.lead}>Start from a scene. Edit when you want your own mix.</Text>
+        {hasStudioAccess || premium ? null : (
+          <View style={styles.gate}>
+            <Pressable style={styles.unlock} onPress={() => requestUnlock('studio')} accessibilityLabel="Watch ads for Studio">
+              <Text style={styles.unlockText}>Watch {AD_COSTS.studio} ads to unlock Studio</Text>
+            </Pressable>
+            <Pressable onPress={() => router.push('/plans')} accessibilityLabel="See plans">
+              <Text style={styles.alt}>Or see Premium plans</Text>
+            </Pressable>
+          </View>
+        )}
+        <View style={styles.sceneGrid}>
+          {studioPresets.map((scene) => (
+            <View key={scene.id} style={styles.sceneCard}>
+              <Pressable onPress={() => playScene(scene)} accessibilityLabel={`Play ${scene.title}`}>
+                <Image source={coverSource(scene.artwork)} style={styles.sceneArt} />
+                <Text style={styles.sceneTitle}>{scene.title}</Text>
+                <Text style={styles.sceneBlurb}>{scene.blurb}</Text>
+              </Pressable>
+              <Pressable onPress={() => editScene(scene)} style={styles.editLink}>
+                <Text style={styles.editText}>Edit</Text>
+              </Pressable>
+            </View>
+          ))}
+        </View>
+        <Pressable style={styles.custom} onPress={() => setMode('edit')}>
+          <Text style={styles.customText}>Custom mix</Text>
+        </Pressable>
+        <Pressable style={styles.custom} onPress={() => router.push('/join-scene')}>
+          <Text style={styles.customText}>Join a shared scene</Text>
+        </Pressable>
+        {saved.length ? <Text style={styles.section}>Your mixes</Text> : null}
+        {saved.map((item) => (
+          <View key={item.id} style={styles.saved}>
+            <Pressable style={styles.savedCopy} onPress={() => { openMix(layersOf(item), true); setMode('edit'); }}>
+              <Text style={styles.name}>{item.title}</Text>
+              <Text style={styles.meta}>{layersOf(item).length} sounds</Text>
+            </Pressable>
+            <Pressable onPress={() => removeSaved(item)} hitSlop={8} accessibilityLabel="Delete mix">
+              <Ionicons name="trash-outline" size={18} color={colors.muted} />
+            </Pressable>
+          </View>
+        ))}
+        {notice ? <Text style={styles.notice}>{notice}</Text> : null}
+      </ScrollView>
+    );
   }
 
   return (
@@ -187,31 +273,12 @@ export default function StudioScreen() {
       keyboardShouldPersistTaps="handled"
       keyboardDismissMode="on-drag"
     >
-      <ScreenHeader title="Studio" back={fromMenu} onBack={() => goBack({ from: 'menu' })} />
-      <Text style={styles.lead}>
-        Choose sounds and set each volume. They play together. A saved mix keeps those choices on your account.
-      </Text>
-      {hasStudioAccess || premium ? null : (
-        <View style={styles.gate}>
-          <Pressable style={styles.unlock} onPress={() => requestUnlock('studio')} accessibilityLabel="Watch ads for Studio">
-            <Text style={styles.unlockText}>Watch {AD_COSTS.studio} ads to unlock Studio</Text>
-          </Pressable>
-          <Pressable onPress={() => router.push('/plans')} accessibilityLabel="See plans">
-            <Text style={styles.alt}>Or see Premium plans</Text>
-          </Pressable>
-        </View>
-      )}
-      <Text style={styles.section}>Presets</Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.presetRow}>
-        {studioPresets.map((preset) => (
-          <Pressable key={preset.id} style={styles.preset} onPress={() => applyPreset(preset)} accessibilityLabel={preset.title}>
-            <Text style={styles.presetTitle}>{preset.title}</Text>
-            <Text style={styles.presetBlurb}>{preset.blurb}</Text>
-          </Pressable>
-        ))}
-      </ScrollView>
+      <ScreenHeader title="Edit mix" back onBack={() => setMode('gallery')} />
+      <Text style={styles.lead}>Adjust volumes, then play or save. Start from a scene if this is empty.</Text>
       {mixTracks.length === 0 ? (
-        <Text style={styles.empty}>No sounds in this mix yet. Start from a preset or add sounds.</Text>
+        <Pressable onPress={() => setMode('gallery')} style={styles.custom}>
+          <Text style={styles.customText}>Start from a scene</Text>
+        </Pressable>
       ) : (
         <View style={styles.layers}>
           {mixTracks.map((layer) => (
@@ -259,23 +326,10 @@ export default function StudioScreen() {
           <Text style={styles.saveText}>Save</Text>
         </Pressable>
       </View>
+      <Pressable onPress={shareMixCode} style={styles.custom}>
+        <Text style={styles.customText}>Copy collab code</Text>
+      </Pressable>
       {notice ? <Text style={styles.notice}>{notice}</Text> : null}
-      <Text style={styles.section}>Saved mixes</Text>
-      {saved.length === 0 ? (
-        <Text style={styles.empty}>Saved mixes show up here and in Library.</Text>
-      ) : (
-        saved.map((item) => (
-          <View key={item.id} style={styles.saved}>
-            <Pressable style={styles.savedCopy} onPress={() => openMix(layersOf(item), true)}>
-              <Text style={styles.name}>{item.title}</Text>
-              <Text style={styles.meta}>{layersOf(item).length} sounds</Text>
-            </Pressable>
-            <Pressable onPress={() => removeSaved(item)} hitSlop={8} accessibilityLabel="Delete mix">
-              <Ionicons name="trash-outline" size={18} color={colors.muted} />
-            </Pressable>
-          </View>
-        ))
-      )}
     </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -302,6 +356,21 @@ function makeStyles(colors) {
     marginHorizontal: 20,
     marginBottom: 16,
   },
+  sceneGrid: {
+    paddingHorizontal: 16,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    rowGap: 16,
+  },
+  sceneCard: { width: '48%' },
+  sceneArt: { width: '100%', aspectRatio: 1, borderRadius: 14, backgroundColor: colors.card },
+  sceneTitle: { color: colors.text, fontFamily: font.semibold, fontSize: 15, marginTop: 8 },
+  sceneBlurb: { color: colors.muted, fontFamily: font.regular, fontSize: 12, marginTop: 2, minHeight: 32 },
+  editLink: { marginTop: 6 },
+  editText: { color: colors.mint, fontFamily: font.medium, fontSize: 13 },
+  custom: { marginHorizontal: 20, marginTop: 18 },
+  customText: { color: colors.mint, fontFamily: font.semibold, fontSize: 15 },
   empty: {
     color: colors.muted,
     fontFamily: font.regular,
@@ -341,16 +410,6 @@ function makeStyles(colors) {
     marginHorizontal: 20,
     marginTop: 10,
   },
-  presetRow: { paddingHorizontal: 20, gap: 10, paddingBottom: 8 },
-  preset: {
-    width: 180,
-    backgroundColor: colors.card,
-    borderRadius: 16,
-    padding: 14,
-    marginRight: 10,
-  },
-  presetTitle: { color: colors.text, fontFamily: font.semibold, fontSize: 15 },
-  presetBlurb: { color: colors.muted, fontFamily: font.regular, fontSize: 12, lineHeight: 17, marginTop: 6 },
   section: {
     color: colors.text,
     fontFamily: font.bold,

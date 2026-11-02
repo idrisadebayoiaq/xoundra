@@ -12,6 +12,8 @@ const ShellContext = React.createContext({
   closePanel: () => {},
   search: '',
   setSearch: () => {},
+  focusMode: false,
+  setFocusMode: () => {},
 });
 
 export function ShellProvider({ children }) {
@@ -22,6 +24,7 @@ export function ShellProvider({ children }) {
   const [sidebar, setSidebar] = React.useState(width >= 1080);
   const [panel, setPanel] = React.useState(width >= 1180);
   const [search, setSearchState] = React.useState('');
+  const [focusMode, setFocusMode] = React.useState(false);
   const sidebarChose = React.useRef(false);
   const panelChose = React.useRef(false);
 
@@ -64,7 +67,9 @@ export function ShellProvider({ children }) {
     closePanel,
     search,
     setSearch,
-  }), [desktop, sidebar, toggleSidebar, panel, openPanel, closePanel, search, setSearch]);
+    focusMode,
+    setFocusMode,
+  }), [desktop, sidebar, toggleSidebar, panel, openPanel, closePanel, search, setSearch, focusMode]);
 
   return <ShellContext.Provider value={value}>{children}</ShellContext.Provider>;
 }

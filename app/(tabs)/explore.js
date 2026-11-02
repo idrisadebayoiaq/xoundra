@@ -4,8 +4,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { ScreenHeader } from '../../src/components/ScreenHeader';
 import { TrackRow } from '../../src/components/Cards';
+import { ScenesRail } from '../../src/components/ScenesRail';
 import { moods, searchTracks } from '../../src/data/catalogue';
 import { coverSource } from '../../src/data/artwork';
+import { listeningSessions } from '../../src/data/sessions';
 import { font } from '../../src/theme';
 import { useTheme } from '../../src/state/ThemeState';
 import { useApp } from '../../src/state/AppState';
@@ -46,7 +48,7 @@ export default function ExploreScreen() {
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-      <ScreenHeader title="Explore" />
+      <ScreenHeader title="Discover" />
       {desktop ? null : <View style={styles.search}>
         <Ionicons name="search" size={18} color={colors.muted} />
         <TextInput
@@ -84,6 +86,24 @@ export default function ExploreScreen() {
         </View>
       ) : (
         <>
+          <ScenesRail title="Scenes" />
+          <Text style={styles.section}>Sessions</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.moodRow}>
+            {listeningSessions.map((session) => (
+              <Pressable
+                key={session.id}
+                style={styles.sessionCard}
+                onPress={() => {
+                  const queue = session.chapters.map((id) => tracks.find((item) => item.id === id)).filter(Boolean);
+                  if (queue[0]) play(queue[0], queue);
+                }}
+              >
+                <Image source={coverSource(session.artwork)} style={styles.sessionArt} />
+                <Text style={styles.sessionTitle}>{session.title}</Text>
+                <Text style={styles.sessionBlurb} numberOfLines={2}>{session.blurb}</Text>
+              </Pressable>
+            ))}
+          </ScrollView>
           {publicLists.length ? (
             <>
               <Text style={styles.section}>Public playlists</Text>
@@ -240,5 +260,10 @@ function makeStyles(colors) {
     fontFamily: font.semibold,
     fontSize: 16,
   },
+  moodRow: { paddingHorizontal: 20, gap: 12, paddingBottom: 8 },
+  sessionCard: { width: 140 },
+  sessionArt: { width: 140, height: 84, borderRadius: 12, backgroundColor: colors.card },
+  sessionTitle: { color: colors.text, fontFamily: font.semibold, fontSize: 14, marginTop: 8 },
+  sessionBlurb: { color: colors.muted, fontFamily: font.regular, fontSize: 12, marginTop: 2, minHeight: 32 },
   });
 }

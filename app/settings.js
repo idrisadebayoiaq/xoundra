@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Platform, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -8,6 +8,8 @@ import { font } from '../src/theme';
 import { useTheme } from '../src/state/ThemeState';
 import { useApp } from '../src/state/AppState';
 import { openAndroidApp } from '../src/components/DownloadAppButton';
+import { readWeatherOptIn, setWeatherOptIn } from '../src/hooks/useWeatherHint';
+import { promptPwaInstall } from '../src/lib/pwaInstall';
 
 const THEME_OPTIONS = [
   { value: 'dark', label: 'Dark', icon: 'moon-outline' },
@@ -21,6 +23,11 @@ export default function SettingsScreen() {
   const { preference, setPreference } = useTheme();
   const app = useApp();
   const current = countries.find((item) => item.code === app.country);
+  const [weatherOn, setWeatherOn] = useState(false);
+
+  useEffect(() => {
+    readWeatherOptIn().then(setWeatherOn).catch(() => {});
+  }, []);
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
@@ -122,6 +129,30 @@ export default function SettingsScreen() {
           thumbColor={colors.text}
         />
       </View>
+      <View style={styles.switchRow}>
+        <View style={styles.copy}>
+          <Text style={styles.label}>Weather hints</Text>
+          <Text style={styles.hint}>Optional Home tips like rain scenes. No precise location required.</Text>
+        </View>
+        <Switch
+          value={weatherOn}
+          onValueChange={(value) => {
+            setWeatherOn(value);
+            setWeatherOptIn(value);
+          }}
+          trackColor={{ true: colors.mint, false: colors.switchOff }}
+          thumbColor={colors.text}
+        />
+      </View>
+
+      {Platform.OS === 'web' ? (
+        <>
+          <Text style={styles.section}>Web app</Text>
+          <Pressable onPress={() => promptPwaInstall()}>
+            <Row label="Add to Home Screen" hint="Install Xoundra as a web app when your browser supports it." />
+          </Pressable>
+        </>
+      ) : null}
 
       <Text style={styles.section}>Creator</Text>
       <Pressable onPress={() => router.push('/artist')} accessibilityLabel={app.isArtist ? 'Artist dashboard' : 'Become an artist'}>

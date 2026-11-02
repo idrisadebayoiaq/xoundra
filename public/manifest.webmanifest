@@ -1,0 +1,22 @@
+{
+  "name": "Xoundra",
+  "short_name": "Xoundra",
+  "description": "Find your quiet.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#07080D",
+  "theme_color": "#07080D",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "48x48",
+      "type": "image/x-icon"
+    },
+    {
+      "src": "/icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

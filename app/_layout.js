@@ -5,10 +5,12 @@ import { useFonts, Outfit_400Regular, Outfit_500Medium, Outfit_600SemiBold, Outf
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, useState } from 'react';
 import { AppProvider, useApp } from '../src/state/AppState';
-import { AdProvider } from '../src/state/AdState';
+import { AdProvider, useAds } from '../src/state/AdState';
+import { RewardsProvider } from '../src/state/RewardsState';
 import { ShellProvider, useShell } from '../src/state/ShellState';
 import { MiniPlayer } from '../src/components/MiniPlayer';
 import { NotificationBridge } from '../src/components/NotificationBridge';
+import { ListenRewardsTicker } from '../src/components/ListenRewardsTicker';
 import { ThemeProvider, useTheme } from '../src/state/ThemeState';
 import { AppFrame } from '../src/components/AppFrame';
 import { WebDeck } from '../src/components/DesktopShell';
@@ -76,7 +78,21 @@ export default function RootLayout() {
 
 function AdBridge({ children }) {
   const { premium } = useApp();
-  return <AdProvider isPaidPremium={premium}>{children}</AdProvider>;
+  return (
+    <AdProvider isPaidPremium={premium}>
+      <RewardsBridge>{children}</RewardsBridge>
+    </AdProvider>
+  );
+}
+
+function RewardsBridge({ children }) {
+  const { grantStudioUntil } = useAds();
+  return (
+    <RewardsProvider grantStudioUntil={grantStudioUntil}>
+      <ListenRewardsTicker />
+      {children}
+    </RewardsProvider>
+  );
 }
 
 function ThemedStatusBar() {
@@ -135,8 +151,10 @@ function Gate() {
         <Stack.Screen name="sign-up" />
         <Stack.Screen name="confirm-email" />
         <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="guide" />
         <Stack.Screen name="player" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
         <Stack.Screen name="ai" options={{ presentation: 'fullScreenModal', animation: 'fade' }} />
+        <Stack.Screen name="join-scene" />
       </Stack>
       {ready && !userId && !onAuth && !confirming ? <Redirect href="/welcome" /> : null}
       {ready && userId && emailConfirmed && online && !onboardingDone && !confirming && !onboardingPath ? <Redirect href="/listen-tip" /> : null}
@@ -155,8 +173,8 @@ function Gate() {
 
 function OutsideTabsPlayer() {
   const path = usePathname();
-  const onTab = path === '/' || path === '/explore' || path === '/studio' || path === '/guide' || path === '/library' || path === '/profile';
-  if (onTab || path === '/player' || path === '/ai' || path === '/welcome' || path === '/sign-in' || path === '/sign-up' || path === '/confirm-email' || path === '/listen-tip' || path === '/sound-picks') return null;
+  const onTab = path === '/' || path === '/explore' || path === '/studio' || path === '/library' || path === '/profile';
+  if (onTab || path === '/player' || path === '/ai' || path === '/welcome' || path === '/sign-in' || path === '/sign-up' || path === '/confirm-email' || path === '/listen-tip' || path === '/sound-picks' || path === '/guide') return null;
   return (
     <View style={{ position: 'absolute', left: 0, right: 0, bottom: 8 }}>
       <MiniPlayer />

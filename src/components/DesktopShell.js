@@ -20,23 +20,58 @@ import { DownloadMark } from './DownloadMark';
 
 const nav = [
   { href: '/', label: 'Home', icon: 'home', match: (path) => path === '/' },
-  { href: '/explore', label: 'Explore', icon: 'compass', match: (path) => path === '/explore' || path === '/browse' },
-  { href: '/studio', label: 'Studio', icon: 'sparkles', match: (path) => path === '/studio' },
-  { href: '/guide', label: 'Guide', icon: 'mic', match: (path) => path === '/guide' || path === '/ai' },
+  { href: '/explore', label: 'Discover', icon: 'compass', match: (path) => path === '/explore' || path === '/browse' },
+  { href: '/studio', label: 'Studio', icon: 'layers', match: (path) => path === '/studio' },
   { href: '/library', label: 'Library', icon: 'albums', match: (path) => path === '/library' || path === '/playlist' || path === '/new-playlist' },
-  { href: '/profile', label: 'Profile', icon: 'person', match: (path) => path === '/profile' },
+  { href: '/profile', label: 'You', icon: 'person', match: (path) => path === '/profile' },
+  { href: '/guide', label: 'Guide', icon: 'mic', match: (path) => path === '/guide' || path === '/ai' },
 ];
 
 export function WebDeck({ children }) {
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
-  const { desktop, sidebar, panel } = useShell();
-  const { track, mixPlaying } = useApp();
+  const { desktop, sidebar, panel, focusMode, setFocusMode } = useShell();
+  const { track, mixPlaying, playing, togglePlay } = useApp();
   const { width } = useWindowDimensions();
-  const showPanel = desktop && panel && Boolean(track || mixPlaying);
+  const showPanel = desktop && panel && Boolean(track || mixPlaying) && !focusMode;
   const overlay = showPanel && width < 1200;
 
+  useEffect(() => {
+    if (!desktop || typeof window === 'undefined') return undefined;
+    function onKey(event) {
+      if (event.code === 'Space' && focusMode) {
+        event.preventDefault();
+        togglePlay();
+      }
+      if (event.code === 'Escape' && focusMode) setFocusMode(false);
+    }
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [desktop, focusMode, setFocusMode, togglePlay]);
+
   if (!desktop) return children;
+
+  if (focusMode) {
+    return (
+      <View style={[styles.deck, styles.focusDeck]}>
+        <Pressable style={styles.focusExit} onPress={() => setFocusMode(false)}>
+          <Text style={styles.focusExitText}>Exit focus · Esc</Text>
+        </Pressable>
+        {track ? (
+          <View style={styles.focusBody}>
+            <Image source={coverSource(track.artwork)} style={styles.focusArt} />
+            <Text style={styles.focusTitle}>{track.title}</Text>
+            <Pressable style={styles.focusPlay} onPress={togglePlay}>
+              <Ionicons name={playing || mixPlaying ? 'pause' : 'play'} size={28} color={colors.mintInk} />
+            </Pressable>
+          </View>
+        ) : (
+          <Text style={styles.focusExitText}>Play a sound, then return to Focus.</Text>
+        )}
+        <Transport />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.deck}>
@@ -60,12 +95,15 @@ function TopBar() {
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
-  const { sidebar, toggleSidebar, search, setSearch } = useShell();
+  const { sidebar, toggleSidebar, search, setSearch, setFocusMode } = useShell();
   const { unread, avatarPath, avatarStamp } = useApp();
   return (
     <View style={[styles.top, { paddingTop: insets.top + 8 }]}>
       <Pressable onPress={toggleSidebar} hitSlop={8} accessibilityLabel={sidebar ? 'Close sidebar' : 'Open sidebar'} style={styles.iconBtn}>
         <Ionicons name={sidebar ? 'chevron-back' : 'menu'} size={22} color={colors.text} />
+      </Pressable>
+      <Pressable onPress={() => setFocusMode(true)} hitSlop={8} accessibilityLabel="Focus mode" style={styles.iconBtn}>
+        <Ionicons name="expand-outline" size={20} color={colors.text} />
       </Pressable>
       <Image source={require('../../assets/icon.png')} style={styles.mark} />
       <Text style={styles.word}>Xoundra</Text>
@@ -346,6 +384,23 @@ function makeStyles(colors) {
   deck: {
     flex: 1,
     backgroundColor: colors.canvas,
+  },
+  focusDeck: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  focusExit: { position: 'absolute', top: 24, right: 24, zIndex: 2 },
+  focusExitText: { color: colors.muted, fontFamily: font.medium, fontSize: 14 },
+  focusBody: { alignItems: 'center', gap: 18, flex: 1, justifyContent: 'center' },
+  focusArt: { width: 320, height: 320, borderRadius: 16, backgroundColor: colors.card },
+  focusTitle: { color: colors.text, fontFamily: font.bold, fontSize: 28 },
+  focusPlay: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: colors.mint,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   body: {
     flex: 1,

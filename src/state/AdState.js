@@ -122,6 +122,11 @@ export function AdProvider({ children, isPaidPremium = false }) {
     pending?.resolve(true);
   }, [persist]);
 
+  const grantStudioUntil = React.useCallback((until) => {
+    const nextUntil = Math.max(Number(until) || 0, unlocksRef.current.studioUntil || 0);
+    persist({ ...unlocksRef.current, studioUntil: nextUntil });
+  }, [persist]);
+
   const value = {
     unlocks,
     premiumUntil: unlocks.premiumUntil,
@@ -131,6 +136,7 @@ export function AdProvider({ children, isPaidPremium = false }) {
     hasSleepAccess: hasSleepAccess(),
     hasStudioAccess: hasStudioAccess(),
     requestUnlock: beginUnlock,
+    grantStudioUntil,
   };
 
   return (

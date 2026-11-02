@@ -11,6 +11,8 @@ export default function Root({ children }) {
         <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
         <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
         <meta name="google-adsense-account" content={ADSENSE_CLIENT} />
+        <meta name="theme-color" content="#07080D" />
+        <link rel="manifest" href="/manifest.webmanifest" />
         <ScrollViewStyleReset />
         <script
           async
