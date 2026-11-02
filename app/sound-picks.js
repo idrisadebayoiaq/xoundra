@@ -64,9 +64,7 @@ export default function SoundPicksScreen() {
       <View style={styles.header}>
         <Text style={styles.kicker}>XOUNDRA</Text>
         <Text style={styles.title}>Pick 5 sounds</Text>
-        <Text style={styles.lead}>
-          Choose five you want nearby. They shape what we recommend first.
-        </Text>
+        <Text style={styles.lead}>Choose five to start.</Text>
         <View style={styles.meter}>
           <View style={styles.meterTrack}>
             <View style={[styles.meterFill, { width: `${(selected.length / 5) * 100}%` }]} />
@@ -89,9 +87,15 @@ export default function SoundPicksScreen() {
               accessibilityState={{ selected: on }}
               style={[styles.card, on && styles.cardOn]}
             >
-              <Image source={coverSource(track.artwork)} style={styles.art} />
+              <View style={styles.artFrame}>
+                <Image
+                  source={coverSource(track.artwork)}
+                  style={styles.art}
+                  resizeMode="cover"
+                />
+              </View>
               <View style={styles.cardBody}>
-                <Text style={styles.name} numberOfLines={2}>{track.title}</Text>
+                <Text style={styles.name} numberOfLines={1}>{track.title}</Text>
                 <Text style={styles.meta} numberOfLines={1}>{track.category}</Text>
               </View>
               <View style={[styles.check, on && styles.checkOn]}>
@@ -188,17 +192,22 @@ function makeStyles(colors) {
       borderColor: colors.mint,
       backgroundColor: colors.cardRaised,
     },
+    artFrame: {
+      width: '100%',
+      aspectRatio: 1,
+      backgroundColor: colors.bg,
+      overflow: 'hidden',
+    },
     art: {
       width: '100%',
-      aspectRatio: 1.55,
-      backgroundColor: colors.bg,
+      height: '100%',
     },
     cardBody: {
       paddingHorizontal: 10,
       paddingTop: 8,
       paddingBottom: 10,
       paddingRight: 34,
-      minHeight: 52,
+      minHeight: 44,
     },
     name: {
       color: colors.text,
