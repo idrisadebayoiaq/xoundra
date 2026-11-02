@@ -217,7 +217,7 @@ export default function StudioScreen() {
     return (
       <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
         <ScreenHeader title="Studio" back={fromMenu} onBack={() => goBack({ from: 'menu' })} />
-        <Text style={styles.lead}>Start from a scene. Edit when you want your own mix.</Text>
+        <Text style={styles.lead}>Pick a scene, or edit your own.</Text>
         {hasStudioAccess || premium ? null : (
           <View style={styles.gate}>
             <Pressable style={styles.unlock} onPress={() => requestUnlock('studio')} accessibilityLabel="Watch ads for Studio">
@@ -274,7 +274,7 @@ export default function StudioScreen() {
       keyboardDismissMode="on-drag"
     >
       <ScreenHeader title="Edit mix" back onBack={() => setMode('gallery')} />
-      <Text style={styles.lead}>Adjust volumes, then play or save. Start from a scene if this is empty.</Text>
+      <Text style={styles.lead}>Set volumes, then play or save.</Text>
       {mixTracks.length === 0 ? (
         <Pressable onPress={() => setMode('gallery')} style={styles.custom}>
           <Text style={styles.customText}>Start from a scene</Text>

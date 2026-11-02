@@ -3,6 +3,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { POINT_CAPS, POINT_COSTS, POINT_EARN, REWARDS_STORAGE_KEY } from '../rewards/costs';
 import { featureWindowMs } from '../ads/rewards';
 import { setDownloadCreditConsumer } from '../rewards/downloadCreditGate';
+import { presentNotice } from '../lib/notices';
+import { writeRewardsNote } from '../rewards/notifyGate';
 
 const RewardsContext = React.createContext(null);
 
@@ -21,6 +23,11 @@ function emptyRewards() {
     downloadCredits: 0,
     weekMilestoneKey: '',
   };
+}
+
+function notify(title, body) {
+  writeRewardsNote(title, body);
+  presentNotice(title, body, { kind: 'rewards' }).catch(() => {});
 }
 
 export function RewardsProvider({ children, grantStudioUntil }) {
@@ -65,6 +72,9 @@ export function RewardsProvider({ children, grantStudioUntil }) {
         points: next.points + POINT_EARN.streakWeek,
         weekMilestoneKey: weekKey,
       };
+      notify('Quiet points', `+${POINT_EARN.streakWeek} for a 7-day streak.`);
+    } else if (next.streakDays === 1 || next.streakDays % 3 === 0) {
+      notify('Streak', `${next.streakDays}-day streak.`);
     }
     persist(next);
     return next;
@@ -86,6 +96,7 @@ export function RewardsProvider({ children, grantStudioUntil }) {
       ritualCount: cur.ritualCount + 1,
     };
     persist(next);
+    notify('Quiet points', `+${POINT_EARN.ritual} from your evening ritual.`);
     bumpStreak();
     return true;
   }, [bumpStreak, persist]);
@@ -106,26 +117,10 @@ export function RewardsProvider({ children, grantStudioUntil }) {
       listenBlocks: cur.listenBlocks + 1,
     };
     persist(next);
+    notify('Quiet points', `+${POINT_EARN.listenBlock} for listening.`);
     bumpStreak();
     return true;
   }, [bumpStreak, persist]);
-
-  const spendDownloadCredit = React.useCallback(() => {
-    const cur = stateRef.current;
-    if (cur.points < POINT_COSTS.download && cur.downloadCredits < 1) return false;
-    if (cur.downloadCredits >= 1) {
-      persist({ ...cur, downloadCredits: cur.downloadCredits - 1 });
-      return true;
-    }
-    persist({
-      ...cur,
-      points: cur.points - POINT_COSTS.download,
-      downloadCredits: cur.downloadCredits + 0,
-    });
-    // Grant one immediate credit consumption: points already spent → allow one download
-    // Caller treats return true as "skip ads for this download".
-    return true;
-  }, [persist]);
 
   const buyDownloadCredit = React.useCallback(() => {
     const cur = stateRef.current;
@@ -135,6 +130,7 @@ export function RewardsProvider({ children, grantStudioUntil }) {
       points: cur.points - POINT_COSTS.download,
       downloadCredits: cur.downloadCredits + 1,
     });
+    notify('Download credit', 'Ready to save one sound.');
     return true;
   }, [persist]);
 
@@ -143,6 +139,7 @@ export function RewardsProvider({ children, grantStudioUntil }) {
     if (cur.points < POINT_COSTS.studio24h) return false;
     persist({ ...cur, points: cur.points - POINT_COSTS.studio24h });
     grantStudioRef.current?.(Date.now() + featureWindowMs());
+    notify('Studio unlocked', 'Open for the next 24 hours.');
     return true;
   }, [persist]);
 
@@ -169,7 +166,6 @@ export function RewardsProvider({ children, grantStudioUntil }) {
     buyDownloadCredit,
     spendStudio24h,
     consumeDownloadCredit,
-    spendDownloadCredit,
   };
 
   return <RewardsContext.Provider value={value}>{children}</RewardsContext.Provider>;

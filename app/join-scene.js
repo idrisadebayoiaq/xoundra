@@ -39,7 +39,7 @@ export default function JoinSceneScreen() {
   return (
     <View style={styles.screen}>
       <ScreenHeader title="Join scene" back />
-      <Text style={styles.lead}>Paste a Xoundra collab code to open the same mix in Studio.</Text>
+      <Text style={styles.lead}>Paste a collab code.</Text>
       <TextInput
         value={code}
         onChangeText={setCode}

@@ -132,7 +132,7 @@ export default function SettingsScreen() {
       <View style={styles.switchRow}>
         <View style={styles.copy}>
           <Text style={styles.label}>Weather hints</Text>
-          <Text style={styles.hint}>Optional Home tips like rain scenes. No precise location required.</Text>
+          <Text style={styles.hint}>Home tips from time of day.</Text>
         </View>
         <Switch
           value={weatherOn}
@@ -149,7 +149,7 @@ export default function SettingsScreen() {
         <>
           <Text style={styles.section}>Web app</Text>
           <Pressable onPress={() => promptPwaInstall()}>
-            <Row label="Add to Home Screen" hint="Install Xoundra as a web app when your browser supports it." />
+            <Row label="Add to Home Screen" hint="Install as a web app." />
           </Pressable>
         </>
       ) : null}

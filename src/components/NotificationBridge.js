@@ -5,6 +5,7 @@ import * as Notifications from 'expo-notifications';
 import { useApp } from '../state/AppState';
 import { setNoticePresenter } from '../lib/notices';
 import { openNotice } from '../lib/openNotice';
+import { setRewardsNoteWriter } from '../rewards/notifyGate';
 import { supabase } from '../lib/supabase';
 
 const icon = require('../../assets/icon.png');
@@ -38,21 +39,30 @@ export function NotificationBridge() {
   }, [notifyEnabled]);
 
   useEffect(() => {
+    setRewardsNoteWriter((title, body) => addNote(title, body));
     setNoticePresenter(async (title, body, data) => {
       if (!enabled.current) return;
       if (Platform.OS === 'web') {
         await showWebNotice(title, body, data);
         return;
       }
-      const pushed = await pushToThisAccount(title, body);
+      const pushed = await pushToThisAccount(title, body, data);
       if (pushed) return;
       await Notifications.scheduleNotificationAsync({
-        content: { title, body, data: { local: true } },
+        content: {
+          title,
+          body,
+          data: { ...(data || {}), local: true },
+          ...(data?.kind === 'rewards' ? { channelId: 'rewards' } : {}),
+        },
         trigger: null,
       }).catch(() => {});
     });
-    return () => setNoticePresenter(async () => {});
-  }, []);
+    return () => {
+      setNoticePresenter(async () => {});
+      setRewardsNoteWriter(null);
+    };
+  }, [addNote]);
 
   useEffect(() => {
     if (userId) registerForPush().catch(() => {});
@@ -99,6 +109,11 @@ async function registerForPush() {
       importance: Notifications.AndroidImportance.DEFAULT,
       lightColor: '#8BE1CF',
     });
+    await Notifications.setNotificationChannelAsync('rewards', {
+      name: 'Quiet points',
+      importance: Notifications.AndroidImportance.DEFAULT,
+      lightColor: '#8BE1CF',
+    });
   }
   const current = await Notifications.getPermissionsAsync();
   const permission = current.granted
@@ -114,9 +129,9 @@ async function registerForPush() {
   });
 }
 
-async function pushToThisAccount(title, body) {
-  const { data, error } = await supabase.functions.invoke('send-push', {
-    body: { action: 'self', title, body },
+async function pushToThisAccount(title, body, data) {
+  const { data: result, error } = await supabase.functions.invoke('send-push', {
+    body: { action: 'self', title, body, data: data || {} },
   });
-  return !error && Number(data?.sent || 0) > 0;
+  return !error && Number(result?.sent || 0) > 0;
 }

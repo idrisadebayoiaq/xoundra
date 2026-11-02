@@ -24,7 +24,7 @@ export function PointsSpendModal({ open, onClose }) {
       <Pressable style={styles.scrim} onPress={onClose}>
         <Pressable style={styles.sheet} onPress={(event) => event.stopPropagation?.()}>
           <Text style={styles.title}>Quiet points</Text>
-          <Text style={styles.lead}>You have {points} points{downloadCredits ? ` · ${downloadCredits} download credit${downloadCredits === 1 ? '' : 's'}` : ''}.</Text>
+          <Text style={styles.lead}>{points} pts{downloadCredits ? ` · ${downloadCredits} credit${downloadCredits === 1 ? '' : 's'}` : ''}</Text>
           <Pressable
             style={[styles.row, points < costs.download && styles.rowDisabled]}
             onPress={buyDownload}
@@ -33,7 +33,6 @@ export function PointsSpendModal({ open, onClose }) {
           >
             <View style={styles.copy}>
               <Text style={styles.rowTitle}>Download credit</Text>
-              <Text style={styles.rowHint}>Save one sound without watching ads.</Text>
             </View>
             <Text style={styles.cost}>{costs.download}</Text>
           </Pressable>
@@ -44,8 +43,7 @@ export function PointsSpendModal({ open, onClose }) {
             accessibilityLabel="Spend points for Studio unlock"
           >
             <View style={styles.copy}>
-              <Text style={styles.rowTitle}>Studio for 24 hours</Text>
-              <Text style={styles.rowHint}>Mix and play scenes without Studio ads.</Text>
+              <Text style={styles.rowTitle}>Studio 24h</Text>
             </View>
             <Text style={styles.cost}>{costs.studio24h}</Text>
           </Pressable>

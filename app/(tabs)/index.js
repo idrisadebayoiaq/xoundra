@@ -96,7 +96,6 @@ export default function HomeScreen() {
         {current ? (
           <View style={styles.hero}>
             <Image source={coverSource(current.artwork)} style={styles.heroArt} />
-            <Text style={styles.heroEyebrow}>Now</Text>
             <Text style={styles.heroTitle} numberOfLines={2}>{current.title}</Text>
             <Text style={styles.heroMeta} numberOfLines={1}>{current.category || 'Xoundra'}</Text>
             <View style={styles.heroActions}>

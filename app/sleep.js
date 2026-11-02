@@ -112,10 +112,7 @@ export default function SleepScreen() {
       keyboardDismissMode="on-drag"
     >
       <ScreenHeader title="Evening" back />
-      <Text style={styles.lead}>
-        Start a ritual now, or schedule the sleep timer for later.
-      </Text>
-      <Text style={styles.section}>Start tonight</Text>
+      <Text style={styles.section}>Tonight</Text>
       <View style={styles.ritualRow}>
         {[15, 30, 45, 60].map((mins) => (
           <Pressable
@@ -160,10 +157,7 @@ export default function SleepScreen() {
           </Pressable>
         ))}
       </ScrollView>
-      <Text style={[styles.section, { marginTop: 22 }]}>Scheduled sleep timer</Text>
-      <Text style={styles.lead}>
-        Pick the sounds and the times. They play in order when the start time arrives, and they stop at the stop time.
-      </Text>
+      <Text style={[styles.section, { marginTop: 22 }]}>Schedule</Text>
       {hasSleepAccess ? null : (
         <View style={styles.gate}>
           <Pressable style={styles.plans} onPress={() => requestUnlock('sleep')} accessibilityLabel="Watch ads for sleep timer">
@@ -252,7 +246,6 @@ export default function SleepScreen() {
         </Pressable>
       ))}
       <Text style={[styles.section, { marginTop: 22 }]}>Focus until</Text>
-      <Text style={styles.lead}>Optional end clock (HH:MM). Saved with the sleep plan as the stop time when set.</Text>
       <TextInput
         value={focusUntil}
         onChangeText={(value) => setFocusUntil(cleanTime(value))}
