@@ -23,9 +23,6 @@ export function PhotoTile({ track, onPress, style }) {
       <View style={styles.tileMenu}>
         <SoundMenuButton track={track} />
       </View>
-      <View style={styles.tileDownload}>
-        <DownloadMark track={track} />
-      </View>
     </View>
   );
 }
@@ -40,9 +37,6 @@ export function AlbumCard({ track, onPress }) {
       </Pressable>
       <View style={styles.albumMenu}>
         <SoundMenuButton track={track} />
-      </View>
-      <View style={styles.albumDownload}>
-        <DownloadMark track={track} />
       </View>
       <Text style={styles.albumTitle} numberOfLines={2}>{track.title}</Text>
       <ArtistLink track={track} style={styles.albumArtist} />
@@ -110,11 +104,6 @@ function makeStyles(colors) {
     justifyContent: 'flex-end',
     padding: 12,
   },
-  tileDownload: {
-    position: 'absolute',
-    top: 6,
-    left: 6,
-  },
   tileMenu: {
     position: 'absolute',
     top: 6,
@@ -129,11 +118,6 @@ function makeStyles(colors) {
   album: {
     width: 148,
     marginRight: 12,
-  },
-  albumDownload: {
-    position: 'absolute',
-    left: 4,
-    bottom: 58,
   },
   albumMenu: {
     position: 'absolute',
