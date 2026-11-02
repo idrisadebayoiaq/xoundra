@@ -2,9 +2,10 @@ import { useRef, useMemo } from 'react';
 import { PanResponder, StyleSheet, View } from 'react-native';
 import { useTheme } from '../state/ThemeState';
 
-export function LevelBar({ value, onChange, color = colors.mint, label = 'Volume' }) {
+export function LevelBar({ value, onChange, color, label = 'Volume' }) {
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
+  const fillColor = color || colors.mint;
   const box = useRef({ x: 0, width: 1 });
   const onChangeRef = useRef(onChange);
   const bar = useRef(null);
@@ -38,7 +39,7 @@ export function LevelBar({ value, onChange, color = colors.mint, label = 'Volume
   return (
     <View ref={bar} accessible accessibilityRole="adjustable" accessibilityLabel={label} style={styles.track} onLayout={remember} {...pan.panHandlers}>
       <View style={styles.rail}>
-        <View style={[styles.fill, { width: `${Math.round(amount * 100)}%`, backgroundColor: color }]} />
+        <View style={[styles.fill, { width: `${Math.round(amount * 100)}%`, backgroundColor: fillColor }]} />
       </View>
     </View>
   );

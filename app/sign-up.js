@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { ScreenHeader } from '../src/components/ScreenHeader';
 import { countries } from '../src/data/catalogue';
@@ -72,18 +73,34 @@ export default function SignUpScreen() {
   );
 }
 
-function Field({ label, ...props }) {
+function Field({ label, secureTextEntry, style, ...props }) {
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
+  const [visible, setVisible] = useState(false);
+  const isPassword = Boolean(secureTextEntry);
+
   return (
     <View style={styles.field}>
       <Text style={styles.label}>{label}</Text>
-      <TextInput
-        {...props}
-        autoCorrect={false}
-        placeholderTextColor={colors.muted}
-        style={styles.input}
-      />
+      <View style={styles.inputRow}>
+        <TextInput
+          {...props}
+          secureTextEntry={isPassword && !visible}
+          autoCorrect={false}
+          placeholderTextColor={colors.muted}
+          style={[styles.input, isPassword && styles.inputWithToggle, style]}
+        />
+        {isPassword ? (
+          <Pressable
+            onPress={() => setVisible((value) => !value)}
+            hitSlop={10}
+            style={styles.toggle}
+            accessibilityLabel={visible ? 'Hide password' : 'Show password'}
+          >
+            <Ionicons name={visible ? 'eye-off-outline' : 'eye-outline'} size={20} color={colors.muted} />
+          </Pressable>
+        ) : null}
+      </View>
     </View>
   );
 }
@@ -94,6 +111,7 @@ function makeStyles(colors) {
   content: { paddingBottom: 32 },
   field: { marginHorizontal: 20, marginBottom: 14 },
   label: { color: colors.muted, fontFamily: font.medium, fontSize: 13, marginBottom: 6 },
+  inputRow: { position: 'relative', justifyContent: 'center' },
   input: {
     height: 48,
     borderRadius: 14,
@@ -102,6 +120,15 @@ function makeStyles(colors) {
     fontFamily: font.regular,
     fontSize: 16,
     paddingHorizontal: 14,
+  },
+  inputWithToggle: { paddingRight: 46 },
+  toggle: {
+    position: 'absolute',
+    right: 12,
+    height: 48,
+    width: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   country: { marginHorizontal: 20, marginBottom: 16 },
   countries: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginHorizontal: 20, marginBottom: 16 },

@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Platform, StyleSheet, Text, View } from 'react-native';
 import { font } from '../theme';
 import { useTheme } from '../state/ThemeState';
@@ -34,22 +34,46 @@ export function AdBanner({ premium = false, label = 'Sponsored' }) {
 
   if (!unit) return null;
 
-  try {
-    // Lazy require so web bundles do not pull the native module.
-    const { BannerAd, BannerAdSize } = require('react-native-google-mobile-ads');
-    return (
-      <View style={styles.slot} accessibilityLabel={label}>
-        <Text style={styles.caption}>{label}</Text>
-        <BannerAd
-          unitId={unit}
-          size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER}
-          requestOptions={{ requestNonPersonalizedAdsOnly: true }}
-        />
-      </View>
-    );
-  } catch {
-    return null;
+  return (
+    <View style={styles.slot} accessibilityLabel={label}>
+      <Text style={styles.caption}>{label}</Text>
+      <NativeBanner unit={unit} fallbackStyle={styles.box} />
+    </View>
+  );
+}
+
+function NativeBanner({ unit, fallbackStyle }) {
+  const [sdk, setSdk] = useState(null);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    let alive = true;
+    try {
+      // Lazy require so web bundles do not pull the native module.
+      const mod = require('react-native-google-mobile-ads');
+      if (alive) setSdk(mod);
+    } catch {
+      if (alive) setFailed(true);
+    }
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  if (failed) return null;
+  if (!sdk?.BannerAd || !sdk?.BannerAdSize) {
+    return <View style={fallbackStyle} />;
   }
+
+  const { BannerAd, BannerAdSize } = sdk;
+  return (
+    <BannerAd
+      unitId={unit}
+      size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER}
+      requestOptions={{ requestNonPersonalizedAdsOnly: true }}
+      onAdFailedToLoad={() => setFailed(true)}
+    />
+  );
 }
 
 function makeStyles(colors) {
