@@ -15,7 +15,8 @@ const appUrl = "https://xoundra.vercel.app";
 const offsets: Record<string, number> = {
   NG: 1, GH: 0, KE: 3, ZA: 2, EG: 2, MA: 1, TZ: 3, UG: 3, ET: 3,
   US: -5, GB: 0, CA: -5, AU: 10, IN: 5.5, AE: 4, SA: 3, DE: 1, FR: 1,
-  NL: 1, IE: 0, BR: -3, MX: -6, JP: 9, SG: 8, PH: 8,
+  NL: 1, IE: 0, BR: -3, MX: -6, JP: 9, SG: 8, PH: 8, KR: 9, ES: 1,
+  IT: 1, PT: 0, SE: 1, NO: 1, DK: 1, FI: 2, PL: 1, TR: 3, CN: 8,
 };
 
 Deno.serve(async (req) => {
@@ -24,16 +25,13 @@ Deno.serve(async (req) => {
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
   const service = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
-  const cronSecret = Deno.env.get("CHECK_IN_CRON_SECRET") ?? Deno.env.get("BILLING_CRON_SECRET") ?? "";
   const admin = createClient(supabaseUrl, service);
   const body = await req.json().catch(() => ({}));
   const action = String(body.action ?? "dispatch");
 
   try {
     if (action === "dispatch") {
-      const headerSecret = req.headers.get("x-check-in-secret") ?? "";
-      const bodySecret = String(body.secret ?? "");
-      if (!cronSecret || (headerSecret !== cronSecret && bodySecret !== cronSecret)) {
+      if (!(await cronAuthorized(admin, req, body))) {
         return json({ error: "unauthorized" }, 401);
       }
       return await dispatchCheckIns(admin, body);
@@ -66,6 +64,27 @@ function json(payload: Record<string, unknown>, status = 200) {
   return Response.json(payload, { status, headers: cors });
 }
 
+async function readAppSecret(admin: ReturnType<typeof createClient>, name: string) {
+  const { data, error } = await admin.rpc("read_app_secret", { p_name: name });
+  if (error || typeof data !== "string") return "";
+  return data;
+}
+
+async function cronAuthorized(
+  admin: ReturnType<typeof createClient>,
+  req: Request,
+  body: Record<string, unknown>,
+) {
+  const headerSecret = req.headers.get("x-check-in-secret") ?? "";
+  const bodySecret = String(body.secret ?? "");
+  const provided = headerSecret || bodySecret;
+  if (!provided) return false;
+  const envSecret = Deno.env.get("CHECK_IN_CRON_SECRET") ?? Deno.env.get("BILLING_CRON_SECRET") ?? "";
+  if (envSecret && provided === envSecret) return true;
+  const stored = await readAppSecret(admin, "CHECK_IN_CRON_SECRET");
+  return Boolean(stored && provided === stored);
+}
+
 async function caller(url: string, anon: string, req: Request) {
   const authHeader = req.headers.get("Authorization") ?? "";
   if (!authHeader) return null;
@@ -84,7 +103,6 @@ function localHour(country: string, now: Date) {
 
 function greetingFor(country: string, now: Date) {
   const hour = localHour(country, now);
-  // Morning at 7:00 local, evening at 21:00 (9pm) local — cron should run every hour.
   if (hour === 7) {
     return { kind: "morning" as const, subject: "Good morning from Xoundra", label: "Good morning" };
   }
@@ -197,8 +215,20 @@ function shell(eyebrow: string, body: string) {
 </html>`;
 }
 
-async function sendMail(to: string, subject: string, html: string, text: string) {
-  const password = Deno.env.get("SMTP_APP_PASSWORD") ?? "";
+async function smtpPassword(admin: ReturnType<typeof createClient>) {
+  const fromEnv = Deno.env.get("SMTP_APP_PASSWORD") ?? "";
+  if (fromEnv) return fromEnv;
+  return await readAppSecret(admin, "SMTP_APP_PASSWORD");
+}
+
+async function sendMail(
+  admin: ReturnType<typeof createClient>,
+  to: string,
+  subject: string,
+  html: string,
+  text: string,
+) {
+  const password = await smtpPassword(admin);
   if (!password) throw new Error("smtp_not_configured");
   const client = new SMTPClient({
     connection: {
@@ -218,20 +248,51 @@ async function sendMail(to: string, subject: string, html: string, text: string)
   await client.close();
 }
 
+async function queueInboxNotice(
+  admin: ReturnType<typeof createClient>,
+  userId: string,
+  kind: "morning" | "evening",
+) {
+  const title = kind === "morning" ? "Good morning" : "Good evening";
+  const body = kind === "morning"
+    ? "A quiet note from Xoundra — how has listening been for you?"
+    : "Before the night settles — how has Xoundra been for you?";
+  try {
+    await admin.from("user_notifications").insert({
+      user_id: userId,
+      kind: "check_in",
+      title,
+      body,
+    });
+  } catch {
+    /* inbox is best-effort */
+  }
+  try {
+    await admin.from("notification_outbox").insert({
+      user_id: userId,
+      kind: "check_in",
+      title,
+      body,
+    });
+  } catch {
+    /* push outbox is best-effort */
+  }
+}
+
 async function dispatchCheckIns(admin: ReturnType<typeof createClient>, body: Record<string, unknown>) {
   const forceKind = body.force_kind === "morning" || body.force_kind === "evening" ? body.force_kind : null;
-  const limit = Math.min(Number(body.limit) || 40, 100);
-  const minDays = Math.max(Number(body.min_days) || 5, 1);
+  const limit = Math.min(Number(body.limit) || 80, 150);
+  const minDays = Math.max(Number(body.min_days) || 1, 1);
   const since = new Date(Date.now() - minDays * 24 * 3600 * 1000).toISOString();
   const now = new Date();
 
   const { data: rows, error } = await admin
     .from("profiles")
-    .select("id, first_name, country_code, check_in_emails, last_check_in_at, email_confirmed, onboarding_done")
+    .select("id, first_name, country_code, check_in_emails, last_check_in_at, last_morning_check_in_at, last_evening_check_in_at, email_confirmed, onboarding_done")
     .eq("email_confirmed", true)
     .eq("onboarding_done", true)
     .eq("check_in_emails", true)
-    .or(`last_check_in_at.is.null,last_check_in_at.lt.${since}`)
+    .order("country_code", { ascending: true })
     .limit(limit);
 
   if (error) return json({ error: "query_failed", detail: error.message }, 500);
@@ -249,6 +310,13 @@ async function dispatchCheckIns(admin: ReturnType<typeof createClient>, body: Re
       continue;
     }
 
+    const stampKey = slot.kind === "morning" ? "last_morning_check_in_at" : "last_evening_check_in_at";
+    const lastSlot = profile[stampKey];
+    if (!forceKind && lastSlot && new Date(lastSlot).getTime() > Date.now() - minDays * 24 * 3600 * 1000) {
+      skipped += 1;
+      continue;
+    }
+
     const { data: auth } = await admin.auth.admin.getUserById(profile.id);
     const email = auth.user?.email;
     if (!email) {
@@ -260,8 +328,12 @@ async function dispatchCheckIns(admin: ReturnType<typeof createClient>, body: Re
     const text = `${slot.label}, ${profile.first_name || "there"}.\n\nHow has Xoundra been for you? Has it helped you sleep, focus, or unwind?\nReply to this email or write to ${supportEmail}.\n\n${appUrl}`;
 
     try {
-      await sendMail(email, slot.subject, html, text);
-      await admin.from("profiles").update({ last_check_in_at: now.toISOString() }).eq("id", profile.id);
+      await sendMail(admin, email, slot.subject, html, text);
+      await queueInboxNotice(admin, profile.id, slot.kind);
+      await admin.from("profiles").update({
+        last_check_in_at: now.toISOString(),
+        [stampKey]: now.toISOString(),
+      }).eq("id", profile.id);
       sent += 1;
     } catch (err) {
       failures.push(profile.id);

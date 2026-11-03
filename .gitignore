@@ -13,6 +13,7 @@ ios/
 android/
 *firebase-adminsdk*.json
 google-services.json
+_seed_app_secrets.sql
 *.zip
 .vercel
 .cursor

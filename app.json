@@ -3,7 +3,7 @@
     "name": "Xoundra",
     "slug": "xoundra",
     "scheme": "xoundra",
-    "version": "1.0.13",
+    "version": "1.0.14",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
@@ -13,7 +13,7 @@
     },
     "android": {
       "package": "com.xoundra.app",
-      "versionCode": 14,
+      "versionCode": 15,
       "softwareKeyboardLayoutMode": "resize",
       "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {

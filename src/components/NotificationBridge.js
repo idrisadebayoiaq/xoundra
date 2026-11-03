@@ -1,6 +1,5 @@
 import { useEffect, useRef } from 'react';
 import { Platform } from 'react-native';
-import { Asset } from 'expo-asset';
 import * as Notifications from 'expo-notifications';
 import { useApp } from '../state/AppState';
 import { setNoticePresenter } from '../lib/notices';
@@ -8,8 +7,8 @@ import { openNotice } from '../lib/openNotice';
 import { setRewardsNoteWriter } from '../rewards/notifyGate';
 import { supabase } from '../lib/supabase';
 
-const icon = require('../../assets/icon.png');
 const noticeOpener = { open: async () => {} };
+const WEB_ICON = 'https://xoundra.vercel.app/favicon.ico';
 
 export function NotificationBridge() {
   const { addNote, notifyEnabled, userId, play, tracks, refreshInbox } = useApp();
@@ -91,9 +90,7 @@ async function showWebNotice(title, body, data) {
   let permission = Notification.permission;
   if (permission === 'default') permission = await Notification.requestPermission();
   if (permission !== 'granted') return;
-  const asset = Asset.fromModule(icon);
-  if (!asset.downloaded) await asset.downloadAsync().catch(() => {});
-  const notice = new Notification(title, { body, icon: asset.uri || undefined });
+  const notice = new Notification(title, { body, icon: WEB_ICON });
   notice.onclick = () => {
     notice.close();
     if (typeof window !== 'undefined') window.focus();
@@ -102,7 +99,10 @@ async function showWebNotice(title, body, data) {
 }
 
 async function registerForPush() {
-  if (Platform.OS === 'web') return;
+  if (Platform.OS === 'web') {
+    await requestWebNotificationPermission();
+    return;
+  }
   if (Platform.OS === 'android') {
     await Notifications.setNotificationChannelAsync('default', {
       name: 'Xoundra',
@@ -127,6 +127,13 @@ async function registerForPush() {
   await supabase.functions.invoke('register-push', {
     body: { token, platform: Platform.OS },
   });
+}
+
+async function requestWebNotificationPermission() {
+  if (typeof Notification === 'undefined') return;
+  if (Notification.permission === 'default') {
+    await Notification.requestPermission().catch(() => 'denied');
+  }
 }
 
 async function pushToThisAccount(title, body, data) {

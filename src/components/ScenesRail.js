@@ -45,7 +45,7 @@ export function ScenesRail({ title = 'Scenes', list = studioPresets }) {
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.row}>
         {list.map((scene) => (
           <Pressable key={scene.id} style={styles.card} onPress={() => playScene(scene)} accessibilityLabel={`Play ${scene.title}`}>
-            <Image source={coverSource(scene.artwork)} style={styles.art} />
+            <Image source={coverSource(scene.artwork)} style={styles.art} resizeMode="cover" />
             <Text style={styles.name} numberOfLines={1}>{scene.title}</Text>
             <Text style={styles.blurb} numberOfLines={2}>{scene.blurb}</Text>
             <Pressable onPress={() => editScene(scene)} hitSlop={8} style={styles.edit}>

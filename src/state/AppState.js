@@ -1159,6 +1159,10 @@ export function AppProvider({ children }) {
   }, []);
 
   React.useEffect(() => {
+    AsyncStorage.getItem('xoundra-notify-enabled').then((value) => {
+      if (value === '0') setNotifyEnabled(false);
+      if (value === '1') setNotifyEnabled(true);
+    }).catch(() => {});
     AsyncStorage.getItem('xoundra-download-network').then((value) => {
       const wifiOnly = value === 'wifi';
       wifiOnlyRef.current = wifiOnly;
@@ -1478,7 +1482,11 @@ export function AppProvider({ children }) {
     inbox,
     unread: notes.filter((item) => !item.read).length + inbox.filter((item) => !item.read_at).length,
     notifyEnabled,
-    setNotifyEnabled,
+    setNotifyEnabled: (on) => {
+      const next = Boolean(on);
+      setNotifyEnabled(next);
+      AsyncStorage.setItem('xoundra-notify-enabled', next ? '1' : '0').catch(() => {});
+    },
     checkInEmails,
     setCheckInEmails: (on) => {
       const next = Boolean(on);

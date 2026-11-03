@@ -1,10 +1,10 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import { createClient } from "jsr:@supabase/supabase-js@2";
+import { createClient, type SupabaseClient } from "jsr:@supabase/supabase-js@2";
 
 const encoder = new TextEncoder();
 const cors = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-push-secret",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
@@ -65,6 +65,35 @@ function json(payload: Record<string, unknown>, status = 200) {
   return Response.json(payload, { status, headers: cors });
 }
 
+async function readAppSecret(admin: SupabaseClient, name: string) {
+  const { data, error } = await admin.rpc("read_app_secret", { p_name: name });
+  if (error || typeof data !== "string") return "";
+  return data;
+}
+
+async function loadFirebaseAccount(admin: SupabaseClient) {
+  let accountRaw = Deno.env.get("FIREBASE_SERVICE_ACCOUNT") ?? "";
+  if (!accountRaw) accountRaw = await readAppSecret(admin, "FIREBASE_SERVICE_ACCOUNT");
+  if (!accountRaw) return null;
+  try {
+    const account = JSON.parse(accountRaw) as { client_email: string; private_key: string; project_id: string };
+    if (!account?.client_email || !account?.private_key || !account?.project_id) return null;
+    return account;
+  } catch {
+    return null;
+  }
+}
+
+async function cronAuthorized(admin: SupabaseClient, req: Request) {
+  const provided = req.headers.get("x-push-secret") ?? "";
+  if (!provided) return false;
+  const envSecret = Deno.env.get("PUSH_DISPATCH_SECRET") ?? Deno.env.get("CHECK_IN_CRON_SECRET") ?? "";
+  if (envSecret && provided === envSecret) return true;
+  const stored = await readAppSecret(admin, "PUSH_DISPATCH_SECRET")
+    || await readAppSecret(admin, "CHECK_IN_CRON_SECRET");
+  return Boolean(stored && provided === stored);
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
   if (req.method !== "POST") return json({ error: "method_not_allowed" }, 405);
@@ -72,12 +101,14 @@ Deno.serve(async (req) => {
   const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
   const anon = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+  const admin = createClient(supabaseUrl, serviceKey);
   const header = req.headers.get("authorization") ?? req.headers.get("Authorization") ?? "";
   const bearer = header.startsWith("Bearer ") ? header.slice(7) : "";
   const isService = Boolean(serviceKey) && bearer === serviceKey;
+  const isCron = await cronAuthorized(admin, req);
 
   let userId = "";
-  if (!isService) {
+  if (!isService && !isCron) {
     const userClient = createClient(supabaseUrl, anon, {
       global: { headers: { Authorization: header } },
     });
@@ -86,17 +117,8 @@ Deno.serve(async (req) => {
     if (!userId) return json({ error: "sign_in_required" }, 401);
   }
 
-  const accountRaw = Deno.env.get("FIREBASE_SERVICE_ACCOUNT");
-  if (!accountRaw) return json({ error: "firebase_not_configured" }, 500);
-  let account: { client_email: string; private_key: string; project_id: string };
-  try {
-    account = JSON.parse(accountRaw);
-  } catch {
-    return json({ error: "firebase_not_configured" }, 500);
-  }
-  if (!account?.client_email || !account?.private_key || !account?.project_id) {
-    return json({ error: "firebase_not_configured" }, 500);
-  }
+  const account = await loadFirebaseAccount(admin);
+  if (!account) return json({ error: "firebase_not_configured" }, 500);
 
   const body = await req.json().catch(() => ({}));
   const action = typeof body.action === "string" ? body.action : "broadcast";
@@ -109,15 +131,13 @@ Deno.serve(async (req) => {
     return json({ firebase: "ok" });
   }
   if (action === "dispatch") {
-    if (!userId && !isService) return json({ error: "sign_in_required" }, 401);
-    const admin = createClient(supabaseUrl, serviceKey);
+    if (!userId && !isService && !isCron) return json({ error: "sign_in_required" }, 401);
     const pending = await admin
       .from("notification_outbox")
       .select("id, user_id, kind, title, body, track_id, album_id, announcement_id")
       .is("sent_at", null)
-      .order("created_at", { ascending: true })
       .limit(25);
-    if (pending.error) return json({ error: "push_failed" }, 500);
+    if (pending.error) return json({ error: "push_failed", detail: pending.error.message }, 500);
     const rows = pending.data ?? [];
     if (!rows.length) return json({ sent: 0 });
     let accessToken = "";
@@ -179,7 +199,6 @@ Deno.serve(async (req) => {
 
   const title = typeof body.title === "string" && body.title.trim() ? body.title.trim() : "Xoundra";
   const message = typeof body.body === "string" ? body.body.trim() : "";
-  const admin = createClient(supabaseUrl, serviceKey);
   const query = admin.from("push_tokens").select("token");
   const { data, error } = action === "self" ? await query.eq("user_id", userId) : await query;
   if (error) return json({ error: "push_failed" }, 500);
@@ -207,7 +226,7 @@ Deno.serve(async (req) => {
           android: {
             priority: "HIGH",
             notification: {
-              channel_id: "default",
+              channel_id: typeof body?.data?.kind === "string" && body.data.kind === "rewards" ? "rewards" : "default",
               icon: "notification_icon",
               color: "#8BE1CF",
             },

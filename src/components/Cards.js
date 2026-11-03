@@ -15,7 +15,7 @@ export function PhotoTile({ track, onPress, style }) {
   return (
     <View style={[styles.tile, style]}>
       <Pressable onPress={onPress} style={[StyleSheet.absoluteFill, styles.tilePress]}>
-        <Image source={coverSource(track.artwork)} style={StyleSheet.absoluteFill} />
+        <Image source={coverSource(track.artwork)} style={StyleSheet.absoluteFill} resizeMode="cover" />
         <View style={styles.scrim} />
         <Text style={styles.label} numberOfLines={2}>{track.title}</Text>
         <ArtistLink track={track} style={styles.tileArtist} />
@@ -33,7 +33,7 @@ export function AlbumCard({ track, onPress }) {
   return (
     <View style={styles.album}>
       <Pressable onPress={onPress} accessibilityLabel={track.title}>
-        <Image source={coverSource(track.artwork)} style={styles.albumArt} />
+        <Image source={coverSource(track.artwork)} style={styles.albumArt} resizeMode="cover" />
       </Pressable>
       <View style={styles.albumMenu}>
         <SoundMenuButton track={track} />
@@ -53,7 +53,7 @@ export function TrackRow({ track, onPress, subtitle }) {
   return (
     <View style={styles.row}>
       <Pressable onPress={onPress} style={styles.main}>
-        <Image source={coverSource(track.artwork)} style={styles.thumb} />
+        <Image source={coverSource(track.artwork)} style={styles.thumb} resizeMode="cover" />
         <View style={styles.copy}>
           <Text style={[styles.title, active && styles.active]} numberOfLines={1}>{track.title}</Text>
           <Text style={styles.sub} numberOfLines={1}>{subtitle || track.category}</Text>

@@ -1,4 +1,5 @@
-import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useMemo } from 'react';
 import { ScreenHeader } from '../src/components/ScreenHeader';
@@ -55,7 +56,9 @@ export default function NotificationsScreen() {
         ) : items.map((item) => (
           <View key={item.id} style={[styles.card, !item.read && styles.cardUnread]}>
             <Pressable style={styles.main} onPress={() => open(item)} accessibilityLabel={item.title}>
-              <Image source={require('../assets/icon.png')} style={styles.icon} />
+              <View style={styles.icon}>
+                <Ionicons name="notifications-outline" size={20} color={colors.mint} />
+              </View>
               <View style={styles.copy}>
                 <Text style={styles.title}>{item.title}</Text>
                 {item.body ? <Text style={styles.body}>{item.body}</Text> : null}
@@ -106,6 +109,9 @@ function makeStyles(colors) {
     width: 42,
     height: 42,
     borderRadius: 12,
+    backgroundColor: colors.card,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   copy: {
     flex: 1,

@@ -198,7 +198,7 @@ export default function StudioScreen() {
                   addLayer(track);
                 }}
               >
-                <Image source={coverSource(track.artwork)} style={styles.pickArt} />
+                <Image source={coverSource(track.artwork)} style={styles.pickArt} resizeMode="cover" />
                 <View style={styles.copy}>
                   <Text style={styles.name}>{track.title}</Text>
                   <Text style={styles.meta}>{track.category}</Text>
@@ -232,7 +232,9 @@ export default function StudioScreen() {
           {studioPresets.map((scene) => (
             <View key={scene.id} style={styles.sceneCard}>
               <Pressable onPress={() => playScene(scene)} accessibilityLabel={`Play ${scene.title}`}>
-                <Image source={coverSource(scene.artwork)} style={styles.sceneArt} />
+                <View style={styles.sceneArtFrame}>
+                  <Image source={coverSource(scene.artwork)} style={styles.sceneArt} resizeMode="cover" />
+                </View>
                 <Text style={styles.sceneTitle}>{scene.title}</Text>
                 <Text style={styles.sceneBlurb}>{scene.blurb}</Text>
               </Pressable>
@@ -283,7 +285,7 @@ export default function StudioScreen() {
         <View style={styles.layers}>
           {mixTracks.map((layer) => (
             <View key={layer.id} style={styles.layer}>
-              <Image source={coverSource(layer.artwork)} style={styles.art} />
+              <Image source={coverSource(layer.artwork)} style={styles.art} resizeMode="cover" />
               <View style={styles.copy}>
                 <Text style={styles.name} numberOfLines={1}>{layer.title}</Text>
                 <LevelBar value={layer.muted ? 0 : layer.volume} onChange={(volume) => setLayerVolume(layer.id, volume)} />
@@ -364,7 +366,14 @@ function makeStyles(colors) {
     rowGap: 16,
   },
   sceneCard: { width: '48%' },
-  sceneArt: { width: '100%', aspectRatio: 1, borderRadius: 14, backgroundColor: colors.card },
+  sceneArtFrame: {
+    width: '100%',
+    aspectRatio: 1,
+    borderRadius: 14,
+    overflow: 'hidden',
+    backgroundColor: colors.card,
+  },
+  sceneArt: { width: '100%', height: '100%' },
   sceneTitle: { color: colors.text, fontFamily: font.semibold, fontSize: 15, marginTop: 8 },
   sceneBlurb: { color: colors.muted, fontFamily: font.regular, fontSize: 12, marginTop: 2, minHeight: 32 },
   editLink: { marginTop: 6 },
