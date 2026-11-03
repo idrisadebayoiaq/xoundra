@@ -18,6 +18,7 @@ function emptyRewards() {
     streakDays: 0,
     streakDayKey: '',
     listenDayKey: '',
+    signInDayKey: '',
     ritualCount: 0,
     listenBlocks: 0,
     downloadCredits: 0,
@@ -79,6 +80,20 @@ export function RewardsProvider({ children, grantStudioUntil }) {
     persist(next);
     return next;
   }, [persist]);
+
+  const claimDailySignIn = React.useCallback(() => {
+    const today = dayKey();
+    const cur = stateRef.current;
+    if (cur.signInDayKey === today) return false;
+    persist({
+      ...cur,
+      points: cur.points + POINT_EARN.dailySignIn,
+      signInDayKey: today,
+    });
+    notify('Quiet points', `+${POINT_EARN.dailySignIn} for today's check-in.`);
+    bumpStreak();
+    return true;
+  }, [bumpStreak, persist]);
 
   const earnRitual = React.useCallback(() => {
     const today = dayKey();
@@ -155,11 +170,16 @@ export function RewardsProvider({ children, grantStudioUntil }) {
     return () => setDownloadCreditConsumer(null);
   }, [consumeDownloadCredit]);
 
+  const dailyClaimed = state.signInDayKey === dayKey();
+
   const value = {
     points: state.points,
     streakDays: state.streakDays,
     downloadCredits: state.downloadCredits,
     costs: POINT_COSTS,
+    earn: POINT_EARN,
+    dailyClaimed,
+    claimDailySignIn,
     earnRitual,
     earnListenBlock,
     bumpStreak,

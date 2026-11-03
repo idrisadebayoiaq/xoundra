@@ -45,7 +45,7 @@ export default function HomeScreen() {
     avatarStamp,
     intention,
   } = useApp();
-  const { points, streakDays } = useRewards();
+  const { points, streakDays, dailyClaimed, earn, claimDailySignIn } = useRewards();
   const weather = useWeatherHint();
 
   useEffect(() => {
@@ -113,9 +113,19 @@ export default function HomeScreen() {
           </View>
         ) : null}
 
-        <Pressable style={styles.quiet} onPress={() => setSpendOpen(true)} accessibilityLabel="Quiet points and streak">
+        <Pressable
+          style={styles.quiet}
+          onPress={() => {
+            if (!dailyClaimed) claimDailySignIn();
+            setSpendOpen(true);
+          }}
+          accessibilityLabel={dailyClaimed ? 'Quiet points and streak' : `Claim today's ${earn.dailySignIn} Quiet points`}
+        >
           <Text style={styles.quietText}>
             {streakDays ? `${streakDays}-day streak` : 'Start a streak'} · {points} Quiet points
+          </Text>
+          <Text style={dailyClaimed ? styles.quietMeta : styles.quietClaim}>
+            {dailyClaimed ? "Today's check-in done" : `Claim today's +${earn.dailySignIn}`}
           </Text>
           {weather?.label ? <Text style={styles.weather}>{weather.label}</Text> : null}
         </Pressable>
@@ -359,6 +369,18 @@ function makeStyles(colors) {
       color: colors.muted,
       fontFamily: font.medium,
       fontSize: 13,
+    },
+    quietClaim: {
+      color: colors.mint,
+      fontFamily: font.semibold,
+      fontSize: 13,
+      marginTop: 4,
+    },
+    quietMeta: {
+      color: colors.muted,
+      fontFamily: font.regular,
+      fontSize: 12,
+      marginTop: 4,
     },
     weather: {
       color: colors.mint,

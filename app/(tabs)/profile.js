@@ -18,7 +18,7 @@ export default function ProfileScreen() {
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
   const app = useApp();
-  const { points, streakDays, downloadCredits } = useRewards();
+  const { points, streakDays, downloadCredits, dailyClaimed, earn, claimDailySignIn } = useRewards();
   const [spendOpen, setSpendOpen] = useState(false);
   const {
     premium,
@@ -73,10 +73,20 @@ export default function ProfileScreen() {
         </View>
       </View>
 
-      <Pressable style={styles.rewards} onPress={() => setSpendOpen(true)} accessibilityLabel="Quiet points">
+      <Pressable
+        style={styles.rewards}
+        onPress={() => {
+          if (!dailyClaimed) claimDailySignIn();
+          setSpendOpen(true);
+        }}
+        accessibilityLabel="Quiet points"
+      >
         <Text style={styles.rewardsTitle}>{streakDays ? `${streakDays}-day streak` : 'No streak yet'}</Text>
         <Text style={styles.rewardsMeta}>
           {points} Quiet points{downloadCredits ? ` · ${downloadCredits} download credit${downloadCredits === 1 ? '' : 's'}` : ''}
+        </Text>
+        <Text style={dailyClaimed ? styles.rewardsMeta : styles.spendLink}>
+          {dailyClaimed ? "Today's check-in claimed" : `Claim today's +${earn.dailySignIn}`}
         </Text>
         <Text style={styles.spendLink}>Spend points</Text>
       </Pressable>

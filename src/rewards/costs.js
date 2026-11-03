@@ -4,12 +4,14 @@ export const POINT_COSTS = {
 };
 
 export const POINT_EARN = {
+  dailySignIn: 10,
   ritual: 10,
   listenBlock: 5,
   streakWeek: 40,
 };
 
 export const POINT_CAPS = {
+  dailySignInPerDay: 1,
   ritualPerDay: 2,
   listenBlocksPerDay: 4, // 4 × 5 = 20 pts
 };
