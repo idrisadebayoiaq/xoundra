@@ -38,9 +38,9 @@ export default function BulletinChatScreen() {
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
-  const { id, invite } = useLocalSearchParams();
+  const { id, invite: inviteParam } = useLocalSearchParams();
   const bulletinId = Array.isArray(id) ? id[0] : id;
-  const openInvite = (Array.isArray(invite) ? invite[0] : invite) === '1';
+  const openInvite = (Array.isArray(inviteParam) ? inviteParam[0] : inviteParam) === '1';
   const app = useApp();
   const listRef = useRef(null);
   const [bulletin, setBulletin] = useState(null);
