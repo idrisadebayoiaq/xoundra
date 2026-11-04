@@ -5,11 +5,13 @@ import { ScreenHeader } from '../src/components/ScreenHeader';
 import { font } from '../src/theme';
 import { useTheme } from '../src/state/ThemeState';
 import { useApp } from '../src/state/AppState';
+import { useMoments } from '../src/state/MomentsState';
 
 export default function JoinSceneScreen() {
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const { openMix, tracks } = useApp();
+  const { showMoment } = useMoments();
   const [code, setCode] = useState('');
   const [notice, setNotice] = useState('');
 
@@ -30,7 +32,11 @@ export default function JoinSceneScreen() {
         return;
       }
       openMix(layers, false);
-      router.replace({ pathname: '/studio', params: { mode: 'edit' } });
+      showMoment('playful', {
+        title: 'Scene joined',
+        body: 'Your mix is opening in Studio.',
+      });
+      setTimeout(() => router.replace({ pathname: '/studio', params: { mode: 'edit' } }), 700);
     } catch {
       setNotice('That collab code could not be read.');
     }

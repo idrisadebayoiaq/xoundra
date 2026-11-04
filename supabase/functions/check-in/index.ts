@@ -116,41 +116,117 @@ function escapeHtml(value: string) {
   return value.replace(/[&<>"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[char] ?? char));
 }
 
-function checkInMail(firstName: string, kind: "morning" | "evening", email: string) {
+const morningVariants = [
+  {
+    mood: "Hope the day opens gently.",
+    prompt: "As you settle into the day, we would love to hear how Xoundra has been for you.",
+    cards: [
+      ["What do you think of Xoundra so far?", "The sounds, the Guide, the quiet of it — anything that stood out."],
+      ["Has it helped you sleep, focus, or unwind?", "Even a short note helps us shape what comes next."],
+      ["Is there a sound or feature you wish we had?", "Tell us what is missing from your mornings."],
+    ],
+  },
+  {
+    mood: "A soft start can change the whole day.",
+    prompt: "If you listened recently, what stayed with you?",
+    cards: [
+      ["Which sound felt most like home?", "Rain, ocean, night — or something else entirely."],
+      ["Did the Guide find the right mood?", "Tell us when it landed, and when it missed."],
+      ["What would make mornings quieter?", "A playlist, a scene, or a small habit in the app."],
+    ],
+  },
+  {
+    mood: "Light in, noise out — that is the hope.",
+    prompt: "We are listening as carefully as you are.",
+    cards: [
+      ["Did Xoundra help you begin calmly?", "Focus, stretch, commute — wherever you pressed play."],
+      ["Anything confusing in the app?", "Screens, Premium, downloads — we will smooth the edges."],
+      ["Who should hear about Xoundra?", "A friend who needs sleep or a quieter desk."],
+    ],
+  },
+  {
+    mood: "Another morning, another chance to breathe.",
+    prompt: "Your notes keep the catalogue honest.",
+    cards: [
+      ["What felt missing yesterday?", "A longer loop, softer night, clearer Guide."],
+      ["Are check-ins welcome, or too much?", "We can keep them gentle."],
+      ["Any artist you want more of?", "Names and moods help us invite the right sounds."],
+    ],
+  },
+];
+
+const eveningVariants = [
+  {
+    mood: "Hope the evening feels a little softer.",
+    prompt: "Before the night deepens, we would love to hear how Xoundra has been for you.",
+    cards: [
+      ["What do you think of Xoundra so far?", "The sounds, the Guide, the quiet of it — anything that stood out."],
+      ["Has it helped you sleep, focus, or unwind?", "Even a short note helps us shape what comes next."],
+      ["Is there a sound or feature you wish we had?", "Tell us what is missing from your evenings."],
+    ],
+  },
+  {
+    mood: "Let the day settle. The night can be quieter.",
+    prompt: "If you played something tonight, how did it feel?",
+    cards: [
+      ["Ready for sleep, or still winding down?", "Tell us what you reach for after dark."],
+      ["Did offline or sleep schedules help?", "We want those tools to stay simple."],
+      ["One change that would matter this week?", "Small requests are welcome."],
+    ],
+  },
+  {
+    mood: "Soft light, soft sound — that is enough.",
+    prompt: "Your evenings teach us what to build next.",
+    cards: [
+      ["Which shelf do you open most at night?", "Sleep, night, rain, focus — be honest."],
+      ["Anything that interrupted the calm?", "Ads, navigation, or a missing download."],
+      ["Would you invite someone to listen with you?", "Scenes and shared quiet are on our mind."],
+    ],
+  },
+  {
+    mood: "The day can stop here for a minute.",
+    prompt: "A short reply is a gift to the next listener.",
+    cards: [
+      ["Did a sound help you rest?", "Or did you keep searching?"],
+      ["How is Premium feeling, if you have it?", "Worth it, confusing, or waiting."],
+      ["What should tomorrow’s quiet include?", "A mood, a place, or a longer mix."],
+    ],
+  },
+];
+
+function pickVariant(kind: "morning" | "evening", seed = Date.now()) {
+  const list = kind === "morning" ? morningVariants : eveningVariants;
+  const day = Math.floor(seed / 86400000);
+  return list[Math.abs(day) % list.length];
+}
+
+function checkInMail(firstName: string, kind: "morning" | "evening", email: string, seed = Date.now()) {
   const name = firstName ? escapeHtml(firstName) : "there";
   const hello = kind === "morning" ? "Good morning" : "Good evening";
-  const mood = kind === "morning"
-    ? "Hope the day opens gently."
-    : "Hope the evening feels a little softer.";
-  const prompt = kind === "morning"
-    ? "As you settle into the day, we would love to hear how Xoundra has been for you."
-    : "Before the night deepens, we would love to hear how Xoundra has been for you.";
+  const variant = pickVariant(kind, seed);
+  const cards = variant.cards
+    .map(
+      ([title, copy], index) => `<tr><td style="background:#0B1018;border:1px solid #243044;border-radius:16px;padding:16px 18px;">
+      ${index === 0 ? `<div style="font-family:Arial,sans-serif;font-size:11px;letter-spacing:0.2em;color:#8BE1CF;">A FEW THINGS WE WONDER</div>` : ""}
+      <div style="font-family:Georgia,serif;font-size:16px;color:#F3F6F8;${index === 0 ? "padding-top:10px;" : ""}line-height:1.5;">${escapeHtml(title)}</div>
+      <div style="font-family:Arial,sans-serif;font-size:14px;color:#8E98A3;padding-top:6px;line-height:1.5;">${escapeHtml(copy)}</div>
+    </td></tr>`,
+    )
+    .join("");
 
   const body = `
   <p style="margin:0 0 18px;font-family:Georgia,'Times New Roman',serif;font-size:28px;line-height:1.25;color:#F3F6F8;">
     ${hello}, ${name}.
   </p>
   <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.7;color:#C5CED6;">
-    ${mood}
+    ${escapeHtml(variant.mood)}
   </p>
   <p style="margin:18px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.7;color:#C5CED6;">
-    ${prompt}
+    ${escapeHtml(variant.prompt)}
   </p>
 
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:28px;border-collapse:separate;border-spacing:0 10px;">
-    <tr><td style="background:#0B1018;border:1px solid #243044;border-radius:16px;padding:16px 18px;">
-      <div style="font-family:Arial,sans-serif;font-size:11px;letter-spacing:0.2em;color:#8BE1CF;">A FEW THINGS WE WONDER</div>
-      <div style="font-family:Georgia,serif;font-size:16px;color:#F3F6F8;padding-top:10px;line-height:1.5;">What do you think of Xoundra so far?</div>
-      <div style="font-family:Arial,sans-serif;font-size:14px;color:#8E98A3;padding-top:6px;line-height:1.5;">The sounds, the Guide, the quiet of it — anything that stood out.</div>
-    </td></tr>
-    <tr><td style="background:#0B1018;border:1px solid #243044;border-radius:16px;padding:16px 18px;">
-      <div style="font-family:Georgia,serif;font-size:16px;color:#F3F6F8;line-height:1.5;">Has it helped you sleep, focus, or unwind?</div>
-      <div style="font-family:Arial,sans-serif;font-size:14px;color:#8E98A3;padding-top:6px;line-height:1.5;">Even a short note helps us shape what comes next.</div>
-    </td></tr>
-    <tr><td style="background:#0B1018;border:1px solid #243044;border-radius:16px;padding:16px 18px;">
-      <div style="font-family:Georgia,serif;font-size:16px;color:#F3F6F8;line-height:1.5;">Is there a sound or feature you wish we had?</div>
-      <div style="font-family:Arial,sans-serif;font-size:14px;color:#8E98A3;padding-top:6px;line-height:1.5;">Tell us what is missing from your evenings or mornings.</div>
-    </td></tr>
+    ${cards}
   </table>
 
   <table role="presentation" cellpadding="0" cellspacing="0" style="margin-top:28px;">
@@ -254,9 +330,8 @@ async function queueInboxNotice(
   kind: "morning" | "evening",
 ) {
   const title = kind === "morning" ? "Good morning" : "Good evening";
-  const body = kind === "morning"
-    ? "A quiet note from Xoundra — how has listening been for you?"
-    : "Before the night settles — how has Xoundra been for you?";
+  const variant = pickVariant(kind);
+  const body = variant.prompt;
   try {
     await admin.from("user_notifications").insert({
       user_id: userId,

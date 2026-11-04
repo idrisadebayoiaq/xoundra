@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { ScreenHeader } from '../src/components/ScreenHeader';
+import { SurfaceCard } from '../src/components/SurfaceCard';
 import { countries, plans } from '../src/data/catalogue';
 import { font } from '../src/theme';
 import { useTheme } from '../src/state/ThemeState';
@@ -25,14 +26,14 @@ export default function PlansScreen() {
         {premium ? 'You are on Premium.' : 'You are on Free. Premium adds mixes, offline downloads, a sleep timer that starts and stops on a schedule, and the voice guide.'}
       </Text>
       {plans.map((plan) => (
-        <View key={plan.id} style={styles.card}>
+        <SurfaceCard key={plan.id} style={styles.card}>
           <Text style={styles.name}>{plan.name}</Text>
           <Text style={styles.price}>{naira ? plan.ngn : plan.usd}</Text>
           <Text style={styles.period}>{plan.period}</Text>
           <Pressable style={styles.button} onPress={() => checkout(plan.id)} disabled={premium}>
             <Text style={styles.buttonText}>{premium ? 'Premium active' : 'Continue'}</Text>
           </Pressable>
-        </View>
+        </SurfaceCard>
       ))}
       <Text style={styles.fine}>
         {naira
@@ -55,9 +56,6 @@ function makeStyles(colors) {
     marginBottom: 16,
   },
   card: {
-    backgroundColor: colors.card,
-    borderRadius: 18,
-    padding: 16,
     marginBottom: 12,
   },
   name: {

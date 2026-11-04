@@ -1,9 +1,10 @@
+import { useCallback, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useFocusEffect } from 'expo-router';
-import { useCallback, useMemo } from 'react';
+import { router, useFocusEffect } from 'expo-router';
 import { ScreenHeader } from '../src/components/ScreenHeader';
 import { openNotice } from '../src/lib/openNotice';
+import { supabase } from '../src/lib/supabase';
 import { font } from '../src/theme';
 import { useTheme } from '../src/state/ThemeState';
 import { useApp } from '../src/state/AppState';
@@ -12,6 +13,7 @@ export default function NotificationsScreen() {
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const { notes, inbox, markNotesRead, markNoticeRead, notifyEnabled, play, tracks, refreshInbox } = useApp();
+  const [busyInvite, setBusyInvite] = useState('');
 
   useFocusEffect(useCallback(() => {
     refreshInbox?.();
@@ -39,6 +41,24 @@ export default function NotificationsScreen() {
     if (item.target) openNotice(item.target, play, tracks);
   }
 
+  async function respondInvite(item, accept) {
+    const inviteId = item.target?.bulletin_invite_id;
+    if (!inviteId) return;
+    setBusyInvite(item.id);
+    const { data, error } = await supabase.rpc('respond_bulletin_invite', {
+      p_invite: inviteId,
+      p_accept: accept,
+    });
+    setBusyInvite('');
+    markNoticeRead(item.id);
+    if (!error && accept && data && item.target?.bulletin_id) {
+      router.push({ pathname: '/artist-bulletins/[id]', params: { id: item.target.bulletin_id } });
+    } else if (!error && item.target?.bulletin_id && accept) {
+      router.push({ pathname: '/artist-bulletins/[id]', params: { id: item.target.bulletin_id } });
+    }
+    refreshInbox?.();
+  }
+
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
       <ScreenHeader title="Notifications" back />
@@ -64,6 +84,38 @@ export default function NotificationsScreen() {
                 {item.body ? <Text style={styles.body}>{item.body}</Text> : null}
               </View>
             </Pressable>
+            {item.target?.kind === 'bulletin_invite' && item.target?.bulletin_invite_id ? (
+              <View style={styles.inviteActions}>
+                <Pressable
+                  style={styles.accept}
+                  disabled={busyInvite === item.id}
+                  onPress={() => respondInvite(item, true)}
+                  accessibilityLabel="Accept Bulletin invite"
+                >
+                  <Text style={styles.acceptText}>Accept</Text>
+                </Pressable>
+                <Pressable
+                  style={styles.decline}
+                  disabled={busyInvite === item.id}
+                  onPress={() => respondInvite(item, false)}
+                  accessibilityLabel="Decline Bulletin invite"
+                >
+                  <Text style={styles.declineText}>Decline</Text>
+                </Pressable>
+              </View>
+            ) : null}
+            {item.target?.kind === 'follow_bulletin' && item.target?.bulletin_id ? (
+              <Pressable
+                onPress={() => {
+                  markNoticeRead(item.id);
+                  router.push({ pathname: '/artist-bulletins/[id]', params: { id: item.target.bulletin_id } });
+                }}
+                style={styles.markOne}
+                accessibilityLabel="Invite follower to Bulletin"
+              >
+                <Text style={styles.markOneText}>Open Bulletin to invite</Text>
+              </Pressable>
+            ) : null}
             {!item.read ? (
               <Pressable onPress={() => markNoticeRead(item.id)} accessibilityLabel={`Mark ${item.title} as read`} hitSlop={8} style={styles.markOne}>
                 <Text style={styles.markOneText}>Mark as read</Text>
@@ -131,5 +183,21 @@ function makeStyles(colors) {
   markOne: { alignSelf: 'flex-start', marginTop: 4 },
   markOneText: { color: colors.mint, fontFamily: font.medium, fontSize: 13 },
   readLabel: { color: colors.muted, fontFamily: font.regular, fontSize: 12, marginTop: 4 },
+  inviteActions: { flexDirection: 'row', gap: 10, marginTop: 4 },
+  accept: {
+    backgroundColor: colors.mint,
+    borderRadius: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+  },
+  acceptText: { color: colors.mintInk, fontFamily: font.semibold, fontSize: 13 },
+  decline: {
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.line,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+  },
+  declineText: { color: colors.text, fontFamily: font.medium, fontSize: 13 },
   });
 }

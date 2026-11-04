@@ -53,11 +53,12 @@ Caption (IG): Home was rebuilt so the first thing you see is the sound, not a pi
 X: New Home. Hero first. Tools later. Open Xoundra and press play. Use the web version or download the app on xoundra.vercel.app #Xoundra
 
 **Image — evening**  
-Headline options: START HERE · HERO FIRST · ONE QUIET SHELF  
-Scene: warm lamp, phone showing Home hero with rain art.  
-CTA: OPEN HOME  
-Caption (IG): The redesign puts brand and listening first. One composition. One job. Then you go deeper. Use the web version or download the app on xoundra.vercel.app  
-X: New Home on Xoundra. Less dashboard. More listening. Use the web version or download the app on xoundra.vercel.app #FindYourQuiet
+Headline: **Just got a new look** (shipped carousel: light Home · dark Home · what changed · 50 left).  
+Scene: phone Home in light + dark; Scenes + Quiet points strip visible.  
+CTA: OPEN HOME / xoundra.vercel.app  
+Files: `D:\LUCENTA DETAILS\xoundra\new-look\` (+ `Xoundra Posted\new-look`).  
+Caption (IG): Xoundra just got a new look. Light mode and dark mode. Home leads with the sound — hero, quiet strip for streak and Quiet points, then scenes. Discover, Studio, Library, and You keep clear jobs. Follow, like, and subscribe. Try the app and tell us what to improve. Only [N] spots left for Premium free for 3 months. Use the web version or download the app on: xoundra.vercel.app  
+X: Xoundra just got a new look. Light + dark. Home starts with listening. Only [N] left for Premium free for 3 months. Follow, like & subscribe. Use the web version or download the app on: xoundra.vercel.app
 
 ---
 

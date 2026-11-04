@@ -79,7 +79,7 @@ export async function fetchPublishedTracks() {
 export async function fetchProfile(userId) {
   const { data } = await supabase
     .from('profiles')
-    .select('first_name, country_code, intention, avatar_path, email_confirmed, is_artist, artist_name, artist_bio, artist_location, artist_tagline, artist_focus, artist_website, artist_links, artist_banner_path, onboarding_done, check_in_emails, last_check_in_at')
+    .select('first_name, country_code, intention, avatar_path, email_confirmed, is_artist, artist_verified, artist_name, artist_bio, artist_location, artist_tagline, artist_focus, artist_website, artist_links, artist_banner_path, onboarding_done, check_in_emails, last_check_in_at')
     .eq('id', userId)
     .maybeSingle();
   return data;

@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useRef } from 'react';
-import { Animated, Easing, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Animated, Easing, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { font } from '../theme';
 import { useTheme } from '../state/ThemeState';
 import { useRewards } from '../state/RewardsState';
+import { SurfaceCard } from './SurfaceCard';
 
 /** Profile balance card — total points, streak, spend. Claiming lives in the menu. */
 export function QuietPointsCard({ onSpend }) {
@@ -41,7 +42,7 @@ export function QuietPointsCard({ onSpend }) {
   };
 
   return (
-    <Pressable
+    <SurfaceCard
       style={styles.card}
       onPress={onSpend}
       accessibilityLabel={`${points} Quiet points. Spend points`}
@@ -73,7 +74,7 @@ export function QuietPointsCard({ onSpend }) {
         <Text style={styles.cta}>Spend points</Text>
         <Ionicons name="arrow-forward" size={16} color={colors.mint} />
       </View>
-    </Pressable>
+    </SurfaceCard>
   );
 }
 
@@ -84,9 +85,6 @@ function makeStyles(colors) {
       marginBottom: 16,
       padding: 20,
       borderRadius: 22,
-      backgroundColor: colors.card,
-      borderWidth: 1,
-      borderColor: colors.line,
       overflow: 'hidden',
       minHeight: 168,
     },

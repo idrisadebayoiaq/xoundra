@@ -25,7 +25,7 @@ export default function SupportScreen() {
       return;
     }
     setMessage('');
-    setNotice('Sent to xoundra.support@gmail.com.');
+    setNotice('Sent. You will get email and push when support replies in the app.');
   }
 
   return (
@@ -36,7 +36,7 @@ export default function SupportScreen() {
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
       >
-        <Text style={styles.lead}>Write to Xoundra. Replies come from xoundra.support@gmail.com.</Text>
+        <Text style={styles.lead}>Write to Xoundra. Admin replies in-app, and you also get email and push for every reply.</Text>
         <TextInput
           value={message}
           onChangeText={setMessage}

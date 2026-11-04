@@ -33,8 +33,9 @@ Deno.serve(async (req) => {
     if (action === "confirm-email-change") return await confirmEmailChange(admin, user, body);
     if (action === "change-password") return await changePassword(admin, supabaseUrl, anon, user, body);
     if (action === "delete-account") return await deleteAccount(admin, supabaseUrl, anon, user, body);
-    if (action === "support") return await supportMessage(user, body);
+    if (action === "support") return await supportMessage(admin, user, body);
     if (action === "admin-overview") return await adminOverview(admin, user);
+    if (action === "admin-grant-premium") return await adminGrantPremium(admin, user, body);
     return json({ error: "unknown_action" }, 400);
   } catch (error) {
     const message = error instanceof Error ? error.message : "request_failed";
@@ -356,13 +357,107 @@ async function deleteAccount(admin: ReturnType<typeof createClient>, url: string
   return json({ ok: true });
 }
 
-async function supportMessage(user: { email?: string }, body: Record<string, unknown>) {
+async function supportMessage(
+  admin: ReturnType<typeof createClient>,
+  user: { id: string; email?: string },
+  body: Record<string, unknown>,
+) {
   const message = String(body.message ?? "").trim();
+  const subject = String(body.subject ?? "Support").trim() || "Support";
   if (message.length < 4) return json({ error: "missing_details" }, 400);
+  const { data: ticket, error: ticketError } = await admin
+    .from("support_tickets")
+    .insert({ user_id: user.id, subject: subject.slice(0, 120) })
+    .select("id")
+    .single();
+  if (ticketError || !ticket) return json({ error: "request_failed" }, 500);
+  await admin.from("support_messages").insert({
+    ticket_id: ticket.id,
+    author_id: user.id,
+    body: message,
+    is_admin: false,
+  });
+  await admin.rpc("notify_admins", {
+    p_kind: "support_ticket",
+    p_title: "New support message",
+    p_body: "A listener sent a support note. Reply from Admin.",
+  }).catch(() => null);
   const from = user.email ?? "unknown";
-  const html = shell("A note from the app", `<p style="margin:0;">${escapeHtml(from)} wrote:</p><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:18px;"><tr><td style="background:#0B1018;border-left:3px solid #8BE1CF;border-radius:12px;padding:16px 18px;font-family:Georgia,serif;font-size:16px;line-height:1.6;color:#F3F6F8;">${escapeHtml(message)}</td></tr></table>`);
-  await sendMail(supportEmail, "Xoundra support", html, `${from}\n\n${message}`);
-  return json({ ok: true });
+  const html = shell(
+    "A note from the app",
+    `<p style="margin:0;">${escapeHtml(from)} wrote:</p><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:18px;"><tr><td style="background:#0B1018;border-left:3px solid #8BE1CF;border-radius:12px;padding:16px 18px;font-family:Georgia,serif;font-size:16px;line-height:1.6;color:#F3F6F8;">${escapeHtml(message)}</td></tr></table>`,
+  );
+  try {
+    await sendMail(supportEmail, "Xoundra support", html, `${from}\n\n${message}`);
+  } catch {
+    /* ticket still saved */
+  }
+  return json({ ok: true, ticket_id: ticket.id });
+}
+
+async function adminGrantPremium(
+  admin: ReturnType<typeof createClient>,
+  user: { id: string },
+  body: Record<string, unknown>,
+) {
+  const { data: role } = await admin.from("user_roles").select("role").eq("user_id", user.id).eq("role", "admin").maybeSingle();
+  if (!role) return json({ error: "not_admin" }, 403);
+  const email = String(body.email ?? "").trim().toLowerCase();
+  const days = Math.max(1, Number(body.days) || 30);
+  const plan = String(body.plan ?? "premium_monthly");
+  if (!email.includes("@")) return json({ error: "invalid_email" }, 400);
+  const { data: userId, error: lookupError } = await admin.rpc("admin_user_id_by_email", { p_email: email });
+  if (lookupError || !userId) return json({ error: "missing_details" }, 404);
+  const targetId = String(userId);
+  const { data: purchase, error: purchaseError } = await admin
+    .from("purchases")
+    .insert({
+      user_id: targetId,
+      plan_id: plan === "founding_lifetime" ? "founding_lifetime" : "premium_monthly",
+      provider: "admin_grant",
+      provider_reference: `admin-${crypto.randomUUID()}`,
+      status: "success",
+      amount_minor: 0,
+      currency: "USD",
+    })
+    .select("id")
+    .single();
+  if (purchaseError || !purchase) return json({ error: "request_failed" }, 500);
+  await admin
+    .from("entitlements")
+    .update({ status: "cancelled" })
+    .eq("user_id", targetId)
+    .eq("status", "active")
+    .neq("plan_id", "founding_lifetime");
+  const ends = plan === "founding_lifetime" ? null : new Date(Date.now() + days * 86400000).toISOString();
+  const { error: entError } = await admin.from("entitlements").insert({
+    user_id: targetId,
+    plan_id: plan === "founding_lifetime" ? "founding_lifetime" : "premium_monthly",
+    purchase_id: purchase.id,
+    status: "active",
+    starts_at: new Date().toISOString(),
+    ends_at: ends,
+  });
+  if (entError) return json({ error: "request_failed" }, 500);
+  await admin.rpc("queue_notice", {
+    p_user: targetId,
+    p_kind: "premium_granted",
+    p_title: "Premium is on",
+    p_body: "An admin enabled Premium on your account. Enjoy mixes, offline downloads, sleep schedules, and the Guide.",
+    p_track: null,
+    p_album: null,
+    p_announcement: null,
+  });
+  const html = shell(
+    "Premium is on",
+    `<p style="margin:0;">An admin enabled Premium on your Xoundra account.</p><p style="margin:16px 0 0;">You now have mixes, offline downloads, sleep schedules, and the Guide — with no charge on this grant.</p>`,
+  );
+  try {
+    await sendMail(email, "Premium is on — Xoundra", html, "An admin enabled Premium on your Xoundra account.");
+  } catch {
+    /* push still queued */
+  }
+  return json({ ok: true, user_id: targetId });
 }
 
 function escapeHtml(value: string) {

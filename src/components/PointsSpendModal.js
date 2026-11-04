@@ -3,20 +3,30 @@ import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { font } from '../theme';
 import { useTheme } from '../state/ThemeState';
 import { useRewards } from '../state/RewardsState';
+import { useMoments } from '../state/MomentsState';
 
 export function PointsSpendModal({ open, onClose }) {
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const { points, downloadCredits, costs, buyDownloadCredit, spendStudio24h } = useRewards();
+  const { showMoment } = useMoments();
 
   function buyDownload() {
     if (!buyDownloadCredit()) return;
     onClose?.();
+    showMoment('unlock', {
+      title: 'Download credit',
+      body: 'Ready to save one sound offline.',
+    });
   }
 
   function buyStudio() {
     if (!spendStudio24h()) return;
     onClose?.();
+    showMoment('unlock', {
+      title: 'Studio open',
+      body: 'Mix freely for the next 24 hours.',
+    });
   }
 
   return (

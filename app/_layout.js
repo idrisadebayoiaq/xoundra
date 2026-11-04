@@ -7,8 +7,11 @@ import { useEffect, useState } from 'react';
 import { AppProvider, useApp } from '../src/state/AppState';
 import { AdProvider, useAds } from '../src/state/AdState';
 import { RewardsProvider } from '../src/state/RewardsState';
+import { MomentsProvider } from '../src/state/MomentsState';
 import { ShellProvider, useShell } from '../src/state/ShellState';
 import { MiniPlayer } from '../src/components/MiniPlayer';
+import { MomentOverlay } from '../src/components/MomentOverlay';
+import { MomentWatchers } from '../src/components/MomentWatchers';
 import { NotificationBridge } from '../src/components/NotificationBridge';
 import { ListenRewardsTicker } from '../src/components/ListenRewardsTicker';
 import { ThemeProvider, useTheme } from '../src/state/ThemeState';
@@ -89,8 +92,12 @@ function RewardsBridge({ children }) {
   const { grantStudioUntil } = useAds();
   return (
     <RewardsProvider grantStudioUntil={grantStudioUntil}>
-      <ListenRewardsTicker />
-      {children}
+      <MomentsProvider>
+        <ListenRewardsTicker />
+        <MomentWatchers />
+        <MomentOverlay />
+        {children}
+      </MomentsProvider>
     </RewardsProvider>
   );
 }

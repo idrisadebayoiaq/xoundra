@@ -1,9 +1,10 @@
 import { useEffect, useState, useMemo } from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import { Redirect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { KeyboardScreen } from '../src/components/KeyboardScreen';
 import { ScreenHeader } from '../src/components/ScreenHeader';
 import { coverSource } from '../src/data/artwork';
 import { imageExtension, uploadArtistFile } from '../src/lib/artistMedia';
@@ -11,6 +12,7 @@ import { drainNotices, supabase } from '../src/lib/supabase';
 import { font } from '../src/theme';
 import { useTheme } from '../src/state/ThemeState';
 import { useApp } from '../src/state/AppState';
+import { useMoments } from '../src/state/MomentsState';
 
 const fallback = [
   ['rain', 'Rain'],
@@ -53,6 +55,7 @@ export default function ArtistUploadScreen() {
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const app = useApp();
+  const { showMoment } = useMoments();
   const [extras, setExtras] = useState([]);
   const [custom, setCustom] = useState('');
   const official = app.categories.length ? app.categories.map((item) => [item.slug, item.title]) : fallback;
@@ -68,6 +71,47 @@ export default function ArtistUploadScreen() {
   const [sounds, setSounds] = useState([blankSound(), blankSound()]);
   const [notice, setNotice] = useState('');
   const [busy, setBusy] = useState(false);
+  const [description, setDescription] = useState('');
+  const [blurb, setBlurb] = useState('');
+  const [altText, setAltText] = useState('');
+  const [assistHints, setAssistHints] = useState([]);
+  const [assistBusy, setAssistBusy] = useState(false);
+
+  async function runStudioAssist() {
+    const assistTitle = mode === 'album' ? albumTitle.trim() : title.trim();
+    if (assistTitle.length < 2) {
+      setNotice('Add a title before using Studio Assist.');
+      return;
+    }
+    setAssistBusy(true);
+    setNotice('');
+    try {
+      const { data, error } = await supabase.functions.invoke('studio-assist', {
+        body: {
+          title: assistTitle,
+          type: mode,
+          category,
+          audioHint: audio?.name || '',
+        },
+      });
+      if (error || data?.error) {
+        setNotice('Studio Assist could not draft copy right now.');
+        return;
+      }
+      if (data.description) setDescription(data.description);
+      if (data.blurb) setBlurb(data.blurb);
+      if (data.altText) setAltText(data.altText);
+      if (data.categoryHint && choices.some((row) => row[0] === data.categoryHint)) {
+        setCategory(data.categoryHint);
+      }
+      setAssistHints([...(data.characterHints || []), ...(data.tags || []), ...(data.moods || [])].filter(Boolean).slice(0, 8));
+      setNotice('Drafted with Studio Assist — edit anything before you publish.');
+    } catch {
+      setNotice('Studio Assist could not draft copy right now.');
+    } finally {
+      setAssistBusy(false);
+    }
+  }
 
   useEffect(() => {
     if (!app.userId) return;
@@ -122,6 +166,10 @@ export default function ArtistUploadScreen() {
       setTitle('');
       setAudio(null);
       setArt(null);
+      showMoment('publish', {
+        title: 'Sound published',
+        body: 'Listeners can play it in the catalogue.',
+      });
       setNotice('The sound is published.');
     } catch {
       setNotice('The sound could not be uploaded.');
@@ -167,6 +215,10 @@ export default function ArtistUploadScreen() {
       setAlbumTitle('');
       setAlbumArt(null);
       setSounds([blankSound(), blankSound()]);
+      showMoment('publish', {
+        title: 'Album published',
+        body: 'Your sounds are live together.',
+      });
       setNotice('The album is published.');
     } catch {
       setNotice('The album could not be uploaded.');
@@ -176,7 +228,7 @@ export default function ArtistUploadScreen() {
   }
 
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+    <KeyboardScreen contentContainerStyle={styles.content}>
       <ScreenHeader title="Upload sounds" back />
       <View style={styles.modes}>
         <Pressable onPress={() => setMode('single')} accessibilityLabel="Upload as single" style={[styles.mode, mode === 'single' && styles.modeOn]}>
@@ -197,6 +249,16 @@ export default function ArtistUploadScreen() {
         <View style={styles.block}>
           <Text style={styles.lead}>One sound, with its own artwork. Listeners can play it, like it, and save it.</Text>
           <Field label="Title" value={title} onChangeText={setTitle} placeholder="Sound title" />
+          <Pressable onPress={runStudioAssist} disabled={assistBusy} style={styles.assist} accessibilityLabel="Studio Assist">
+            <Ionicons name="color-wand-outline" size={16} color={colors.mint} />
+            <Text style={styles.assistText}>{assistBusy ? 'Drafting…' : 'Studio Assist'}</Text>
+          </Pressable>
+          <Field label="Description (optional)" value={description} onChangeText={setDescription} placeholder="Longer catalogue note" multiline />
+          <Field label="Short blurb" value={blurb} onChangeText={setBlurb} placeholder="One soft line" />
+          <Field label="Artwork alt text" value={altText} onChangeText={setAltText} placeholder="Describe the artwork" />
+          {assistHints.length ? (
+            <Text style={styles.hints}>Hints: {assistHints.join(' · ')}</Text>
+          ) : null}
           <Field label="Length in minutes" value={minutes} onChangeText={setMinutes} placeholder="3" keyboardType="number-pad" />
           <Text style={styles.fieldLabel}>Category</Text>
           <Chips choices={choices} value={category} onChange={setCategory} />
@@ -214,6 +276,16 @@ export default function ArtistUploadScreen() {
         <View style={styles.block}>
           <Text style={styles.lead}>Several sounds in order. Each sound has its own artwork. The album has one cover, and listeners open it like a playlist.</Text>
           <Field label="Album title" value={albumTitle} onChangeText={setAlbumTitle} placeholder="Album title" />
+          <Pressable onPress={runStudioAssist} disabled={assistBusy} style={styles.assist} accessibilityLabel="Studio Assist">
+            <Ionicons name="color-wand-outline" size={16} color={colors.mint} />
+            <Text style={styles.assistText}>{assistBusy ? 'Drafting…' : 'Studio Assist'}</Text>
+          </Pressable>
+          <Field label="Description (optional)" value={description} onChangeText={setDescription} placeholder="Album note" multiline />
+          <Field label="Short blurb" value={blurb} onChangeText={setBlurb} placeholder="One soft line" />
+          <Field label="Artwork alt text" value={altText} onChangeText={setAltText} placeholder="Describe the cover" />
+          {assistHints.length ? (
+            <Text style={styles.hints}>Hints: {assistHints.join(' · ')}</Text>
+          ) : null}
           <ArtPicker label="Album artwork" asset={albumArt} onPress={async () => {
             const picked = await pickImage();
             if (picked.error) setNotice(picked.error);
@@ -251,17 +323,24 @@ export default function ArtistUploadScreen() {
         </View>
       )}
       {notice ? <Text style={styles.notice}>{notice}</Text> : null}
-    </ScrollView>
+    </KeyboardScreen>
   );
 }
 
-function Field({ label, ...props }) {
+function Field({ label, multiline, ...props }) {
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   return (
     <View>
       <Text style={styles.fieldLabel}>{label}</Text>
-      <TextInput placeholderTextColor={colors.muted} style={styles.input} accessibilityLabel={label} {...props} />
+      <TextInput
+        placeholderTextColor={colors.muted}
+        style={[styles.input, multiline && styles.area]}
+        accessibilityLabel={label}
+        multiline={multiline}
+        textAlignVertical={multiline ? 'top' : 'center'}
+        {...props}
+      />
     </View>
   );
 }
@@ -317,7 +396,21 @@ function makeStyles(colors) {
   block: { gap: 12 },
   lead: { color: colors.muted, fontFamily: font.regular, fontSize: 14, lineHeight: 20 },
   fieldLabel: { color: colors.muted, fontFamily: font.medium, fontSize: 13, marginBottom: 6 },
-  input: { height: 48, borderRadius: 12, backgroundColor: colors.card, color: colors.text, fontFamily: font.regular, fontSize: 16, paddingHorizontal: 14 },
+  input: { minHeight: 48, borderRadius: 12, backgroundColor: colors.card, color: colors.text, fontFamily: font.regular, fontSize: 16, paddingHorizontal: 14, paddingVertical: 12 },
+  area: { minHeight: 96 },
+  assist: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    alignSelf: 'flex-start',
+    borderWidth: 1,
+    borderColor: colors.line,
+    borderRadius: 18,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  assistText: { color: colors.mint, fontFamily: font.semibold, fontSize: 14 },
+  hints: { color: colors.muted, fontFamily: font.regular, fontSize: 13, lineHeight: 18 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: { borderRadius: 16, borderWidth: 1, borderColor: colors.line, paddingHorizontal: 12, paddingVertical: 6 },
   chipOn: { backgroundColor: colors.text, borderColor: colors.text },

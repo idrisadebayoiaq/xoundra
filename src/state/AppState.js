@@ -154,6 +154,7 @@ export function AppProvider({ children }) {
   const [onlineKnown, setOnlineKnown] = React.useState(false);
   const [playbackNote, setPlaybackNote] = React.useState('');
   const [isArtist, setIsArtist] = React.useState(false);
+  const [artistVerified, setArtistVerified] = React.useState(false);
   const [onboardingDone, setOnboardingDone] = React.useState(false);
   const [picks, setPicks] = React.useState([]);
   const [avatarStamp, setAvatarStamp] = React.useState(0);
@@ -367,6 +368,7 @@ export function AppProvider({ children }) {
       setFollowedArtists([]);
       setHelped([]);
       setIsArtist(false);
+      setArtistVerified(false);
       setArtistName('');
       setArtistBio('');
       setArtistLocation('');
@@ -439,6 +441,7 @@ export function AppProvider({ children }) {
       }
     }
     setIsArtist(profile?.is_artist === true);
+    setArtistVerified(profile?.artist_verified === true);
     setArtistName(profile?.artist_name || '');
     setArtistBio(profile?.artist_bio || '');
     setArtistLocation(profile?.artist_location || '');
@@ -895,7 +898,7 @@ export function AppProvider({ children }) {
     if (!user) return;
     const { data } = await supabase
       .from('user_notifications')
-      .select('id, kind, title, body, track_id, album_id, announcement_id, created_at, read_at')
+      .select('id, kind, title, body, track_id, album_id, announcement_id, quiet_room_post_id, bulletin_id, bulletin_invite_id, created_at, read_at')
       .eq('user_id', user)
       .order('created_at', { ascending: false })
       .limit(80);
@@ -1449,6 +1452,7 @@ export function AppProvider({ children }) {
     onlineKnown,
     playbackNote,
     isArtist,
+    artistVerified,
     artistName,
     artistBio,
     artistLocation,

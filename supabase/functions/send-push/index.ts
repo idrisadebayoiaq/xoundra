@@ -1,7 +1,20 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient, type SupabaseClient } from "jsr:@supabase/supabase-js@2";
+import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts";
 
 const encoder = new TextEncoder();
+const supportEmail = "xoundra.support@gmail.com";
+const emailKinds = new Set([
+  "verification_approved",
+  "verification_rejected",
+  "verification_request",
+  "premium_granted",
+  "support_reply",
+  "support_ticket",
+  "bulletin_invite",
+  "follow_bulletin",
+  "announcement",
+]);
 const cors = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-push-secret",
@@ -134,7 +147,7 @@ Deno.serve(async (req) => {
     if (!userId && !isService && !isCron) return json({ error: "sign_in_required" }, 401);
     const pending = await admin
       .from("notification_outbox")
-      .select("id, user_id, kind, title, body, track_id, album_id, announcement_id")
+      .select("id, user_id, kind, title, body, track_id, album_id, announcement_id, email_sent_at")
       .is("sent_at", null)
       .limit(25);
     if (pending.error) return json({ error: "push_failed", detail: pending.error.message }, 500);
@@ -148,6 +161,14 @@ Deno.serve(async (req) => {
     }
     let sent = 0;
     for (const row of rows) {
+      if (!row.email_sent_at && emailKinds.has(String(row.kind || ""))) {
+        try {
+          await emailNotice(admin, row);
+          await admin.from("notification_outbox").update({ email_sent_at: new Date().toISOString() }).eq("id", row.id);
+        } catch {
+          /* push still attempted */
+        }
+      }
       const tokens = await admin.from("push_tokens").select("token").eq("user_id", row.user_id);
       let delivered = !tokens.error;
       for (const tokenRow of tokens.data ?? []) {
@@ -244,3 +265,49 @@ Deno.serve(async (req) => {
   }
   return json({ sent });
 });
+
+async function smtpPassword(admin: SupabaseClient) {
+  const fromEnv = Deno.env.get("SMTP_APP_PASSWORD") ?? "";
+  if (fromEnv) return fromEnv;
+  return await readAppSecret(admin, "SMTP_APP_PASSWORD");
+}
+
+async function emailNotice(
+  admin: SupabaseClient,
+  row: { user_id: string; kind: string; title: string; body: string },
+) {
+  const { data: userData } = await admin.auth.admin.getUserById(row.user_id);
+  const to = userData?.user?.email;
+  if (!to) return;
+  const password = await smtpPassword(admin);
+  if (!password) return;
+  const client = new SMTPClient({
+    connection: {
+      hostname: "smtp.gmail.com",
+      port: 465,
+      tls: true,
+      auth: { username: supportEmail, password },
+    },
+  });
+  const safeTitle = String(row.title || "Xoundra");
+  const safeBody = String(row.body || "");
+  const html = `<!doctype html><html><body style="margin:0;background:#07080D;color:#F3F6F8;font-family:Arial,sans-serif;padding:32px 16px;">
+  <div style="max-width:520px;margin:0 auto;background:#101725;border:1px solid #243044;border-radius:24px;padding:28px;">
+    <div style="letter-spacing:0.28em;color:#8BE1CF;font-size:12px;">XOUNDRA</div>
+    <h1 style="font-family:Georgia,serif;font-size:28px;margin:16px 0 12px;">${escapeHtml(safeTitle)}</h1>
+    <p style="line-height:1.7;color:#C5CED6;margin:0;">${escapeHtml(safeBody)}</p>
+    <p style="margin:28px 0 0;color:#8BE1CF;font-style:italic;">Find your quiet.</p>
+  </div></body></html>`;
+  await client.send({
+    from: `Xoundra <${supportEmail}>`,
+    to,
+    subject: safeTitle,
+    content: safeBody,
+    html,
+  });
+  await client.close();
+}
+
+function escapeHtml(value: string) {
+  return value.replace(/[&<>"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[char] ?? char));
+}

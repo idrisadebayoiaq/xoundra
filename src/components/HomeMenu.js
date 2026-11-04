@@ -6,6 +6,7 @@ import { font } from '../theme';
 import { useTheme } from '../state/ThemeState';
 import { useApp } from '../state/AppState';
 import { useRewards } from '../state/RewardsState';
+import { useMoments } from '../state/MomentsState';
 import { openFromMenu } from '../lib/navigation';
 import { PointsSpendModal } from './PointsSpendModal';
 
@@ -20,7 +21,8 @@ export function HomeMenu({ open, onClose }) {
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
   const { premium } = useApp();
-  const { points, dailyClaimed, earn, claimDailySignIn } = useRewards();
+  const { points, dailyClaimed, earn, claimDailySignIn, streakDays } = useRewards();
+  const { showMoment } = useMoments();
   const [spendOpen, setSpendOpen] = useState(false);
   const [justClaimed, setJustClaimed] = useState(false);
   const pulse = useRef(new Animated.Value(0)).current;
@@ -61,7 +63,21 @@ export function HomeMenu({ open, onClose }) {
 
   function claim() {
     if (dailyClaimed) return;
-    if (claimDailySignIn()) setJustClaimed(true);
+    if (!claimDailySignIn()) return;
+    setJustClaimed(true);
+    showMoment('claim', {
+      title: `+${earn.dailySignIn} Quiet points`,
+      body: 'Claimed for today. Come back tomorrow.',
+    });
+    const nextStreak = streakDays + (streakDays ? 1 : 1);
+    if (nextStreak === 3 || nextStreak === 7 || nextStreak === 14) {
+      setTimeout(() => {
+        showMoment('streak', {
+          title: `${nextStreak}-day streak`,
+          body: 'A quiet habit is forming.',
+        });
+      }, 2400);
+    }
   }
 
   const claimScale = {
