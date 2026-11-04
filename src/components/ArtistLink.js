@@ -14,9 +14,11 @@ export function ArtistLink({ track, style }) {
     <Pressable
       onPress={(event) => {
         event?.stopPropagation?.();
+        if (typeof event?.preventDefault === 'function') event.preventDefault();
         router.push({ pathname: '/artist-page', params: { id: track.artistId } });
       }}
-      hitSlop={8}
+      hitSlop={2}
+      accessibilityRole="link"
       accessibilityLabel={`Artist ${track.artistName}`}
     >
       <Text style={textStyle} numberOfLines={1}>{track.artistName}</Text>

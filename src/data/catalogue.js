@@ -15,12 +15,56 @@ export function trackById(id) {
   return tracks.find((track) => track.id === id) || null;
 }
 
+function nightLike(track) {
+  const category = String(track.category || '').toLowerCase();
+  const tags = (track.tags || []).map((tag) => String(tag).toLowerCase());
+  const title = String(track.title || '').toLowerCase();
+  return (
+    category === 'night'
+    || category === 'sleep'
+    || category === 'ambient'
+    || tags.includes('night')
+    || tags.includes('sleep')
+    || /night|evening|dusk|moon/i.test(title)
+  );
+}
+
 export function pickTonight(list) {
-  return tonightOrder.map((id) => list.find((track) => track.id === id)).filter(Boolean);
+  const pinned = tonightOrder.map((id) => list.find((track) => track.id === id)).filter(Boolean);
+  const pinnedIds = new Set(pinned.map((track) => track.id));
+  const extras = [...list]
+    .filter((track) => !pinnedIds.has(track.id) && nightLike(track))
+    .sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')));
+  return [...pinned, ...extras].slice(0, 8);
 }
 
 export function pickSleep(list) {
-  return list.filter((track) => track.shelf === 'home' && (track.tags || []).includes('sleep')).slice(0, 8);
+  const curated = list.filter((track) => track.shelf === 'home' && (track.tags || []).includes('sleep'));
+  const artistSleep = list.filter((track) => {
+    const category = String(track.category || '').toLowerCase();
+    const tags = (track.tags || []).map((tag) => String(tag).toLowerCase());
+    return category === 'sleep' || tags.includes('sleep');
+  });
+  const seen = new Set();
+  const mixed = [];
+  for (const track of [...curated, ...artistSleep]) {
+    if (seen.has(track.id)) continue;
+    seen.add(track.id);
+    mixed.push(track);
+  }
+  return mixed.slice(0, 12);
+}
+
+export function pickNewReleases(list, days = 30, limit = 12) {
+  const cutoff = Date.now() - days * 24 * 60 * 60 * 1000;
+  return [...list]
+    .filter((track) => {
+      if (!track.createdAt) return Boolean(track.artistId);
+      const stamp = new Date(track.createdAt).getTime();
+      return Number.isFinite(stamp) && stamp >= cutoff;
+    })
+    .sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')))
+    .slice(0, limit);
 }
 
 export const tonight = pickTonight(tracks);

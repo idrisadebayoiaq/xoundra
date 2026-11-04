@@ -12,12 +12,24 @@ import { useApp } from '../src/state/AppState';
 export default function NotificationsScreen() {
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
-  const { notes, inbox, markNotesRead, markNoticeRead, notifyEnabled, play, tracks, refreshInbox } = useApp();
+  const { notes, inbox, markNotesRead, markNoticeRead, notifyEnabled, play, tracks, refreshInbox, userId, isArtist } = useApp();
   const [busyInvite, setBusyInvite] = useState('');
+  const [myBulletinId, setMyBulletinId] = useState('');
 
   useFocusEffect(useCallback(() => {
     refreshInbox?.();
-  }, [refreshInbox]));
+    if (!userId || !isArtist) {
+      setMyBulletinId('');
+      return;
+    }
+    supabase
+      .from('bulletins')
+      .select('id')
+      .eq('artist_id', userId)
+      .is('archived_at', null)
+      .maybeSingle()
+      .then(({ data }) => setMyBulletinId(data?.id || ''));
+  }, [refreshInbox, userId, isArtist]));
 
   const server = (inbox || []).map((item) => ({
     id: item.id,
@@ -104,16 +116,23 @@ export default function NotificationsScreen() {
                 </Pressable>
               </View>
             ) : null}
-            {item.target?.kind === 'follow_bulletin' && item.target?.bulletin_id ? (
+            {(item.target?.kind === 'follow' || item.target?.kind === 'follow_bulletin')
+            && (item.target?.bulletin_id || myBulletinId) ? (
               <Pressable
                 onPress={() => {
                   markNoticeRead(item.id);
-                  router.push({ pathname: '/artist-bulletins/[id]', params: { id: item.target.bulletin_id } });
+                  router.push({
+                    pathname: '/artist-bulletins/[id]',
+                    params: {
+                      id: item.target.bulletin_id || myBulletinId,
+                      invite: '1',
+                    },
+                  });
                 }}
                 style={styles.markOne}
-                accessibilityLabel="Invite follower to Bulletin"
+                accessibilityLabel="Add to bulletin"
               >
-                <Text style={styles.markOneText}>Open Bulletin to invite</Text>
+                <Text style={styles.markOneText}>Add to bulletin</Text>
               </Pressable>
             ) : null}
             {!item.read ? (

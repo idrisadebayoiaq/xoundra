@@ -180,8 +180,8 @@ export default function ArtistRecordScreen() {
     <KeyboardScreen contentContainerStyle={styles.content}>
       <ScreenHeader title="Record sound" back />
       <Text style={styles.lead}>
-        Capture a sound where you are — rain, room tone, night air — then publish it. Trim and polish come later.
-        {Platform.OS === 'web' ? ' On web, use Chrome or Edge and allow the mic.' : ''}
+        Record, then publish.
+        {Platform.OS === 'web' ? ' Use Chrome or Edge and allow the mic.' : ''}
       </Text>
 
       <SurfaceCard style={styles.recorder}>

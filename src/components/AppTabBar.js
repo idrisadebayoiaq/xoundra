@@ -24,9 +24,11 @@ export function AppTabBar({ state }) {
   const insets = useSafeAreaInsets();
   const { desktop } = useShell();
   if (desktop) return null;
+  const activeRoute = state.routes[state.index]?.name;
+  const showMini = activeRoute === 'index' || activeRoute === 'studio' || activeRoute === 'library';
   return (
     <View style={{ backgroundColor: colors.bg }}>
-      <MiniPlayer />
+      {showMini ? <MiniPlayer /> : null}
       <View style={[styles.bar, { paddingBottom: Math.max(insets.bottom, 10) }]}>
         {state.routes.map((route, index) => {
           if (hidden.has(route.name)) return null;

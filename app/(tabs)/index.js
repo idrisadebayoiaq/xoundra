@@ -7,14 +7,13 @@ import { AlbumCard, PhotoTile } from '../../src/components/Cards';
 import { HomeMenu } from '../../src/components/HomeMenu';
 import { Avatar } from '../../src/components/Avatar';
 import { ScenesRail } from '../../src/components/ScenesRail';
-import { pickSleep, pickTonight, greeting } from '../../src/data/catalogue';
+import { pickNewReleases, pickSleep, pickTonight, greeting } from '../../src/data/catalogue';
 import { coverSource } from '../../src/data/artwork';
 import { continuePlaying, forYou, mostPlayedFromHistory, recommended, trending } from '../../src/data/shelves';
 import { soundDna } from '../../src/lib/sameEnergy';
 import { font } from '../../src/theme';
 import { useTheme } from '../../src/state/ThemeState';
 import { useApp } from '../../src/state/AppState';
-import { avatarUrl } from '../../src/lib/supabase';
 import { useWeatherHint } from '../../src/hooks/useWeatherHint';
 
 export default function HomeScreen() {
@@ -53,6 +52,7 @@ export default function HomeScreen() {
 
   const tonight = pickTonight(tracks);
   const forSleep = pickSleep(tracks);
+  const newReleases = pickNewReleases(tracks);
   const current = track || tracks.find((item) => item.id === resumeId) || downloads[0] || tonight[0] || tracks[0] || null;
   const mostPlayed = mostPlayedFromHistory(history, tracks);
   const dna = soundDna(history, tracks, 8);
@@ -61,6 +61,7 @@ export default function HomeScreen() {
     ? [intentionShelfTitle(intention), intentionShelf]
     : ['Continue playing', continuePlaying(history, current)];
   const belowShelves = [
+    ['New releases', newReleases],
     ['Recommended', recommended(tracks, history, helped, signals, picks)],
     ['Trending', trending(tracks)],
     ['For you', forYou(tracks)],
@@ -129,20 +130,12 @@ export default function HomeScreen() {
               {followedArtists.map((artist) => (
                 <Pressable
                   key={artist.id}
-                  style={styles.artistCard}
+                  style={styles.artistChip}
                   onPress={() => router.push({ pathname: '/artist-page', params: { id: artist.id } })}
                   accessibilityLabel={artist.name}
                 >
-                  {artist.bannerPath ? (
-                    <Image source={{ uri: `${avatarUrl(artist.bannerPath)}?v=1` }} style={styles.artistBanner} />
-                  ) : (
-                    <View style={[styles.artistBanner, styles.artistBannerEmpty]} />
-                  )}
-                  <View style={styles.artistAvatarWrap}>
-                    <Avatar path={artist.avatarPath} size={44} />
-                  </View>
+                  <Avatar path={artist.avatarPath} size={56} />
                   <Text style={styles.artistName} numberOfLines={1}>{artist.name}</Text>
-                  {artist.tagline ? <Text style={styles.artistMeta} numberOfLines={1}>{artist.tagline}</Text> : null}
                 </Pressable>
               ))}
             </ScrollView>
@@ -381,46 +374,18 @@ function makeStyles(colors) {
       paddingHorizontal: 20,
       paddingBottom: 8,
     },
-    artistCard: {
-      width: 148,
+    artistChip: {
+      width: 76,
       marginRight: 12,
-      backgroundColor: colors.card,
-      borderRadius: 16,
-      overflow: 'hidden',
-      paddingBottom: 12,
-    },
-    artistBanner: {
-      width: '100%',
-      height: 64,
-      backgroundColor: colors.cardRaised,
-    },
-    artistBannerEmpty: {
-      backgroundColor: colors.line,
-    },
-    artistAvatarWrap: {
-      marginTop: -22,
-      marginLeft: 12,
-      width: 48,
-      height: 48,
-      borderRadius: 24,
-      borderWidth: 2,
-      borderColor: colors.card,
-      overflow: 'hidden',
-      backgroundColor: colors.bg,
+      alignItems: 'center',
+      gap: 8,
     },
     artistName: {
       color: colors.text,
-      fontFamily: font.semibold,
-      fontSize: 14,
-      marginHorizontal: 12,
-      marginTop: 8,
-    },
-    artistMeta: {
-      color: colors.muted,
-      fontFamily: font.regular,
+      fontFamily: font.medium,
       fontSize: 12,
-      marginHorizontal: 12,
-      marginTop: 2,
+      textAlign: 'center',
+      width: '100%',
     },
     userPlays: {
       color: colors.muted,

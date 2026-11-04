@@ -12,16 +12,17 @@ import { DownloadMark } from './DownloadMark';
 export function PhotoTile({ track, onPress, style }) {
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
+  const overlayInk = '#F3F6F8';
   return (
     <View style={[styles.tile, style]}>
       <Pressable onPress={onPress} style={[StyleSheet.absoluteFill, styles.tilePress]}>
         <Image source={coverSource(track.artwork)} style={StyleSheet.absoluteFill} resizeMode="cover" />
         <View style={styles.scrim} />
-        <Text style={styles.label} numberOfLines={2}>{track.title}</Text>
-        <ArtistLink track={track} style={styles.tileArtist} />
+        <Text style={[styles.label, { color: overlayInk }]} numberOfLines={2}>{track.title}</Text>
+        <ArtistLink track={track} style={[styles.tileArtist, { color: overlayInk }]} />
       </Pressable>
       <View style={styles.tileMenu}>
-        <SoundMenuButton track={track} />
+        <SoundMenuButton track={track} color={overlayInk} />
       </View>
     </View>
   );
@@ -92,10 +93,10 @@ function makeStyles(colors) {
   },
   scrim: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(7,8,13,0.28)',
+    backgroundColor: 'rgba(7,8,13,0.52)',
   },
   label: {
-    color: colors.text,
+    color: '#F3F6F8',
     fontFamily: font.semibold,
     fontSize: 15,
   },

@@ -11,36 +11,12 @@ import { useTheme } from '../src/state/ThemeState';
 import { useApp } from '../src/state/AppState';
 
 const tools = [
-  {
-    href: '/artist-upload',
-    label: 'Upload sounds',
-    copy: 'Publish a file, or several as an album. Studio Assist can draft copy.',
-    icon: 'cloud-upload-outline',
-  },
-  {
-    href: '/artist-record',
-    label: 'Record sound',
-    copy: 'Capture a field take in the app, then publish. Editing comes later.',
-    icon: 'mic-outline',
-  },
-  {
-    href: '/artist-bulletins',
-    label: 'Bulletin',
-    copy: 'Updates for people who follow you.',
-    icon: 'newspaper-outline',
-  },
-  {
-    href: '/artist-sounds',
-    label: 'My sounds',
-    copy: 'Singles and albums you have published.',
-    icon: 'musical-notes-outline',
-  },
-  {
-    href: '/artist-analytics',
-    label: 'Analytics',
-    copy: 'Plays, likes, favorites, notes, and follows.',
-    icon: 'stats-chart-outline',
-  },
+  { href: '/artist-upload', label: 'Upload', icon: 'cloud-upload-outline' },
+  { href: '/artist-record', label: 'Record', icon: 'mic-outline' },
+  { href: '/artist-bulletins', label: 'Bulletin', icon: 'chatbubbles-outline' },
+  { href: '/artist-sounds', label: 'My sounds', icon: 'musical-notes-outline' },
+  { href: '/artist-analytics', label: 'Analytics', icon: 'stats-chart-outline' },
+  { href: '/edit-profile', label: 'Artist page', icon: 'person-outline' },
 ];
 
 export default function ArtistScreen() {
@@ -56,14 +32,14 @@ export default function ArtistScreen() {
   async function become() {
     const artist = name.trim();
     if (artist.length < 2) {
-      setNotice('Add the name listeners should see.');
+      setNotice('Add an artist name.');
       return;
     }
     setBusy(true);
     const { error } = await supabase.rpc('become_artist', { p_name: artist });
     setBusy(false);
     if (error) {
-      setNotice('That artist name could not be saved.');
+      setNotice('Could not save that name.');
       return;
     }
     await app.refreshAccount();
@@ -96,13 +72,13 @@ export default function ArtistScreen() {
     const { error } = await supabase.rpc('apply_artist_verification', { p_note: verifyNote.trim() });
     setBusy(false);
     if (error) {
-      if (/already_pending/i.test(error.message || '')) setNotice('Your request is already waiting for review.');
-      else if (/already_verified/i.test(error.message || '')) setNotice('You are already verified.');
-      else setNotice('Could not send the verification request.');
+      if (/already_pending/i.test(error.message || '')) setNotice('Already waiting for review.');
+      else if (/already_verified/i.test(error.message || '')) setNotice('Already verified.');
+      else setNotice('Could not send request.');
       return;
     }
     setVerifyStatus('pending');
-    setNotice('Request sent. Admin will review your catalogue.');
+    setNotice('Request sent.');
     drainNotices();
   }
 
@@ -112,18 +88,20 @@ export default function ArtistScreen() {
     return (
       <KeyboardScreen contentContainerStyle={styles.content}>
         <ScreenHeader title="Become an artist" back />
-        <Text style={styles.lead}>Choose the name listeners should see. You can upload or record straight away.</Text>
-        <TextInput
-          value={name}
-          onChangeText={setName}
-          placeholder="Artist name"
-          placeholderTextColor={colors.muted}
-          style={styles.input}
-          accessibilityLabel="Artist name"
-        />
-        <Pressable onPress={become} disabled={busy} accessibilityLabel="Become an artist" style={styles.button}>
-          <Text style={styles.buttonText}>{busy ? 'Saving' : 'Become an artist'}</Text>
-        </Pressable>
+        <SurfaceCard style={styles.becomeCard}>
+          <Text style={styles.becomeTitle}>Your artist name</Text>
+          <TextInput
+            value={name}
+            onChangeText={setName}
+            placeholder="Name listeners see"
+            placeholderTextColor={colors.muted}
+            style={styles.input}
+            accessibilityLabel="Artist name"
+          />
+          <Pressable onPress={become} disabled={busy} accessibilityLabel="Become an artist" style={styles.button}>
+            <Text style={styles.buttonText}>{busy ? 'Saving' : 'Continue'}</Text>
+          </Pressable>
+        </SurfaceCard>
         {notice ? <Text style={styles.notice}>{notice}</Text> : null}
       </KeyboardScreen>
     );
@@ -131,13 +109,9 @@ export default function ArtistScreen() {
 
   return (
     <KeyboardScreen contentContainerStyle={styles.content}>
-      <ScreenHeader title="Artist" back />
+      <ScreenHeader title="Artist tools" back />
       <View style={styles.hero}>
-        <Text style={styles.heroEyebrow}>Studio</Text>
-        <Text style={styles.heroTitle}>{app.artistName || 'Your catalogue'}</Text>
-        <Text style={styles.lead}>
-          One job per tool — upload files, record in the field, run your Bulletin, then read how listeners respond.
-        </Text>
+        <Text style={styles.heroTitle}>{app.artistName || 'Artist'}</Text>
         {app.artistVerified || verifyStatus === 'verified' ? (
           <View style={styles.verifiedPill}>
             <Ionicons name="checkmark-circle" size={16} color={colors.mintInk} />
@@ -146,70 +120,51 @@ export default function ArtistScreen() {
         ) : null}
       </View>
 
-      <Text style={styles.section}>Create</Text>
-      {tools.slice(0, 2).map((item) => (
-        <SurfaceCard key={item.href} style={styles.row} onPress={() => router.push(item.href)} accessibilityLabel={item.label}>
-          <View style={styles.icon}>
-            <Ionicons name={item.icon} size={22} color={colors.mint} />
-          </View>
-          <View style={styles.copy}>
+      <View style={styles.grid}>
+        {tools.map((item) => (
+          <SurfaceCard key={item.href} style={styles.tool} onPress={() => router.push(item.href)} accessibilityLabel={item.label}>
+            <View style={styles.icon}>
+              <Ionicons name={item.icon} size={22} color={colors.mint} />
+            </View>
             <Text style={styles.label}>{item.label}</Text>
-            <Text style={styles.copyText}>{item.copy}</Text>
-          </View>
-          <Ionicons name="chevron-forward" size={18} color={colors.muted} />
-        </SurfaceCard>
-      ))}
-
-      <Text style={styles.section}>Manage</Text>
-      {tools.slice(2).map((item) => (
-        <SurfaceCard key={item.href} style={styles.row} onPress={() => router.push(item.href)} accessibilityLabel={item.label}>
-          <View style={styles.icon}>
-            <Ionicons name={item.icon} size={22} color={colors.mint} />
-          </View>
-          <View style={styles.copy}>
-            <Text style={styles.label}>{item.label}</Text>
-            <Text style={styles.copyText}>{item.copy}</Text>
-          </View>
-          <Ionicons name="chevron-forward" size={18} color={colors.muted} />
-        </SurfaceCard>
-      ))}
+          </SurfaceCard>
+        ))}
+      </View>
 
       <SurfaceCard style={styles.verifyCard}>
-        <Text style={styles.label}>Verified green badge</Text>
+        <Text style={styles.label}>Verification</Text>
         {app.artistVerified || verifyStatus === 'verified' ? (
-          <Text style={styles.copyText}>Listeners see your green check on your public page.</Text>
+          <Text style={styles.meta}>Green badge is live.</Text>
         ) : verifyStatus === 'pending' ? (
-          <Text style={styles.copyText}>Your free request is with admin for review.</Text>
+          <Text style={styles.meta}>Pending review.</Text>
         ) : (
           <>
-            <Text style={styles.copyText}>Apply free. Admin reviews profile and analytics.</Text>
             {verifyStatus.startsWith('rejected:') ? (
-              <Text style={styles.notice}>Last decision: {verifyStatus.slice('rejected:'.length) || 'Not approved yet.'}</Text>
+              <Text style={styles.notice}>{verifyStatus.slice('rejected:'.length) || 'Not approved yet.'}</Text>
             ) : null}
             <TextInput
               value={verifyNote}
               onChangeText={setVerifyNote}
-              placeholder="Optional note for admin"
+              placeholder="Note for admin"
               placeholderTextColor={colors.muted}
               style={[styles.input, styles.area]}
               multiline
             />
             <Pressable onPress={applyVerify} disabled={busy} style={styles.button}>
-              <Text style={styles.buttonText}>{busy ? 'Sending' : 'Apply for verification'}</Text>
+              <Text style={styles.buttonText}>{busy ? 'Sending' : 'Apply'}</Text>
             </Pressable>
           </>
         )}
       </SurfaceCard>
 
       <Pressable
-        style={styles.public}
+        style={styles.preview}
         onPress={() => router.push({ pathname: '/artist-page', params: { id: app.userId } })}
-        accessibilityLabel="Open public page"
+        accessibilityLabel="Preview public page"
       >
-        <Text style={styles.publicText}>Preview public page</Text>
+        <Text style={styles.previewText}>Preview public page</Text>
+        <Ionicons name="arrow-forward" size={16} color={colors.mint} />
       </Pressable>
-
-      <Text style={styles.later}>Earning stays later. Quiet points stay in-app until payouts are ready.</Text>
       {notice ? <Text style={styles.notice}>{notice}</Text> : null}
     </KeyboardScreen>
   );
@@ -218,75 +173,62 @@ export default function ArtistScreen() {
 function makeStyles(colors) {
   return StyleSheet.create({
     screen: { flex: 1, backgroundColor: colors.bg },
-    content: { paddingBottom: 48, paddingHorizontal: 20 },
-    hero: {
-      backgroundColor: colors.card,
-      borderRadius: 22,
-      padding: 18,
-      borderWidth: 1,
-      borderColor: colors.line,
-      marginBottom: 18,
-      gap: 6,
-    },
-    heroEyebrow: {
-      color: colors.mint,
-      fontFamily: font.semibold,
-      fontSize: 11,
-      letterSpacing: 1.2,
-      textTransform: 'uppercase',
-    },
-    heroTitle: { color: colors.text, fontFamily: font.bold, fontSize: 26, letterSpacing: -0.6 },
-    lead: { color: colors.muted, fontFamily: font.regular, fontSize: 15, lineHeight: 22 },
+    content: { paddingBottom: 40, paddingHorizontal: 20 },
+    becomeCard: { marginTop: 8, gap: 12 },
+    becomeTitle: { color: colors.text, fontFamily: font.bold, fontSize: 22 },
+    hero: { marginBottom: 16, gap: 8 },
+    heroTitle: { color: colors.text, fontFamily: font.bold, fontSize: 28 },
     verifiedPill: {
       alignSelf: 'flex-start',
       flexDirection: 'row',
       alignItems: 'center',
       gap: 6,
       backgroundColor: colors.mint,
-      borderRadius: 16,
+      borderRadius: 14,
       paddingHorizontal: 10,
       paddingVertical: 5,
-      marginTop: 6,
     },
     verifiedText: { color: colors.mintInk, fontFamily: font.semibold, fontSize: 12 },
-    section: { color: colors.text, fontFamily: font.bold, fontSize: 18, marginBottom: 10, marginTop: 4 },
-    input: {
-      minHeight: 48,
+    grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 14 },
+    tool: { width: '47%', minHeight: 108, justifyContent: 'space-between', flexGrow: 1 },
+    icon: {
+      width: 42,
+      height: 42,
       borderRadius: 14,
+      backgroundColor: colors.bg,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 12,
+    },
+    label: { color: colors.text, fontFamily: font.semibold, fontSize: 16 },
+    meta: { color: colors.muted, fontFamily: font.regular, fontSize: 14, marginTop: 6 },
+    verifyCard: { marginBottom: 12, gap: 8 },
+    input: {
+      height: 48,
+      borderRadius: 12,
       backgroundColor: colors.bg,
       color: colors.text,
       fontFamily: font.regular,
       fontSize: 16,
       paddingHorizontal: 14,
-      paddingVertical: 12,
-      marginTop: 8,
     },
-    area: { minHeight: 88, textAlignVertical: 'top' },
+    area: { height: 88, paddingTop: 12, textAlignVertical: 'top' },
     button: {
-      alignSelf: 'flex-start',
+      height: 48,
+      borderRadius: 24,
       backgroundColor: colors.mint,
-      borderRadius: 22,
-      paddingHorizontal: 18,
-      paddingVertical: 12,
-      marginTop: 10,
-    },
-    buttonText: { color: colors.mintInk, fontFamily: font.semibold, fontSize: 15 },
-    row: { flexDirection: 'row', alignItems: 'center', gap: 14, marginBottom: 10 },
-    icon: {
-      width: 44,
-      height: 44,
-      borderRadius: 14,
-      backgroundColor: colors.bg,
       alignItems: 'center',
       justifyContent: 'center',
+      marginTop: 4,
     },
-    copy: { flex: 1 },
-    label: { color: colors.text, fontFamily: font.semibold, fontSize: 16 },
-    copyText: { color: colors.muted, fontFamily: font.regular, fontSize: 13, lineHeight: 18, marginTop: 3 },
-    verifyCard: { marginTop: 12, gap: 6 },
-    public: { alignSelf: 'flex-start', marginTop: 14 },
-    publicText: { color: colors.mint, fontFamily: font.semibold, fontSize: 15 },
-    later: { color: colors.muted, fontFamily: font.regular, fontSize: 13, lineHeight: 19, marginTop: 16 },
-    notice: { color: colors.amber, fontFamily: font.regular, fontSize: 14, marginTop: 12 },
+    buttonText: { color: colors.mintInk, fontFamily: font.semibold, fontSize: 15 },
+    preview: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      marginTop: 4,
+    },
+    previewText: { color: colors.mint, fontFamily: font.semibold, fontSize: 15 },
+    notice: { color: colors.amber, fontFamily: font.medium, fontSize: 14, marginTop: 10 },
   });
 }

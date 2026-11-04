@@ -68,7 +68,7 @@ export default function QuietRoomFeed() {
   return (
     <View style={styles.screen}>
       <ScreenHeader title="Quiet Room" back />
-      <Text style={styles.lead}>Sounds, recommendations, and calm notes about the app — one shared room.</Text>
+      <Text style={styles.lead}>Shared notes about sounds and the app.</Text>
       <FlatList
         data={posts}
         keyExtractor={(item) => item.id}

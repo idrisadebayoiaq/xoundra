@@ -1,50 +1,107 @@
 import { useCallback, useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
+import { FlatList, Modal, Pressable, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Redirect, router, useFocusEffect } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ScreenHeader } from '../../src/components/ScreenHeader';
-import { SurfaceCard } from '../../src/components/SurfaceCard';
-import { KeyboardScreen } from '../../src/components/KeyboardScreen';
 import { supabase } from '../../src/lib/supabase';
 import { font } from '../../src/theme';
 import { useTheme } from '../../src/state/ThemeState';
 import { useApp } from '../../src/state/AppState';
 
+function timeLabel(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  const now = new Date();
+  const sameDay = d.toDateString() === now.toDateString();
+  if (sameDay) {
+    return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  }
+  return d.toLocaleDateString([], { month: 'short', day: 'numeric' });
+}
+
 export default function ArtistBulletinsScreen() {
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
+  const insets = useSafeAreaInsets();
   const app = useApp();
-  const [mine, setMine] = useState(null);
-  const [joined, setJoined] = useState([]);
+  const [rows, setRows] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [createOpen, setCreateOpen] = useState(false);
   const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
   const [replies, setReplies] = useState(false);
   const [notice, setNotice] = useState('');
   const [busy, setBusy] = useState(false);
+  const hasMine = rows.some((row) => row.mine);
 
   const load = useCallback(async () => {
     if (!app.userId) return;
-    const [{ data: owned }, { data: memberships }] = await Promise.all([
+    setLoading(true);
+    const [{ data: owned, error: ownedError }, { data: memberships, error: memberError }] = await Promise.all([
       app.isArtist
         ? supabase
             .from('bulletins')
-            .select('id, title, description, members_can_reply, created_at')
+            .select('id, title, description, members_can_reply, created_at, artist_id')
             .eq('artist_id', app.userId)
             .is('archived_at', null)
             .maybeSingle()
-        : Promise.resolve({ data: null }),
+        : Promise.resolve({ data: null, error: null }),
       supabase
         .from('bulletin_members')
-        .select('bulletin_id, role, bulletins(id, title, description, artist_id, members_can_reply)')
+        .select('bulletin_id, role, bulletins(id, title, description, artist_id, members_can_reply, created_at)')
         .eq('user_id', app.userId),
     ]);
-    setMine(owned);
-    setJoined(
-      (memberships || [])
-        .map((row) => row.bulletins)
-        .filter(Boolean)
-        .filter((b) => b.artist_id !== app.userId),
-    );
+    if (ownedError || memberError) {
+      setNotice('Could not load Bulletins.');
+      setLoading(false);
+      return;
+    }
+
+    const ids = [];
+    if (owned?.id) ids.push(owned.id);
+    (memberships || []).forEach((row) => {
+      if (row.bulletins?.id) ids.push(row.bulletins.id);
+    });
+    const uniqueIds = [...new Set(ids)];
+    let latest = {};
+    if (uniqueIds.length) {
+      const { data: posts } = await supabase
+        .from('bulletin_posts')
+        .select('bulletin_id, body, created_at')
+        .in('bulletin_id', uniqueIds)
+        .order('created_at', { ascending: false })
+        .limit(80);
+      (posts || []).forEach((post) => {
+        if (!latest[post.bulletin_id]) latest[post.bulletin_id] = post;
+      });
+    }
+
+    const list = [];
+    if (owned) {
+      list.push({
+        id: owned.id,
+        title: owned.title,
+        mine: true,
+        snippet: latest[owned.id]?.body || 'No messages yet',
+        at: latest[owned.id]?.created_at || owned.created_at,
+      });
+    }
+    (memberships || []).forEach((row) => {
+      const board = row.bulletins;
+      if (!board || board.artist_id === app.userId) return;
+      list.push({
+        id: board.id,
+        title: board.title,
+        mine: false,
+        snippet: latest[board.id]?.body || 'No messages yet',
+        at: latest[board.id]?.created_at || board.created_at,
+      });
+    });
+    list.sort((a, b) => new Date(b.at || 0) - new Date(a.at || 0));
+    setRows(list);
+    setNotice('');
+    setLoading(false);
   }, [app.userId, app.isArtist]);
 
   useFocusEffect(useCallback(() => {
@@ -64,116 +121,181 @@ export default function ArtistBulletinsScreen() {
     setNotice('');
     const { data, error } = await supabase.rpc('create_bulletin', {
       p_title: name,
-      p_description: description.trim(),
+      p_description: '',
       p_members_can_reply: replies,
       p_cover: null,
     });
     setBusy(false);
     if (error) {
-      if (/bulletin_exists/i.test(error.message || '')) setNotice('You already have an active Bulletin.');
-      else if (/not_artist/i.test(error.message || '')) setNotice('Only verified artists can create a Bulletin.');
-      else setNotice('Bulletin could not be created.');
+      if (/bulletin_exists/i.test(error.message || '')) {
+        setNotice('You already have a Bulletin.');
+        await load();
+        const existing = rows.find((row) => row.mine) || null;
+        if (existing?.id) {
+          setCreateOpen(false);
+          router.replace({ pathname: '/artist-bulletins/[id]', params: { id: existing.id } });
+        } else {
+          const { data: mine } = await supabase
+            .from('bulletins')
+            .select('id')
+            .eq('artist_id', app.userId)
+            .is('archived_at', null)
+            .maybeSingle();
+          if (mine?.id) {
+            setCreateOpen(false);
+            router.replace({ pathname: '/artist-bulletins/[id]', params: { id: mine.id } });
+          }
+        }
+        return;
+      }
+      setNotice('Could not create.');
       return;
     }
-    router.push({ pathname: '/artist-bulletins/[id]', params: { id: data } });
+    setCreateOpen(false);
+    setTitle('');
+    router.replace({ pathname: '/artist-bulletins/[id]', params: { id: data } });
   }
 
   return (
-    <KeyboardScreen contentContainerStyle={styles.content}>
-      <ScreenHeader title="Bulletins" back />
-      <Text style={styles.lead}>Updates for people who follow you — a calm, owned space. Not a social feed.</Text>
-
-      {app.isArtist ? (
-        mine ? (
-          <SurfaceCard
-            onPress={() => router.push({ pathname: '/artist-bulletins/[id]', params: { id: mine.id } })}
-            accessibilityLabel={mine.title}
-            style={styles.cardGap}
+    <View style={styles.screen}>
+      <View style={[styles.top, { paddingTop: insets.top + 4 }]}>
+        <ScreenHeader title="Bulletins" back />
+        {app.isArtist && !hasMine ? (
+          <Pressable
+            style={styles.createBtn}
+            onPress={() => setCreateOpen(true)}
+            accessibilityLabel="Create Bulletin"
           >
-            <Text style={styles.eyebrow}>Your Bulletin</Text>
-            <Text style={styles.title}>{mine.title}</Text>
-            {mine.description ? <Text style={styles.copy}>{mine.description}</Text> : null}
-            <Text style={styles.meta}>{mine.members_can_reply ? 'Members can reply' : 'Replies off · react and read'}</Text>
-            <View style={styles.ctaRow}>
-              <Text style={styles.cta}>Open</Text>
-              <Ionicons name="arrow-forward" size={16} color={colors.mint} />
+            <Ionicons name="add" size={22} color={colors.mintInk} />
+          </Pressable>
+        ) : null}
+      </View>
+
+      {loading ? <Text style={styles.empty}>Loading…</Text> : null}
+      {!loading && rows.length === 0 ? (
+        <View style={styles.emptyWrap}>
+          <Text style={styles.empty}>No Bulletins yet.</Text>
+          {app.isArtist ? (
+            <Pressable style={styles.emptyCta} onPress={() => setCreateOpen(true)} accessibilityLabel="Create Bulletin">
+              <Text style={styles.emptyCtaText}>Create</Text>
+            </Pressable>
+          ) : null}
+        </View>
+      ) : null}
+
+      <FlatList
+        data={rows}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={styles.list}
+        renderItem={({ item }) => (
+          <Pressable
+            style={styles.row}
+            onPress={() => router.push({ pathname: '/artist-bulletins/[id]', params: { id: item.id } })}
+            accessibilityLabel={item.title}
+          >
+            <View style={styles.avatar}>
+              <Ionicons name="chatbubbles" size={22} color={colors.mint} />
             </View>
-          </SurfaceCard>
-        ) : (
-          <SurfaceCard style={styles.cardGap}>
-            <Text style={styles.eyebrow}>Create</Text>
-            <Text style={styles.title}>Start your Bulletin</Text>
-            <Text style={styles.copy}>One active Bulletin per artist. Invite followers when they join you.</Text>
+            <View style={styles.copy}>
+              <View style={styles.rowTop}>
+                <Text style={styles.title} numberOfLines={1}>{item.title}</Text>
+                <Text style={styles.time}>{timeLabel(item.at)}</Text>
+              </View>
+              <Text style={styles.snippet} numberOfLines={1}>{item.snippet}</Text>
+            </View>
+          </Pressable>
+        )}
+      />
+
+      {notice && !createOpen ? <Text style={styles.notice}>{notice}</Text> : null}
+
+      <Modal visible={createOpen} transparent animationType="slide" onRequestClose={() => setCreateOpen(false)}>
+        <Pressable style={styles.sheetScrim} onPress={() => setCreateOpen(false)}>
+          <Pressable style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, 16) }]} onPress={(e) => e.stopPropagation?.()}>
+            <Text style={styles.sheetTitle}>New Bulletin</Text>
             <TextInput
               value={title}
               onChangeText={setTitle}
-              placeholder="Bulletin name"
+              placeholder="Name"
               placeholderTextColor={colors.muted}
               style={styles.input}
               accessibilityLabel="Bulletin name"
-            />
-            <TextInput
-              value={description}
-              onChangeText={setDescription}
-              placeholder="Optional subtitle"
-              placeholderTextColor={colors.muted}
-              style={[styles.input, styles.area]}
-              multiline
-              accessibilityLabel="Bulletin description"
             />
             <View style={styles.switchRow}>
               <Text style={styles.switchLabel}>Members can reply</Text>
               <Switch value={replies} onValueChange={setReplies} trackColor={{ true: colors.mint }} />
             </View>
-            <Pressable style={styles.button} onPress={create} disabled={busy} accessibilityLabel="Create Bulletin">
-              <Text style={styles.buttonText}>{busy ? 'Creating' : 'Create Bulletin'}</Text>
+            {notice ? <Text style={styles.notice}>{notice}</Text> : null}
+            <Pressable style={styles.primary} onPress={create} disabled={busy} accessibilityLabel="Create">
+              <Text style={styles.primaryText}>{busy ? 'Creating…' : 'Create'}</Text>
             </Pressable>
-          </SurfaceCard>
-        )
-      ) : null}
-
-      <Text style={styles.section}>Joined</Text>
-      {joined.length === 0 ? (
-        <Text style={styles.copy}>Bulletins you accept from artists will show here.</Text>
-      ) : (
-        joined.map((item) => (
-          <SurfaceCard
-            key={item.id}
-            onPress={() => router.push({ pathname: '/artist-bulletins/[id]', params: { id: item.id } })}
-            accessibilityLabel={item.title}
-            style={styles.cardGap}
-          >
-            <Text style={styles.title}>{item.title}</Text>
-            {item.description ? <Text style={styles.copy}>{item.description}</Text> : null}
-          </SurfaceCard>
-        ))
-      )}
-      {notice ? <Text style={styles.notice}>{notice}</Text> : null}
-    </KeyboardScreen>
+          </Pressable>
+        </Pressable>
+      </Modal>
+    </View>
   );
 }
 
 function makeStyles(colors) {
   return StyleSheet.create({
     screen: { flex: 1, backgroundColor: colors.bg },
-    content: { paddingBottom: 40, paddingHorizontal: 20 },
-    lead: { color: colors.muted, fontFamily: font.regular, fontSize: 15, lineHeight: 22, marginBottom: 16 },
-    cardGap: { marginBottom: 12 },
-    eyebrow: {
-      color: colors.mint,
-      fontFamily: font.semibold,
-      fontSize: 12,
-      letterSpacing: 1,
-      textTransform: 'uppercase',
-      marginBottom: 6,
+    top: {
+      paddingHorizontal: 8,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
     },
-    title: { color: colors.text, fontFamily: font.bold, fontSize: 20 },
-    copy: { color: colors.muted, fontFamily: font.regular, fontSize: 14, lineHeight: 20, marginTop: 6 },
-    meta: { color: colors.muted, fontFamily: font.medium, fontSize: 13, marginTop: 10 },
-    ctaRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 14 },
-    cta: { color: colors.mint, fontFamily: font.semibold, fontSize: 15 },
+    createBtn: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: colors.mint,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: 12,
+    },
+    list: { paddingBottom: 40 },
+    row: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      paddingHorizontal: 16,
+      paddingVertical: 14,
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: colors.line,
+    },
+    avatar: {
+      width: 48,
+      height: 48,
+      borderRadius: 24,
+      backgroundColor: colors.card,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    copy: { flex: 1, gap: 4 },
+    rowTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
+    title: { flex: 1, color: colors.text, fontFamily: font.semibold, fontSize: 16 },
+    time: { color: colors.muted, fontFamily: font.regular, fontSize: 12 },
+    snippet: { color: colors.muted, fontFamily: font.regular, fontSize: 14 },
+    emptyWrap: { alignItems: 'center', marginTop: 48, gap: 14 },
+    empty: { color: colors.muted, fontFamily: font.regular, fontSize: 15, textAlign: 'center', marginTop: 24 },
+    emptyCta: {
+      backgroundColor: colors.mint,
+      borderRadius: 20,
+      paddingHorizontal: 18,
+      paddingVertical: 10,
+    },
+    emptyCtaText: { color: colors.mintInk, fontFamily: font.semibold, fontSize: 15 },
+    sheetScrim: { flex: 1, backgroundColor: colors.overlay, justifyContent: 'flex-end' },
+    sheet: {
+      backgroundColor: colors.card,
+      borderTopLeftRadius: 20,
+      borderTopRightRadius: 20,
+      padding: 20,
+      gap: 12,
+    },
+    sheetTitle: { color: colors.text, fontFamily: font.bold, fontSize: 20 },
     input: {
-      marginTop: 12,
       height: 48,
       borderRadius: 12,
       backgroundColor: colors.bg,
@@ -182,24 +304,16 @@ function makeStyles(colors) {
       fontSize: 16,
       paddingHorizontal: 14,
     },
-    area: { height: 88, paddingTop: 12, textAlignVertical: 'top' },
-    switchRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      marginTop: 14,
-    },
+    switchRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
     switchLabel: { color: colors.text, fontFamily: font.medium, fontSize: 15 },
-    button: {
-      marginTop: 16,
+    primary: {
       height: 48,
       borderRadius: 24,
       backgroundColor: colors.mint,
       alignItems: 'center',
       justifyContent: 'center',
     },
-    buttonText: { color: colors.mintInk, fontFamily: font.semibold, fontSize: 15 },
-    section: { color: colors.text, fontFamily: font.bold, fontSize: 20, marginTop: 12, marginBottom: 10 },
-    notice: { color: colors.amber, fontFamily: font.medium, fontSize: 14, marginTop: 12 },
+    primaryText: { color: colors.mintInk, fontFamily: font.semibold, fontSize: 15 },
+    notice: { color: colors.amber, fontFamily: font.medium, fontSize: 14, marginHorizontal: 16, marginBottom: 8 },
   });
 }

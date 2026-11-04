@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Animated, Image, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { Animated, Image, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { goBack } from '../src/lib/navigation';
@@ -19,10 +19,10 @@ import { similarTracks } from '../src/lib/sameEnergy';
 import { useRewards } from '../src/state/RewardsState';
 
 function coverSize(width, height) {
-  const side = Math.min(width, 480);
-  const fromWidth = side - 120;
-  const fromHeight = height - 460;
-  return Math.max(168, Math.min(260, fromWidth, fromHeight));
+  const side = Math.min(width, 520);
+  const fromWidth = side - 72;
+  const fromHeight = height - 340;
+  return Math.max(220, Math.min(340, fromWidth, fromHeight));
 }
 
 export default function PlayerScreen() {
@@ -90,7 +90,7 @@ export default function PlayerScreen() {
   const liked = isLiked(track.id);
 
   return (
-    <ScrollView style={[styles.screen, { paddingTop: insets.top + 8 }]} contentContainerStyle={{ paddingBottom: insets.bottom + 28 }}>
+    <View style={[styles.screen, { paddingTop: insets.top + 8, paddingBottom: insets.bottom + 16 }]}>
       <View style={styles.topActions}>
         <Pressable onPress={goBack} hitSlop={12} accessibilityLabel="Minimize playback">
           <Ionicons name="chevron-down" size={30} color={colors.text} />
@@ -106,7 +106,9 @@ export default function PlayerScreen() {
           <Ionicons name="close" size={28} color={colors.text} />
         </Pressable>
       </View>
-      <Image source={coverSource(track.artwork)} style={[styles.art, { width: art, height: art }]} />
+      <View style={styles.artStage}>
+        <Image source={coverSource(track.artwork)} style={[styles.art, { width: art, height: art }]} />
+      </View>
       <View style={styles.titleRow}>
         <View style={styles.titles}>
           <Text style={styles.title} numberOfLines={1}>{track.title}</Text>
@@ -123,69 +125,71 @@ export default function PlayerScreen() {
         </Pressable>
         <SoundMenuButton track={track} />
       </View>
-      <View style={styles.times}>
-        <Text style={styles.time}>{formatTime(position)}</Text>
-        <Text style={styles.time}>{formatTime(track.duration)}</Text>
-      </View>
-      <LevelBar label="Position" value={track.duration ? position / track.duration : 0} onChange={(ratio) => seek(ratio * track.duration)} />
-      <View style={styles.transport}>
-        <Pressable onPress={() => setShuffle(!shuffle)} hitSlop={8}>
-          <Ionicons name="shuffle" size={22} color={shuffle ? colors.mint : colors.text} />
-        </Pressable>
-        <Pressable onPress={() => skip(-1)} hitSlop={8} disabled={index === 0}>
-          <Ionicons name="play-skip-back" size={28} color={index === 0 ? colors.muted : colors.text} />
-        </Pressable>
-        <Pressable style={styles.pause} onPress={togglePlay}>
-          <Ionicons name={playing ? 'pause' : 'play'} size={28} color={colors.mintInk} />
-        </Pressable>
-        <Pressable onPress={() => skip(1)} hitSlop={8} disabled={index >= queue.length - 1}>
-          <Ionicons name="play-skip-forward" size={28} color={index >= queue.length - 1 ? colors.muted : colors.text} />
-        </Pressable>
-        <Pressable onPress={() => setRepeat(!repeat)} hitSlop={8}>
-          <Ionicons name="repeat" size={22} color={repeat ? colors.mint : colors.text} />
-        </Pressable>
-      </View>
-      <View style={styles.chips}>
-        <Pressable
-          onPress={() => {
-            if (!premium) {
-              router.push('/plans');
-              return;
-            }
-            cycleSleep();
-          }}
-          style={styles.chip}
-        >
-          <Text style={styles.chipText}>
-            {sleepMinutes ? `Sleep ${sleepMinutes} min` : 'Sleep'}
-          </Text>
-        </Pressable>
-        <Pressable
-          style={styles.chip}
-          onPress={async () => {
-            const result = await shareListeningCard(track);
-            if (result === 'shared') bumpStreak();
-          }}
-        >
-          <Text style={styles.chipText}>Share</Text>
-        </Pressable>
-        <Pressable style={styles.chip} onPress={() => setBreathOn((value) => !value)}>
-          <Text style={styles.chipText}>{breathOn ? 'Breath on' : 'Breath'}</Text>
-        </Pressable>
-        <Pressable
-          style={styles.chip}
-          onPress={() => {
-            const next = similarTracks(track, tracks, 12);
-            if (next.length) play(next[0], [track, ...next]);
-          }}
-        >
-          <Text style={styles.chipText}>Same energy</Text>
-        </Pressable>
+      <View style={styles.bottomBlock}>
+        <View style={styles.times}>
+          <Text style={styles.time}>{formatTime(position)}</Text>
+          <Text style={styles.time}>{formatTime(track.duration)}</Text>
+        </View>
+        <LevelBar label="Position" value={track.duration ? position / track.duration : 0} onChange={(ratio) => seek(ratio * track.duration)} />
+        <View style={styles.transport}>
+          <Pressable onPress={() => setShuffle(!shuffle)} hitSlop={8}>
+            <Ionicons name="shuffle" size={22} color={shuffle ? colors.mint : colors.text} />
+          </Pressable>
+          <Pressable onPress={() => skip(-1)} hitSlop={8} disabled={index === 0}>
+            <Ionicons name="play-skip-back" size={28} color={index === 0 ? colors.muted : colors.text} />
+          </Pressable>
+          <Pressable style={styles.pause} onPress={togglePlay}>
+            <Ionicons name={playing ? 'pause' : 'play'} size={28} color={colors.mintInk} />
+          </Pressable>
+          <Pressable onPress={() => skip(1)} hitSlop={8} disabled={index >= queue.length - 1}>
+            <Ionicons name="play-skip-forward" size={28} color={index >= queue.length - 1 ? colors.muted : colors.text} />
+          </Pressable>
+          <Pressable onPress={() => setRepeat(!repeat)} hitSlop={8}>
+            <Ionicons name="repeat" size={22} color={repeat ? colors.mint : colors.text} />
+          </Pressable>
+        </View>
+        <View style={styles.chips}>
+          <Pressable
+            onPress={() => {
+              if (!premium) {
+                router.push('/plans');
+                return;
+              }
+              cycleSleep();
+            }}
+            style={styles.chip}
+          >
+            <Text style={styles.chipText}>
+              {sleepMinutes ? `Sleep ${sleepMinutes} min` : 'Sleep'}
+            </Text>
+          </Pressable>
+          <Pressable
+            style={styles.chip}
+            onPress={async () => {
+              const result = await shareListeningCard(track);
+              if (result === 'shared') bumpStreak();
+            }}
+          >
+            <Text style={styles.chipText}>Share</Text>
+          </Pressable>
+          <Pressable style={styles.chip} onPress={() => setBreathOn((value) => !value)}>
+            <Text style={styles.chipText}>{breathOn ? 'Breath on' : 'Breath'}</Text>
+          </Pressable>
+          <Pressable
+            style={styles.chip}
+            onPress={() => {
+              const next = similarTracks(track, tracks, 12);
+              if (next.length) play(next[0], [track, ...next]);
+            }}
+          >
+            <Text style={styles.chipText}>Same energy</Text>
+          </Pressable>
+        </View>
       </View>
       {breathOn ? (
         <Animated.View style={[styles.breath, { opacity: breath }]} pointerEvents="none" />
       ) : null}
-    </ScrollView>
+    </View>
   );
 }
 
@@ -208,17 +212,25 @@ function makeStyles(colors) {
     fontSize: 16,
     marginTop: 24,
   },
+  artStage: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 220,
+  },
   art: {
     alignSelf: 'center',
-    borderRadius: 8,
+    borderRadius: 12,
     backgroundColor: colors.card,
-    marginTop: 4,
   },
   titleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 22,
+    marginTop: 8,
     gap: 12,
+  },
+  bottomBlock: {
+    marginTop: 10,
   },
   titles: { flex: 1 },
   title: {

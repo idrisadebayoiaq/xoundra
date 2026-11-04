@@ -147,7 +147,9 @@ Deno.serve(async (req) => {
     if (!userId && !isService && !isCron) return json({ error: "sign_in_required" }, 401);
     const pending = await admin
       .from("notification_outbox")
-      .select("id, user_id, kind, title, body, track_id, album_id, announcement_id, email_sent_at")
+      .select(
+        "id, user_id, kind, title, body, track_id, album_id, announcement_id, quiet_room_post_id, bulletin_id, bulletin_invite_id, email_sent_at",
+      )
       .is("sent_at", null)
       .limit(25);
     if (pending.error) return json({ error: "push_failed", detail: pending.error.message }, 500);
@@ -187,6 +189,9 @@ Deno.serve(async (req) => {
                 track_id: row.track_id || "",
                 album_id: row.album_id || "",
                 announcement_id: row.announcement_id || "",
+                quiet_room_post_id: row.quiet_room_post_id || "",
+                bulletin_id: row.bulletin_id || "",
+                bulletin_invite_id: row.bulletin_invite_id || "",
               },
               android: {
                 priority: "HIGH",

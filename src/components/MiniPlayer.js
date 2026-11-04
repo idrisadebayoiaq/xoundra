@@ -54,7 +54,7 @@ export function MiniPlayer() {
     <Pressable style={styles.bar} onPress={() => router.push('/player')} accessibilityLabel={`Now playing ${track.title}`}>
       <View style={[styles.progress, { width: `${progress * 100}%` }]} />
       <Image source={coverSource(track.artwork)} style={styles.art} />
-      <View style={styles.copy}>
+      <View style={styles.copy} pointerEvents="box-none">
         <Text style={styles.title} numberOfLines={1}>{track.title}</Text>
         <ArtistLink track={track} style={styles.device} />
         {output ? <Text style={styles.device} numberOfLines={1}>{output}</Text> : null}

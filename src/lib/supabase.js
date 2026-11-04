@@ -38,7 +38,7 @@ export async function fetchPublishedTracks() {
   const [trackResult, statResult, signalResult] = await Promise.all([
     supabase
       .from('tracks')
-      .select('id, title, category, duration_seconds, access_tier, shelf, artwork_path, audio_path, artist_id, artist_name, album_id, track_tags(tag)')
+      .select('id, title, category, duration_seconds, access_tier, shelf, artwork_path, audio_path, artist_id, artist_name, album_id, created_at, track_tags(tag)')
       .eq('status', 'published'),
     supabase.from('track_stats').select('track_id, plays, likes, favorites'),
     supabase.from('comment_signals').select('track_id, helped, total'),
@@ -65,6 +65,7 @@ export async function fetchPublishedTracks() {
       artistId: row.artist_id || '',
       artistName: row.artist_name || '',
       albumId: row.album_id || '',
+      createdAt: row.created_at || '',
       plays: Number(count.plays) || 0,
       likes: Number(count.likes) || 0,
       favorites: Number(count.favorites) || 0,

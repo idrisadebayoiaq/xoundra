@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import { KeyboardScreen } from '../src/components/KeyboardScreen';
 import { ScreenHeader } from '../src/components/ScreenHeader';
 import { countries } from '../src/data/catalogue';
 import { intentions } from '../src/data/intentions';
@@ -222,7 +223,7 @@ export default function EditProfileScreen() {
   const bannerUri = banner ? `${avatarUrl(banner)}?v=${app.avatarStamp}` : '';
 
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+    <KeyboardScreen contentContainerStyle={styles.content} extraPad={48}>
       <ScreenHeader title="Edit profile" back />
 
       {app.isArtist ? (
@@ -326,7 +327,7 @@ export default function EditProfileScreen() {
       <Pressable style={styles.button} onPress={save} disabled={busy}>
         <Text style={styles.buttonText}>{busy ? 'Saving' : 'Save'}</Text>
       </Pressable>
-    </ScrollView>
+    </KeyboardScreen>
   );
 }
 

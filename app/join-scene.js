@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, Text, TextInput } from 'react-native';
 import { router } from 'expo-router';
+import { KeyboardScreen } from '../src/components/KeyboardScreen';
 import { ScreenHeader } from '../src/components/ScreenHeader';
 import { font } from '../src/theme';
 import { useTheme } from '../src/state/ThemeState';
@@ -43,7 +44,7 @@ export default function JoinSceneScreen() {
   }
 
   return (
-    <View style={styles.screen}>
+    <KeyboardScreen contentContainerStyle={styles.content} extraPad={40}>
       <ScreenHeader title="Join scene" back />
       <Text style={styles.lead}>Paste a collab code.</Text>
       <TextInput
@@ -60,13 +61,13 @@ export default function JoinSceneScreen() {
         <Text style={styles.buttonText}>Open in Studio</Text>
       </Pressable>
       {notice ? <Text style={styles.notice}>{notice}</Text> : null}
-    </View>
+    </KeyboardScreen>
   );
 }
 
 function makeStyles(colors) {
   return StyleSheet.create({
-    screen: { flex: 1, backgroundColor: colors.bg },
+    content: { paddingBottom: 28 },
     lead: {
       color: colors.muted,
       fontFamily: font.regular,

@@ -10,17 +10,22 @@ import { useMoments } from '../state/MomentsState';
 import { openFromMenu } from '../lib/navigation';
 import { PointsSpendModal } from './PointsSpendModal';
 
-const links = [
-  { label: 'Evening', icon: 'moon-outline', href: '/sleep' },
-  { label: 'Guide', icon: 'mic-outline', href: '/guide' },
-  { label: 'Support', icon: 'help-circle-outline', href: '/support' },
-];
-
 export function HomeMenu({ open, onClose }) {
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
-  const { premium } = useApp();
+  const { premium, isArtist } = useApp();
+  const links = [
+    { label: 'Evening', icon: 'moon-outline', href: '/sleep' },
+    { label: 'Guide', icon: 'mic-outline', href: '/guide' },
+    ...(isArtist
+      ? [
+          { label: 'Artist tools', icon: 'mic-circle-outline', href: '/artist' },
+          { label: 'Bulletin', icon: 'chatbubbles-outline', href: '/artist-bulletins' },
+          { label: 'Analytics', icon: 'stats-chart-outline', href: '/artist-analytics' },
+        ]
+      : [{ label: 'Bulletins', icon: 'chatbubbles-outline', href: '/artist-bulletins' }]),
+  ];
   const { points, dailyClaimed, earn, claimDailySignIn, streakDays } = useRewards();
   const { showMoment } = useMoments();
   const [spendOpen, setSpendOpen] = useState(false);
@@ -161,12 +166,19 @@ export function HomeMenu({ open, onClose }) {
             </Pressable>
 
             {links.map((item) => (
-              <Pressable key={item.href} style={styles.row} onPress={() => go(item.href)} accessibilityLabel={item.label}>
+              <Pressable key={`${item.href}-${item.label}`} style={styles.row} onPress={() => go(item.href)} accessibilityLabel={item.label}>
                 <Ionicons name={item.icon} size={22} color={colors.mint} />
                 <Text style={styles.rowLabel}>{item.label}</Text>
                 <Ionicons name="chevron-forward" size={18} color={colors.muted} />
               </Pressable>
             ))}
+
+            <View style={styles.spacer} />
+            <Pressable style={styles.row} onPress={() => go('/support')} accessibilityLabel="Support">
+              <Ionicons name="help-circle-outline" size={22} color={colors.mint} />
+              <Text style={styles.rowLabel}>Support</Text>
+              <Ionicons name="chevron-forward" size={18} color={colors.muted} />
+            </Pressable>
           </Pressable>
         </Pressable>
       </Modal>
@@ -325,5 +337,6 @@ function makeStyles(colors) {
       fontFamily: font.medium,
       fontSize: 16,
     },
+    spacer: { flex: 1, minHeight: 24 },
   });
 }

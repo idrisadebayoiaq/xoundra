@@ -180,8 +180,8 @@ function Gate() {
 
 function OutsideTabsPlayer() {
   const path = usePathname();
-  const onTab = path === '/' || path === '/explore' || path === '/studio' || path === '/library' || path === '/profile';
-  if (onTab || path === '/player' || path === '/ai' || path === '/welcome' || path === '/sign-in' || path === '/sign-up' || path === '/confirm-email' || path === '/listen-tip' || path === '/sound-picks' || path === '/guide') return null;
+  // Mini-player only on Guide outside tabs; Home/Library/Studio use AppTabBar.
+  if (path !== '/guide') return null;
   return (
     <View style={{ position: 'absolute', left: 0, right: 0, bottom: 8 }}>
       <MiniPlayer />

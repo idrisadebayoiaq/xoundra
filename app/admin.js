@@ -196,7 +196,7 @@ export default function AdminScreen() {
   if (!isAdmin) return <Redirect href="/profile" />;
 
   return (
-    <KeyboardScreen contentContainerStyle={styles.content}>
+    <KeyboardScreen contentContainerStyle={styles.content} extraPad={72}>
       <ScreenHeader title="Admin" back />
       <Text style={styles.lead}>Verification, Premium grants, support replies, and announcements.</Text>
       {error ? <Text style={styles.error}>{error}</Text> : null}

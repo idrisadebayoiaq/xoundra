@@ -215,55 +215,59 @@ export default function StudioScreen() {
 
   if (mode === 'gallery') {
     return (
-      <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
-        <ScreenHeader title="Studio" back={fromMenu} onBack={() => goBack({ from: 'menu' })} />
-        <Text style={styles.lead}>Pick a scene, or edit your own.</Text>
-        {hasStudioAccess || premium ? null : (
-          <View style={styles.gate}>
-            <Pressable style={styles.unlock} onPress={() => requestUnlock('studio')} accessibilityLabel="Watch ads for Studio">
-              <Text style={styles.unlockText}>Watch {AD_COSTS.studio} ads to unlock Studio</Text>
-            </Pressable>
-            <Pressable onPress={() => router.push('/plans')} accessibilityLabel="See plans">
-              <Text style={styles.alt}>Or see Premium plans</Text>
-            </Pressable>
-          </View>
-        )}
-        <View style={styles.sceneGrid}>
-          {studioPresets.map((scene) => (
-            <View key={scene.id} style={styles.sceneCard}>
-              <Pressable onPress={() => playScene(scene)} accessibilityLabel={`Play ${scene.title}`}>
-                <View style={styles.sceneArtFrame}>
-                  <Image source={coverSource(scene.artwork)} style={styles.sceneArt} resizeMode="cover" />
-                </View>
-                <Text style={styles.sceneTitle}>{scene.title}</Text>
-                <Text style={styles.sceneBlurb}>{scene.blurb}</Text>
+      <View style={styles.screen}>
+        <ScrollView style={styles.screen} contentContainerStyle={[styles.content, { paddingBottom: 96 }]}>
+          <ScreenHeader title="Studio" back={fromMenu} onBack={() => goBack({ from: 'menu' })} />
+          <Text style={styles.lead}>Pick a scene.</Text>
+          {hasStudioAccess || premium ? null : (
+            <View style={styles.gate}>
+              <Pressable style={styles.unlock} onPress={() => requestUnlock('studio')} accessibilityLabel="Watch ads for Studio">
+                <Text style={styles.unlockText}>Watch {AD_COSTS.studio} ads to unlock Studio</Text>
               </Pressable>
-              <Pressable onPress={() => editScene(scene)} style={styles.editLink}>
-                <Text style={styles.editText}>Edit</Text>
+              <Pressable onPress={() => router.push('/plans')} accessibilityLabel="See plans">
+                <Text style={styles.alt}>Or see Premium plans</Text>
+              </Pressable>
+            </View>
+          )}
+          <View style={styles.sceneGrid}>
+            {studioPresets.map((scene) => (
+              <View key={scene.id} style={styles.sceneCard}>
+                <Pressable onPress={() => playScene(scene)} accessibilityLabel={`Play ${scene.title}`}>
+                  <View style={styles.sceneArtFrame}>
+                    <Image source={coverSource(scene.artwork)} style={styles.sceneArt} resizeMode="cover" />
+                  </View>
+                  <Text style={styles.sceneTitle}>{scene.title}</Text>
+                  <Text style={styles.sceneBlurb}>{scene.blurb}</Text>
+                </Pressable>
+                <Pressable onPress={() => editScene(scene)} style={styles.editLink}>
+                  <Text style={styles.editText}>Edit</Text>
+                </Pressable>
+              </View>
+            ))}
+          </View>
+          {saved.length ? <Text style={styles.section}>Your mixes</Text> : null}
+          {saved.map((item) => (
+            <View key={item.id} style={styles.saved}>
+              <Pressable style={styles.savedCopy} onPress={() => { openMix(layersOf(item), true); setMode('edit'); }}>
+                <Text style={styles.name}>{item.title}</Text>
+                <Text style={styles.meta}>{layersOf(item).length} sounds</Text>
+              </Pressable>
+              <Pressable onPress={() => removeSaved(item)} hitSlop={8} accessibilityLabel="Delete mix">
+                <Ionicons name="trash-outline" size={18} color={colors.muted} />
               </Pressable>
             </View>
           ))}
+          {notice ? <Text style={styles.notice}>{notice}</Text> : null}
+        </ScrollView>
+        <View style={styles.bottomActions}>
+          <Pressable style={styles.bottomBtn} onPress={() => setMode('edit')} accessibilityLabel="Custom mix">
+            <Text style={styles.bottomBtnText}>Custom mix</Text>
+          </Pressable>
+          <Pressable style={styles.bottomBtn} onPress={() => router.push('/join-scene')} accessibilityLabel="Join shared scene">
+            <Text style={styles.bottomBtnText}>Join scene</Text>
+          </Pressable>
         </View>
-        <Pressable style={styles.custom} onPress={() => setMode('edit')}>
-          <Text style={styles.customText}>Custom mix</Text>
-        </Pressable>
-        <Pressable style={styles.custom} onPress={() => router.push('/join-scene')}>
-          <Text style={styles.customText}>Join a shared scene</Text>
-        </Pressable>
-        {saved.length ? <Text style={styles.section}>Your mixes</Text> : null}
-        {saved.map((item) => (
-          <View key={item.id} style={styles.saved}>
-            <Pressable style={styles.savedCopy} onPress={() => { openMix(layersOf(item), true); setMode('edit'); }}>
-              <Text style={styles.name}>{item.title}</Text>
-              <Text style={styles.meta}>{layersOf(item).length} sounds</Text>
-            </Pressable>
-            <Pressable onPress={() => removeSaved(item)} hitSlop={8} accessibilityLabel="Delete mix">
-              <Ionicons name="trash-outline" size={18} color={colors.muted} />
-            </Pressable>
-          </View>
-        ))}
-        {notice ? <Text style={styles.notice}>{notice}</Text> : null}
-      </ScrollView>
+      </View>
     );
   }
 
@@ -379,6 +383,32 @@ function makeStyles(colors) {
   editLink: { marginTop: 6 },
   editText: { color: colors.mint, fontFamily: font.medium, fontSize: 13 },
   custom: { marginHorizontal: 20, marginTop: 18 },
+  bottomActions: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    flexDirection: 'row',
+    gap: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: colors.bg,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.line,
+  },
+  bottomBtn: {
+    flex: 1,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: colors.mint,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  bottomBtnText: {
+    color: colors.mintInk,
+    fontFamily: font.semibold,
+    fontSize: 15,
+  },
   customText: { color: colors.mint, fontFamily: font.semibold, fontSize: 15 },
   empty: {
     color: colors.muted,

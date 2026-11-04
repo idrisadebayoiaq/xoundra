@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { Image, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
+import { createAudioPlayer } from 'expo-audio';
 import { Redirect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { KeyboardScreen } from '../src/components/KeyboardScreen';
@@ -49,6 +50,26 @@ async function pickAudio() {
   });
   if (picked.canceled || !picked.assets?.[0]) return null;
   return picked.assets[0];
+}
+
+async function probeAudio(asset) {
+  if (!asset?.uri) return { minutes: '' };
+  let minutes = '';
+  try {
+    const player = createAudioPlayer({ uri: asset.uri });
+    for (let i = 0; i < 25; i += 1) {
+      const duration = Number(player.duration) || 0;
+      if (duration > 0) {
+        minutes = String(Math.max(1, Math.round(duration / 60)));
+        break;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 120));
+    }
+    if (typeof player.remove === 'function') player.remove();
+  } catch {
+    /* keep blank minutes for manual entry */
+  }
+  return { minutes };
 }
 
 export default function ArtistUploadScreen() {
@@ -247,7 +268,7 @@ export default function ArtistUploadScreen() {
       </View>
       {mode === 'single' ? (
         <View style={styles.block}>
-          <Text style={styles.lead}>One sound, with its own artwork. Listeners can play it, like it, and save it.</Text>
+          <Text style={styles.lead}>One sound + artwork.</Text>
           <Field label="Title" value={title} onChangeText={setTitle} placeholder="Sound title" />
           <Pressable onPress={runStudioAssist} disabled={assistBusy} style={styles.assist} accessibilityLabel="Studio Assist">
             <Ionicons name="color-wand-outline" size={16} color={colors.mint} />
@@ -267,14 +288,23 @@ export default function ArtistUploadScreen() {
             if (picked.error) setNotice(picked.error);
             else if (picked.asset) setArt(picked.asset);
           }} />
-          <FilePicker label={audio?.name || 'Choose an mp3'} onPress={async () => setAudio(await pickAudio())} />
+          <FilePicker
+            label={audio?.name || 'Choose an mp3'}
+            onPress={async () => {
+              const next = await pickAudio();
+              if (!next) return;
+              setAudio(next);
+              const probed = await probeAudio(next);
+              if (probed.minutes) setMinutes(probed.minutes);
+            }}
+          />
           <Pressable onPress={publishSingle} disabled={busy} accessibilityLabel="Publish sound" style={styles.publish}>
             <Text style={styles.publishText}>{busy ? 'Uploading' : 'Publish sound'}</Text>
           </Pressable>
         </View>
       ) : (
         <View style={styles.block}>
-          <Text style={styles.lead}>Several sounds in order. Each sound has its own artwork. The album has one cover, and listeners open it like a playlist.</Text>
+          <Text style={styles.lead}>Album cover + each track’s art.</Text>
           <Field label="Album title" value={albumTitle} onChangeText={setAlbumTitle} placeholder="Album title" />
           <Pressable onPress={runStudioAssist} disabled={assistBusy} style={styles.assist} accessibilityLabel="Studio Assist">
             <Ionicons name="color-wand-outline" size={16} color={colors.mint} />
@@ -310,7 +340,18 @@ export default function ArtistUploadScreen() {
                 if (picked.error) setNotice(picked.error);
                 else if (picked.asset) patchSound(sound.key, { art: picked.asset });
               }} />
-              <FilePicker label={sound.audio?.name || 'Choose an mp3'} onPress={async () => patchSound(sound.key, { audio: await pickAudio() })} />
+              <FilePicker
+                label={sound.audio?.name || 'Choose an mp3'}
+                onPress={async () => {
+                  const next = await pickAudio();
+                  if (!next) return;
+                  const probed = await probeAudio(next);
+                  patchSound(sound.key, {
+                    audio: next,
+                    ...(probed.minutes ? { minutes: probed.minutes } : {}),
+                  });
+                }}
+              />
             </View>
           ))}
           <Pressable onPress={() => setSounds((items) => [...items, blankSound()])} accessibilityLabel="Add another sound" style={styles.add}>
