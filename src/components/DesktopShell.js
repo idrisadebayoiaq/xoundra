@@ -7,6 +7,7 @@ import { font } from '../theme';
 import { useTheme } from '../state/ThemeState';
 import { useApp } from '../state/AppState';
 import { useShell } from '../state/ShellState';
+import { useRewards } from '../state/RewardsState';
 import { coverSource } from '../data/artwork';
 import { formatTime } from '../data/catalogue';
 import { supabase } from '../lib/supabase';
@@ -17,6 +18,7 @@ import { DownloadProgress } from './DownloadProgress';
 import { LevelBar } from './LevelBar';
 import { PlaylistCover } from './PlaylistCover';
 import { DownloadMark } from './DownloadMark';
+import { PointsSpendModal } from './PointsSpendModal';
 
 const nav = [
   { href: '/', label: 'Home', icon: 'home', match: (path) => path === '/' },
@@ -97,6 +99,8 @@ function TopBar() {
   const insets = useSafeAreaInsets();
   const { sidebar, toggleSidebar, search, setSearch, setFocusMode } = useShell();
   const { unread, avatarPath, avatarStamp } = useApp();
+  const { points, dailyClaimed, earn, claimDailySignIn } = useRewards();
+  const [spendOpen, setSpendOpen] = useState(false);
   return (
     <View style={[styles.top, { paddingTop: insets.top + 8 }]}>
       <Pressable onPress={toggleSidebar} hitSlop={8} accessibilityLabel={sidebar ? 'Close sidebar' : 'Open sidebar'} style={styles.iconBtn}>
@@ -119,6 +123,20 @@ function TopBar() {
           autoCapitalize="none"
         />
       </View>
+      {dailyClaimed ? (
+        <Pressable style={styles.pointsChip} onPress={() => setSpendOpen(true)} accessibilityLabel={`${points} Quiet points`}>
+          <Ionicons name="leaf-outline" size={14} color={colors.mint} />
+          <Text style={styles.pointsChipText}>{points}</Text>
+        </Pressable>
+      ) : (
+        <Pressable
+          style={styles.claimChip}
+          onPress={() => claimDailySignIn()}
+          accessibilityLabel={`Claim today's ${earn.dailySignIn} Quiet points`}
+        >
+          <Text style={styles.claimChipText}>Claim +{earn.dailySignIn}</Text>
+        </Pressable>
+      )}
       <DownloadAppButton compact />
       <Pressable onPress={() => router.push('/notifications')} hitSlop={8} accessibilityLabel="Notifications" style={styles.iconBtn}>
         <Ionicons name="notifications-outline" size={20} color={colors.text} />
@@ -127,6 +145,7 @@ function TopBar() {
       <Pressable onPress={() => router.navigate('/profile')} hitSlop={8} accessibilityLabel="Profile">
         <Avatar path={avatarPath} stamp={avatarStamp} size={32} />
       </Pressable>
+      <PointsSpendModal open={spendOpen} onClose={() => setSpendOpen(false)} />
     </View>
   );
 }
@@ -502,6 +521,33 @@ function makeStyles(colors) {
     height: 36,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  claimChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 999,
+    backgroundColor: colors.mint,
+  },
+  claimChipText: {
+    color: colors.mintInk,
+    fontFamily: font.semibold,
+    fontSize: 13,
+  },
+  pointsChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderRadius: 999,
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.line,
+  },
+  pointsChipText: {
+    color: colors.mint,
+    fontFamily: font.semibold,
+    fontSize: 13,
   },
   dot: {
     position: 'absolute',

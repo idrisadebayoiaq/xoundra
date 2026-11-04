@@ -7,7 +7,6 @@ import { AlbumCard, PhotoTile } from '../../src/components/Cards';
 import { HomeMenu } from '../../src/components/HomeMenu';
 import { Avatar } from '../../src/components/Avatar';
 import { ScenesRail } from '../../src/components/ScenesRail';
-import { PointsSpendModal } from '../../src/components/PointsSpendModal';
 import { pickSleep, pickTonight, greeting } from '../../src/data/catalogue';
 import { coverSource } from '../../src/data/artwork';
 import { continuePlaying, forYou, mostPlayedFromHistory, recommended, trending } from '../../src/data/shelves';
@@ -15,7 +14,6 @@ import { soundDna } from '../../src/lib/sameEnergy';
 import { font } from '../../src/theme';
 import { useTheme } from '../../src/state/ThemeState';
 import { useApp } from '../../src/state/AppState';
-import { useRewards } from '../../src/state/RewardsState';
 import { avatarUrl } from '../../src/lib/supabase';
 import { useWeatherHint } from '../../src/hooks/useWeatherHint';
 
@@ -25,7 +23,6 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [spendOpen, setSpendOpen] = useState(false);
   const {
     play,
     tracks,
@@ -45,7 +42,6 @@ export default function HomeScreen() {
     avatarStamp,
     intention,
   } = useApp();
-  const { points, streakDays, dailyClaimed, earn, claimDailySignIn } = useRewards();
   const weather = useWeatherHint();
 
   useEffect(() => {
@@ -113,22 +109,12 @@ export default function HomeScreen() {
           </View>
         ) : null}
 
-        <Pressable
-          style={styles.quiet}
-          onPress={() => {
-            if (!dailyClaimed) claimDailySignIn();
-            setSpendOpen(true);
-          }}
-          accessibilityLabel={dailyClaimed ? 'Quiet points and streak' : `Claim today's ${earn.dailySignIn} Quiet points`}
-        >
-          <Text style={styles.quietText}>
-            {streakDays ? `${streakDays}-day streak` : 'Start a streak'} · {points} Quiet points
-          </Text>
-          <Text style={dailyClaimed ? styles.quietMeta : styles.quietClaim}>
-            {dailyClaimed ? "Today's check-in done" : `Claim today's +${earn.dailySignIn}`}
-          </Text>
-          {weather?.label ? <Text style={styles.weather}>{weather.label}</Text> : null}
-        </Pressable>
+        {weather?.label ? (
+          <Pressable style={styles.quiet} onPress={() => setMenuOpen(true)} accessibilityLabel={weather.label}>
+            <Text style={styles.weather}>{weather.label}</Text>
+            <Text style={styles.quietMeta}>Menu · daily Quiet points</Text>
+          </Pressable>
+        ) : null}
 
         <Shelf title={primaryShelf[0]} list={primaryShelf[1]} onPlay={play} />
 
@@ -191,7 +177,6 @@ export default function HomeScreen() {
         </ScrollView>
       </ScrollView>
       <HomeMenu open={menuOpen} onClose={() => setMenuOpen(false)} />
-      <PointsSpendModal open={spendOpen} onClose={() => setSpendOpen(false)} />
     </>
   );
 }
@@ -365,17 +350,6 @@ function makeStyles(colors) {
       marginBottom: 12,
       paddingVertical: 10,
     },
-    quietText: {
-      color: colors.muted,
-      fontFamily: font.medium,
-      fontSize: 13,
-    },
-    quietClaim: {
-      color: colors.mint,
-      fontFamily: font.semibold,
-      fontSize: 13,
-      marginTop: 4,
-    },
     quietMeta: {
       color: colors.muted,
       fontFamily: font.regular,
@@ -384,9 +358,8 @@ function makeStyles(colors) {
     },
     weather: {
       color: colors.mint,
-      fontFamily: font.regular,
-      fontSize: 12,
-      marginTop: 4,
+      fontFamily: font.medium,
+      fontSize: 13,
     },
     section: {
       color: colors.text,

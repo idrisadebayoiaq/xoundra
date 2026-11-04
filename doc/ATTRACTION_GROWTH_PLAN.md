@@ -74,7 +74,7 @@ Widgets, PWA, Focus mode, weather, breath, sound DNA, artist sessions, offline p
 
 | Action | Points | Cap / day |
 |---|---|---|
-| Daily check-in (claim) | 10 | 1 |
+| Daily check-in (claim in **Menu**; balance on **You**) | 10 | 1 |
 | Complete ritual | 10 | 2 |
 | 15 min continuous listen | 5 | 20 |
 | 7-day streak milestone | 40 | 1 / week |

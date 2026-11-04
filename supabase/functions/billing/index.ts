@@ -4,10 +4,26 @@ import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts";
 
 const cors = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-billing-cron",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 const supportEmail = "xoundra.support@gmail.com";
+
+async function readAppSecret(admin: ReturnType<typeof createClient>, name: string) {
+  const { data, error } = await admin.rpc("read_app_secret", { p_name: name });
+  if (error || typeof data !== "string") return "";
+  return data;
+}
+
+async function billingCronOk(admin: ReturnType<typeof createClient>, req: Request) {
+  const provided = req.headers.get("x-billing-cron") ?? "";
+  if (!provided) return false;
+  const envSecret = Deno.env.get("BILLING_CRON_SECRET") ?? Deno.env.get("CHECK_IN_CRON_SECRET") ?? "";
+  if (envSecret && provided === envSecret) return true;
+  const stored = await readAppSecret(admin, "BILLING_CRON_SECRET")
+    || await readAppSecret(admin, "CHECK_IN_CRON_SECRET");
+  return Boolean(stored && provided === stored);
+}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
@@ -24,8 +40,7 @@ Deno.serve(async (req) => {
   const action = String(body.action ?? "charge");
 
   if (action === "renew_due") {
-    const cron = Deno.env.get("BILLING_CRON_SECRET") ?? "";
-    if (!cron || req.headers.get("x-billing-cron") !== cron) return json({ error: "not_allowed" }, 401);
+    if (!(await billingCronOk(admin, req))) return json({ error: "not_allowed" }, 401);
     return json(await renewDue(admin, secret));
   }
 

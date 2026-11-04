@@ -5,11 +5,11 @@ import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { PlatformIcon } from '../../src/components/PlatformIcon';
 import { PointsSpendModal } from '../../src/components/PointsSpendModal';
+import { QuietPointsCard } from '../../src/components/QuietPointsCard';
 import { cleanArtistLinks, platformById } from '../../src/data/artistPlatforms';
 import { font } from '../../src/theme';
 import { useTheme } from '../../src/state/ThemeState';
 import { useApp } from '../../src/state/AppState';
-import { useRewards } from '../../src/state/RewardsState';
 import { Avatar } from '../../src/components/Avatar';
 import { avatarUrl } from '../../src/lib/supabase';
 
@@ -18,7 +18,6 @@ export default function ProfileScreen() {
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
   const app = useApp();
-  const { points, streakDays, downloadCredits, dailyClaimed, earn, claimDailySignIn } = useRewards();
   const [spendOpen, setSpendOpen] = useState(false);
   const {
     premium,
@@ -73,23 +72,7 @@ export default function ProfileScreen() {
         </View>
       </View>
 
-      <Pressable
-        style={styles.rewards}
-        onPress={() => {
-          if (!dailyClaimed) claimDailySignIn();
-          setSpendOpen(true);
-        }}
-        accessibilityLabel="Quiet points"
-      >
-        <Text style={styles.rewardsTitle}>{streakDays ? `${streakDays}-day streak` : 'No streak yet'}</Text>
-        <Text style={styles.rewardsMeta}>
-          {points} Quiet points{downloadCredits ? ` · ${downloadCredits} download credit${downloadCredits === 1 ? '' : 's'}` : ''}
-        </Text>
-        <Text style={dailyClaimed ? styles.rewardsMeta : styles.spendLink}>
-          {dailyClaimed ? "Today's check-in claimed" : `Claim today's +${earn.dailySignIn}`}
-        </Text>
-        <Text style={styles.spendLink}>Spend points</Text>
-      </Pressable>
+      <QuietPointsCard onSpend={() => setSpendOpen(true)} />
 
       <Pressable style={styles.planRow} onPress={() => router.push('/plans')}>
         <Text style={styles.planLabel}>Plan</Text>
@@ -141,17 +124,6 @@ function makeStyles(colors) {
       alignItems: 'center',
       justifyContent: 'space-between',
     },
-    rewards: {
-      marginHorizontal: 20,
-      marginBottom: 14,
-      padding: 14,
-      borderRadius: 16,
-      backgroundColor: colors.card,
-      gap: 4,
-    },
-    rewardsTitle: { color: colors.text, fontFamily: font.semibold, fontSize: 16 },
-    rewardsMeta: { color: colors.muted, fontFamily: font.regular, fontSize: 13 },
-    spendLink: { color: colors.mint, fontFamily: font.medium, fontSize: 14, marginTop: 6 },
     planRow: {
       marginHorizontal: 20,
       marginBottom: 16,
